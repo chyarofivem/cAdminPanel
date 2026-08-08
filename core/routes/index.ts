@@ -2,27 +2,38 @@ export { default as diagnostics_sendReport } from './diagnostics/sendReport';
 export { default as diagnostics_getDiagnostics } from './diagnostics/getDiagnostics';
 export { default as intercom } from './intercom.js';
 export { default as resources } from './resources.js';
+export { default as resources_data } from './resources/data';
 export { default as perfChart } from './perfChart';
 export { default as playerDrops } from './playerDrops';
-export { default as systemLogs } from './systemLogs';
+export { default as txAdminLog } from './txAdminLog';
+export { default as branding } from './branding';
+export { default as cadmin_ping } from './cadmin/ping';
+export { default as cadmin_players } from './cadmin/players';
+export { default as cadmin_player } from './cadmin/player';
+export { default as cadmin_money } from './cadmin/money';
+export { default as cadmin_job } from './cadmin/job';
+export { default as cadmin_group } from './cadmin/group';
+export { default as cadmin_inventory } from './cadmin/inventory';
+export { default as cadmin_garage } from './cadmin/garage';
+export { default as cadmin_jobs } from './cadmin/jobs';
+export { default as cadmin_install } from './cadmin/install';
+export { default as cadmin_link } from './cadmin/link';
+export { list as cadmin_users, action as cadmin_userAction } from './cadmin/users';
+export { default as cadmin_overview } from './cadmin/overview';
 
-export { default as auth_addMasterPin } from './authentication/addMasterPin.js';
-export { default as auth_addMasterCallback } from './authentication/addMasterCallback.js';
-export { default as auth_addMasterSave } from './authentication/addMasterSave.js';
-export { default as auth_providerRedirect } from './authentication/providerRedirect';
-export { default as auth_providerCallback } from './authentication/providerCallback';
-export { default as auth_verifyPassword } from './authentication/verifyPassword';
-export { default as auth_changePassword } from './authentication/changePassword';
+export { default as auth_chyaroSetup } from './authentication/chyaroSetup';
+export { default as auth_chyaroLogin } from './authentication/chyaroLogin';
+export { default as auth_chyaroCallback } from './authentication/chyaroCallback';
 export { default as auth_self } from './authentication/self';
 export { default as auth_logout } from './authentication/logout';
-export { default as auth_getIdentifiers } from './authentication/getIdentifiers';
-export { default as auth_changeIdentifiers } from './authentication/changeIdentifiers';
 
 export { default as adminManager_page } from './adminManager/page.js';
+export { default as adminManager_data } from './adminManager/data';
 export { default as adminManager_getModal } from './adminManager/getModal';
 export { default as adminManager_actions } from './adminManager/actions';
 
 export { default as cfgEditor_page } from './cfgEditor/get';
+export { default as cfgEditor_data } from './cfgEditor/data';
 export { default as cfgEditor_save } from './cfgEditor/save';
 
 export { default as deployer_stepper } from './deployer/stepper';
@@ -64,10 +75,6 @@ export { default as whitelist_list } from './whitelist/list';
 export { default as whitelist_actions } from './whitelist/actions';
 
 export { default as advanced_runCommand } from './advanced/runCommand';
-
-//FIXME: reorganizar TODAS rotas de logs, incluindo listagem e download
-export { default as serverLog } from './serverLog.js';
-export { default as serverLogPartial } from './serverLogPartial.js';
 
 export { default as host_status } from './hostStatus';
 

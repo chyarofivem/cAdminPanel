@@ -218,7 +218,7 @@ export default class FxRunner {
                 txCore.webServer.webSocket.pushRefresh('status');
             }
         });
-        txCore.logger.fxserver.logFxserverSpawn(this.proc.pid.toString());
+        await txCore.logger.fxserver.logFxserverSpawn(this.proc.pid.toString());
 
         //Setting up StdIO
         childProc.stdout.setEncoding('utf8');

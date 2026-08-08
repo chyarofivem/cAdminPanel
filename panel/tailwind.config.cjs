@@ -69,6 +69,12 @@ module.exports = {
         mono: ["var(--font-mono)", ...fontFamily.mono],
       },
       colors: {
+        brand: {
+          300: "oklch(var(--brand-300) / <alpha-value>)",
+          500: "oklch(var(--brand-500) / <alpha-value>)",
+          600: "oklch(var(--brand-600) / <alpha-value>)",
+          700: "oklch(var(--brand-700) / <alpha-value>)",
+        },
         discord: {
           DEFAULT: "#5865F2",
           active: "#7289DA"
@@ -115,7 +121,7 @@ module.exports = {
           foreground: "hsl(var(--muted-foreground))",
         },
         accent: {
-          DEFAULT: "hsl(var(--accent))",
+          DEFAULT: "oklch(var(--brand-600) / <alpha-value>)",
           foreground: "hsl(var(--accent-foreground))",
         },
         popover: {

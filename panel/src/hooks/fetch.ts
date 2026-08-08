@@ -81,7 +81,8 @@ export const useAuthedFetcher = () => {
  */
 type SimpleFetchOpts<Req = any> = FetcherOpts & {
     body?: Req,
-    timeout?: number
+    timeout?: number,
+    headers?: Record<string, string>,
 };
 
 export const fetchWithTimeout = async <Resp = any, Req = any>(url: string, fetchOpts: SimpleFetchOpts<Req> = {}) => {
@@ -89,10 +90,11 @@ export const fetchWithTimeout = async <Resp = any, Req = any>(url: string, fetch
     const body = method === 'POST' && fetchOpts.body
         ? JSON.stringify(fetchOpts.body)
         : undefined;
+    const { timeout, headers, ...requestOpts } = fetchOpts;
     const response = await fetch(url, {
-        headers: defaultHeaders,
-        signal: AbortSignal.timeout(fetchOpts.timeout ?? ApiTimeout.DEFAULT),
-        ...fetchOpts,
+        ...requestOpts,
+        headers: { ...defaultHeaders, ...headers },
+        signal: AbortSignal.timeout(timeout ?? ApiTimeout.DEFAULT),
         method,
         body,
     });

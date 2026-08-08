@@ -18,18 +18,21 @@ export class LoggerBase {
     lrErrors = 0;
     public activeFilePath: string;
     public lrLastError: string | undefined;
-    private basePath: string;
+    protected readonly basePath: string;
+    protected readonly persistentLoggingEnabled: boolean;
     private logNameRegex: RegExp;
 
     constructor(
         basePath: string,
         logName: string,
         lrDefaultOptions: rfs.Options,
-        lrProfileConfig: rfs.Options | false = false
+        lrProfileConfig: rfs.Options | false = false,
+        writeRotationDivider = true,
     ) {
         //Sanity check
         if (!basePath || !logName) throw new Error('Missing constructor parameters');
         this.basePath = basePath;
+        this.persistentLoggingEnabled = lrProfileConfig !== false;
         this.activeFilePath = path.join(basePath, `${logName}.log`);
         this.logNameRegex = new RegExp(`^${logName}(_\\d{4}-\\d{2}-\\d{2}_\\d{2}-\\d{2}-\\d{2}(_\\d+)?)?.log$`);
 
@@ -56,7 +59,9 @@ export class LoggerBase {
 
         this.lrStream = rfs.createStream(filenameGenerator, lrOptions);
         this.lrStream.on('rotated', (filename) => {
-            this.lrStream.write(getLogDivider('Log Rotated'));
+            if (writeRotationDivider) {
+                this.lrStream.write(getLogDivider('Log Rotated'));
+            }
             console.verbose.log(`Rotated file ${filename}`);
         });
         this.lrStream.on('error', (error) => {
@@ -66,6 +71,23 @@ export class LoggerBase {
                 this.lrLastError = error.message;
             }
         });
+    }
+
+    /**
+     * Rotates the active file immediately.
+     *
+     * rotating-file-stream intentionally keeps this method private in its
+     * TypeScript declaration, but exposes it on the runtime instance. Keeping
+     * this compatibility shim here prevents specialized loggers from reaching
+     * into the dependency directly.
+     */
+    protected async rotateNow() {
+        if (!this.persistentLoggingEnabled) return;
+        const stream = this.lrStream as unknown as { rotate: () => Promise<void> };
+        if (typeof stream.rotate !== 'function') {
+            throw new Error('The active rotating file stream cannot be rotated manually.');
+        }
+        await stream.rotate();
     }
 
     listLogFiles() {

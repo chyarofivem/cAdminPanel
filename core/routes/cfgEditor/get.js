@@ -10,7 +10,7 @@ const console = consoleFactory(modulename);
  */
 export default async function CFGEditorPage(ctx) {
     //Check permissions
-    if (!ctx.admin.hasPermission('server.cfg.editor')) {
+    if (!ctx.admin.testPermission('master', modulename)) {
         return ctx.utils.renderMessage('You don\'t have permission to view this page.');
     }
 

@@ -15,6 +15,10 @@ local ServerCtxObj = {
   localeData = nil,
   switchPageKey = '',
   txAdminVersion = '',
+  panelName = 'FiveM Panel',
+  accent = 'blue',
+  accentColor = '#2563eb',
+  bannerUrl = '',
   alignRight = false,
   announceNotiPos = '', -- top-center, top-right, top-left, bottom-center, bottom-right, bottom-left
 }
@@ -57,6 +61,32 @@ local function getCustomLocaleData()
     ['nui_warning'] = locale['nui_warning'],
     ['nui_menu'] = locale['nui_menu'],
   }
+end
+
+local function publishServerCtx()
+  GlobalState.txAdminServerCtx = ServerCtxObj
+  for adminID, _ in pairs(TX_ADMINS) do
+    TriggerClientEvent('txcl:setServerCtx', adminID, ServerCtxObj)
+  end
+end
+
+local function syncBranding()
+  local url = 'http://' .. TX_LUACOMHOST .. '/intercom/branding'
+  local payload = json.encode({ txAdminToken = TX_LUACOMTOKEN })
+  PerformHttpRequest(url, function(httpCode, data)
+    if httpCode ~= 200 then
+      return txPrint('^3WARNING: failed to sync panel branding from txAdmin.')
+    end
+    local ok, branding = pcall(json.decode, data)
+    if not ok or type(branding) ~= 'table' or branding.success ~= true then
+      return txPrint('^3WARNING: received invalid panel branding from txAdmin.')
+    end
+    ServerCtxObj.panelName = branding.panelName or ServerCtxObj.panelName
+    ServerCtxObj.accent = branding.accent or ServerCtxObj.accent
+    ServerCtxObj.accentColor = branding.accentColor or ServerCtxObj.accentColor
+    ServerCtxObj.bannerUrl = branding.bannerUrl or ServerCtxObj.bannerUrl
+    publishServerCtx()
+  end, 'POST', payload, { ['Content-Type'] = 'application/json' })
 end
 
 local function syncServerCtx()
@@ -110,12 +140,8 @@ local function syncServerCtx()
   end
 
   debugPrint('Updated ServerCtx.')
-  GlobalState.txAdminServerCtx = ServerCtxObj
-
-  -- Telling admins that the server context changed
-  for adminID, _ in pairs(TX_ADMINS) do
-    TriggerClientEvent('txcl:setServerCtx', adminID, ServerCtxObj)
-  end
+  publishServerCtx()
+  syncBranding()
 end
 
 RegisterNetEvent('txsv:req:serverCtx', function()

@@ -1,9 +1,9 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { setPlayerModalUrlParam, usePlayerModalStateValue } from "@/hooks/playerModal";
-import { InfoIcon, ListIcon, HistoryIcon, GavelIcon } from "lucide-react";
+import { InfoIcon, ListIcon, HistoryIcon, GavelIcon, UserRoundCogIcon } from "lucide-react";
 import PlayerInfoTab from "./PlayerInfoTab";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import PlayerIdsTab from "./PlayerIdsTab";
 import PlayerHistoryTab from "./PlayerHistoryTab";
 import PlayerBanTab from "./PlayerBanTab";
@@ -13,9 +13,12 @@ import { useBackendApi } from "@/hooks/fetch";
 import { PlayerModalResp, PlayerModalSuccess } from "@shared/playerApiTypes";
 import PlayerModalFooter from "./PlayerModalFooter";
 import { ModalContent, ModalTabMessage, ModalTabsList, ModalTabWrapper, type ModalTabInfo } from "@/components/modal-tabs";
+import { useAdminPerms } from "@/hooks/auth";
+import PlayerCharacterTab from "./PlayerCharacterTab";
+import { t } from '@/lib/i18n';
 
 
-const modalTabs: ModalTabInfo[] = [
+const baseModalTabs: ModalTabInfo[] = [
     {
         title: 'Info',
         icon: <InfoIcon className="mr-2 h-5 w-5 hidden xs:block" />,
@@ -37,6 +40,15 @@ const modalTabs: ModalTabInfo[] = [
 
 
 export default function PlayerModal() {
+    const { hasPerm } = useAdminPerms();
+    const modalTabs = useMemo<ModalTabInfo[]>(() => {
+        if (!window.txConsts.cadminEnabled || !hasPerm('cadmin.players.view')) return baseModalTabs;
+        return [
+            baseModalTabs[0],
+            { title: 'Character', icon: <UserRoundCogIcon className="mr-2 h-5 w-5 hidden xs:block" /> },
+            ...baseModalTabs.slice(1),
+        ];
+    }, [hasPerm]);
     const { isModalOpen, closeModal, playerRef } = usePlayerModalStateValue();
     const [selectedTab, setSelectedTab] = useState(modalTabs[0].title);
     const [currRefreshKey, setCurrRefreshKey] = useState(0);
@@ -125,9 +137,9 @@ export default function PlayerModal() {
             </>;
         }
     } else if (modalError) {
-        pageTitle = <span className="text-destructive-inline">Error!</span>;
+        pageTitle = <span className="text-destructive-inline">{t('Error')}</span>;
     } else {
-        pageTitle = <span className="text-muted-foreground italic">Loading...</span>;
+        pageTitle = <span className="text-muted-foreground italic">{t('Loading...')}</span>;
     }
 
     return (
@@ -155,7 +167,7 @@ export default function PlayerModal() {
                                 onClick={() => setSelectedTab(tab.title)}
                                 onKeyDown={handleTabButtonKeyDown}
                             >
-                                {tab.icon} {tab.title}
+                                {tab.icon} {t(tab.title)}
                             </Button>
                         ))}
                     </ModalTabsList>
@@ -164,9 +176,9 @@ export default function PlayerModal() {
                         {!modalData ? (
                             <ModalTabMessage>
                                 {modalError ? (
-                                    <span className="text-destructive-inline">Error: {modalError}</span>
+                                    <span className="text-destructive-inline">{t('Error')}: {t(modalError)}</span>
                                 ) : (
-                                    <GenericSpinner msg="Loading..." />
+                                    <GenericSpinner msg={t('Loading...')} />
                                 )}
                             </ModalTabMessage>
                         ) : (
@@ -184,6 +196,7 @@ export default function PlayerModal() {
                                     serverTime={modalData.serverTime}
                                     refreshModalData={refreshModalData}
                                 />}
+                                {selectedTab === 'Character' && <PlayerCharacterTab license={modalData.player.license} />}
                                 {selectedTab === 'IDs' && <PlayerIdsTab
                                     player={modalData.player}
                                     playerRef={playerRef!}

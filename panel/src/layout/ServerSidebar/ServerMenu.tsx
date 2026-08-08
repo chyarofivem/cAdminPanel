@@ -1,112 +1,76 @@
-import { MenuNavLink } from '@/components/MainPageLink';
-import TxAnchor from '@/components/TxAnchor';
-import { useAdminPerms } from '@/hooks/auth';
-import { serverNameAtom, txConfigStateAtom } from '@/hooks/status';
-import { cn } from '@/lib/utils';
-import { TxConfigState } from '@shared/enums';
-import { GlobalStatusType } from '@shared/socketioTypes';
-import { useAtomValue } from 'jotai';
-import { BoxIcon, ChevronRightSquareIcon, DnaIcon, EyeIcon, FileEditIcon, HourglassIcon, LayoutDashboardIcon } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 import { useLocation } from 'wouter';
+import {
+    Activity, ChevronDown, CircleGauge, ClipboardCheck, FileEdit,
+    History, LayoutDashboard, ListChecks, ScrollText, Server, Settings, ShieldCheck,
+    TerminalSquare, UserRoundCog, Users, Wrench, Zap,
+} from 'lucide-react';
+import MainPageLink from '@/components/MainPageLink';
+import { useAdminPerms } from '@/hooks/auth';
+import { cn } from '@/lib/utils';
+import { t } from '@/lib/i18n';
 
+type LinkSpec = { label: string; href: string; icon?: React.ReactNode; permission?: string; master?: boolean };
 
-//Separate component to prevent re-render of the entire menu
-function ServerName() {
-    return useAtomValue(serverNameAtom);
+function SidebarLink({ link, nested = false }: { link: LinkSpec; nested?: boolean }) {
+    const [location] = useLocation();
+    const { hasPerm } = useAdminPerms();
+    const allowed = link.master ? hasPerm('master') : !link.permission || hasPerm(link.permission);
+    const active = link.href === '/' ? location === '/' : location === link.href || location.startsWith(`${link.href}/`);
+    if (!allowed) return null;
+    return <MainPageLink href={link.href} isActive={active} className={cn(
+        'flex items-center rounded-lg text-sm transition-colors duration-200',
+        nested ? 'mx-2 px-3 py-1.5 text-zinc-400 hover:bg-white/5 hover:text-white' : 'px-3 py-2 text-gray-300 hover:bg-white/5 hover:text-white',
+        active && (nested ? 'bg-white/5 text-white shadow-sm' : 'border-2 border-dashed border-brand-600/20 bg-brand-600/10 text-brand-500 shadow-sm'),
+    )}>
+        {link.icon && <span className={cn('mr-2 text-zinc-500', active && 'text-brand-500/60')}>{link.icon}</span>}
+        {link.label}
+    </MainPageLink>;
 }
 
-type PendingServerConfigureProps = {
-    txConfigState?: Exclude<TxConfigState, TxConfigState.Ready>;
+function NavGroup({ label, icon, links }: { label: string; icon: React.ReactNode; links: LinkSpec[] }) {
+    const [location] = useLocation();
+    const { hasPerm } = useAdminPerms();
+    const visible = links.filter(link => link.master ? hasPerm('master') : !link.permission || hasPerm(link.permission));
+    const groupActive = visible.some(link => location === link.href || location.startsWith(`${link.href}/`));
+    const [open, setOpen] = useState(groupActive);
+    if (!visible.length) return null;
+    return <div className="mt-1">
+        <button type="button" onClick={() => setOpen(value => !value)} className={cn(
+            'flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm text-gray-300 transition-colors hover:bg-white/5 hover:text-white',
+            groupActive && 'border-2 border-dashed border-brand-600/20 bg-brand-600/10 text-brand-500',
+        )}>
+            <span className="flex items-center"><span className={cn('mr-2 text-zinc-500', groupActive && 'text-brand-500/60')}>{icon}</span>{label}</span>
+            <ChevronDown className={cn('size-4 transition-transform', open && 'rotate-180')} />
+        </button>
+        {open && <div className="mt-1 space-y-1">{visible.map(link => <SidebarLink key={link.href} link={link} nested />)}</div>}
+    </div>;
 }
 
-function PendingServerConfigure({ txConfigState }: PendingServerConfigureProps) {
-    const [currLocation] = useLocation();
-    const [linkHref, setLinkHref] = useState('');
-    const linkText = useRef('');
-
-    //This effect is done to prevent the link from popping up in the delay between ui change 
-    // and the pendingStep state atom being updated from the socket.io event
-    useEffect(() => {
-        let newHref = '';
-        if (txConfigState === TxConfigState.Setup && !currLocation.startsWith('/server/setup')) {
-            newHref = '/server/setup';
-            linkText.current = 'Go to the setup page!';
-        } else if (txConfigState === TxConfigState.Deployer && !currLocation.startsWith('/server/deployer')) {
-            newHref = '/server/deployer';
-            linkText.current = 'Go to the deployer page!';
-        } else {
-            newHref = '';
-        }
-
-        if (!newHref) {
-            setLinkHref('');
-            return;
-        } else {
-            const timeout = setTimeout(() => {
-                setLinkHref(newHref);
-            }, 500);
-            return () => clearTimeout(timeout);
-        }
-    }, [currLocation, txConfigState]);
-
-    return (
-        <div className='absolute inset-0 flex flex-col items-center justify-center gap-4'>
-            <HourglassIcon className='h-12 w-12 opacity-75 animate-pulse' />
-            <p className='text-center text-lg tracking-wider font-light opacity-75'>
-                You need to configure your server to be able to start it.
-            </p>
-            {linkHref ? (
-                <TxAnchor href={linkHref} className='animate-toastbar-enter'>
-                    {linkText.current}
-                </TxAnchor>
-            ) : (
-                <TxAnchor href='#' className='animate-toastbar-leave pointer-events-none'>
-                    {linkText.current || <>&nbsp;</>}
-                </TxAnchor>
-            )}
-        </div>
-    )
-}
+const iconClass = 'size-5';
 
 export default function ServerMenu() {
-    const txConfigState = useAtomValue(txConfigStateAtom);
-    const { hasPerm } = useAdminPerms();
-
-    const isConfigPending = txConfigState !== TxConfigState.Ready;
-    return <div className='relative'>
-        {isConfigPending && <PendingServerConfigure txConfigState={txConfigState} />}
-        <div className={cn(isConfigPending && 'opacity-0 pointer-events-none')}>
-            <h2 className="mb-1.5 text-lg font-semibold tracking-tight line-clamp-1">
-                <ServerName />
-            </h2>
-            <div className="space-y-1 select-none">
-                <MenuNavLink href="/">
-                    <LayoutDashboardIcon className="mr-2 h-4 w-4" />Dashboard
-                </MenuNavLink>
-                <MenuNavLink href="/server/console" disabled={!hasPerm('console.view')}>
-                    <ChevronRightSquareIcon className="mr-2 h-4 w-4" />Live Console
-                </MenuNavLink>
-                <MenuNavLink href="/server/resources">
-                    <BoxIcon className="mr-2 h-4 w-4" />Resources
-                </MenuNavLink>
-                <MenuNavLink href="/server/server-log" disabled={!hasPerm('server.log.view')}>
-                    <EyeIcon className="mr-2 h-4 w-4" />Server Log
-                </MenuNavLink>
-                <MenuNavLink href="/server/cfg-editor" disabled={!hasPerm('server.cfg.editor')}>
-                    <FileEditIcon className="mr-2 h-4 w-4" />CFG Editor
-                </MenuNavLink>
-                {window.txConsts.showAdvanced && (
-                    <MenuNavLink href="/advanced" className='text-accent' disabled={!hasPerm('all_permisisons')}>
-                        <DnaIcon className="mr-2 h-4 w-4" />Advanced
-                    </MenuNavLink>
-                )}
-                {import.meta.env.DEV && (
-                    <MenuNavLink href="/test" className='text-accent'>
-                        <DnaIcon className="mr-2 h-4 w-4" />Test
-                    </MenuNavLink>
-                )}
-            </div>
-        </div>
-    </div>
+    return <nav className="font-medium">
+        <SidebarLink link={{ label: t('Home'), href: '/', icon: <LayoutDashboard className={iconClass} /> }} />
+        <NavGroup label={t('Administration')} icon={<ShieldCheck className={iconClass} />} links={[
+            { label: t('Player Management'), href: '/administration/players', icon: <UserRoundCog className="size-4" /> },
+            { label: t('Staff & Permissions'), href: '/admins', icon: <Users className="size-4" />, permission: 'manage.admins' },
+            ...(window.txConsts.cadminEnabled ? [{ label: t('Linked Accounts'), href: '/cadmin/users', master: true }] : []),
+        ]} />
+        <NavGroup label={t('Server')} icon={<Server className={iconClass} />} links={[
+            { label: t('Console Log'), href: '/server/console-log', icon: <TerminalSquare className="size-4" />, permission: 'console.view' },
+            { label: t('Resources'), href: '/server/resources', icon: <Wrench className="size-4" /> },
+            { label: t('CFG Editor'), href: '/server/cfg-editor', icon: <FileEdit className="size-4" />, master: true },
+            { label: t('History'), href: '/history', icon: <History className="size-4" /> },
+            { label: t('Player Drops'), href: '/insights/player-drops', icon: <Activity className="size-4" /> },
+        ]} />
+        <NavGroup label={t('System')} icon={<CircleGauge className={iconClass} />} links={[
+            { label: t('Allowlist'), href: '/allowlist', icon: <ClipboardCheck className="size-4" /> },
+            { label: t('Settings'), href: '/settings', icon: <Settings className="size-4" />, permission: 'settings.view' },
+            { label: t('Master Actions'), href: '/system/master-actions', icon: <Zap className="size-4" /> },
+            { label: t('Diagnostics'), href: '/system/diagnostics', icon: <ListChecks className="size-4" /> },
+            { label: t('txAdmin Log'), href: '/system/txadmin-log', icon: <ScrollText className="size-4" />, permission: 'txadmin.log.combined' },
+        ]} />
+        {window.txConsts.showAdvanced && <SidebarLink link={{ label: t('Advanced'), href: '/advanced', icon: <Zap className={iconClass} />, permission: 'all_permissions' }} />}
+    </nav>;
 }

@@ -6,13 +6,13 @@
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no">
-    <meta name="description" content="txAdmin - remotely Manage & Monitor your GTA5 FiveM Server">
+    <meta name="description" content="Manage and monitor <%= panelName %>">
     <meta name="author" content="André Tabarra">
-    <title><%= headerTitle %></title>
+    <title><%= panelName %></title>
     <link href="css/simple-line-icons.css?txVer=<%= txAdminVersion %>" rel="stylesheet">
     <link href="css/coreui.min.css?txVer=<%= txAdminVersion %>" rel="stylesheet">
     <link href="css/dark.css?txVer=<%= txAdminVersion %>" rel="stylesheet">
-    <link rel="shortcut icon" type="image/png" href="img/favicon_default.png" id="favicon" />
+    <link rel="shortcut icon" href="<%= faviconUrl %>" id="favicon" />
     <link rel="stylesheet" href="css/txAdmin.css?txVer=<%= txAdminVersion %>">
 
     <!-- Page CSS -->
@@ -83,9 +83,7 @@
         .template-cards > .description{
             -webkit-line-clamp: 2;
         }
-        .template-cards > .titleText::before{
-            content: "⭐";
-        }
+        .template-cards > .titleText::before{ content: ""; }
         .template-cards > .title{
             display: flex;
             flex-direction: row;
@@ -126,18 +124,28 @@
             border: 1px solid #d6d6d6;
         }
     </style>
+    <link rel="stylesheet" href="css/cadmin-legacy.css?txVer=<%= txAdminVersion %>">
+    <style>:root { <%- accentStyle %> }</style>
     
     <!-- injected consts -->
     <script><%- jsInjection %></script>
 </head>
 
-<body class="c-app flex-row <%= uiTheme %>">
+<body class="c-app flex-row theme--dark <%= uiTheme %>">
     <div class="container">
+        <section class="ca-workflow-intro ca-setup-intro">
+            <div>
+                <p class="ca-workflow-kicker">Initial configuration</p>
+                <h1>Set up your server</h1>
+                <p class="ca-workflow-description">Choose how the server should be created, confirm its location, and start it when ready.</p>
+            </div>
+            <span class="ca-workflow-count">Guided setup</span>
+        </section>
 
         <!-- Stepper Row -->
         <div class="row justify-content-center">
-            <div class="col-12 col-md-12 col-lg-8">
-                <div class="card fade-in">
+            <div class="col-12 col-xl-10 setup-workflow">
+                <div class="card fade-in setup-shell">
                     <div class="card-body">
                         <ul class="stepper linear">
 
@@ -145,7 +153,7 @@
                             <li class="step <%= skipServerName ? 'done' : 'active' %>">
                                 <div class="step-title waves-effect">Server Name</div>
                                 <div class="step-content">
-                                    A <strong>short</strong> server name to be used in txAdmin interface and
+                                    A <strong>short</strong> server name to be used in <%= panelName %> and
                                     Chat/Discord messages.
                                     <input type="text" class="form-control mt-2" id="frmName" maxlength="18"
                                         minlength="1" placeholder="Happy Server" value="<%= serverName %>" required>
@@ -164,17 +172,18 @@
                             <li class="step <%= skipServerName ? 'active' : '' %>">
                                 <div class="step-title waves-effect">Deployment Type</div>
                                 <div class="step-content">
-                                    <strong>Select</strong> how you want to setup your server:
+                                    <p class="ca-choice-prompt">Choose how you want to create the server.</p>
+                                    <div class="deployment-choice-grid">
                                     <div class="bigbutton deployment-type-card border-dark next-step" onclick="selectDeploymentType('popular')">
-                                        <span class="title"><strong>⭐ Popular Recipes</strong> <span class="badge badge-danger">RECOMMENDED</span></span>
+                                        <span class="title"><strong>Popular Recipes</strong> <span class="badge badge-danger">RECOMMENDED</span></span>
                                         <br>
                                         <span class="description">
                                             Select a template from a curated list of community favorites. <br>
-                                            This includes QBCore, ESX and a Default template for you to customize.
+                                            Choose Empty, ESX Legacy, or Qbox from the built-in supported list.
                                         </span>
                                     </div>
                                     <div class="bigbutton deployment-type-card border-dark next-step" onclick="selectDeploymentType('local')">
-                                        <span class="title"><strong>📁 Existing Server Data</strong></span>
+                                        <span class="title"><strong>Existing Server Data</strong></span>
                                         <br>
                                         <span class="description">
                                             Select an existing server data folder in the host. <br>
@@ -183,7 +192,7 @@
                                         </span>
                                     </div>
                                     <div class="bigbutton deployment-type-card border-dark next-step" onclick="selectDeploymentType('remote')">
-                                        <span class="title"><strong>📥 Remote URL Template</strong></span>
+                                        <span class="title"><strong>Remote URL Template</strong></span>
                                         <br>
                                         <span class="description">
                                             Based on a Recipe URL in the YAML format. <br>
@@ -191,12 +200,13 @@
                                         </span>
                                     </div>
                                     <div class="bigbutton deployment-type-card border-dark next-step" onclick="selectDeploymentType('custom')">
-                                        <span class="title"><strong>📑 Custom Template</strong></span>
+                                        <span class="title"><strong>Custom Template</strong></span>
                                         <br>
                                         <span class="description">
                                             This is recommended if you have a custom recipe-based server or if you are writing your own recipe. 
                                             You will be asked for the recipe right after this page.
                                         </span>
+                                    </div>
                                     </div>
                                     <div class="step-actions">
                                         <button class="btn btn-pill btn-secondary previous-step"
@@ -380,13 +390,13 @@
     <script src="https://unpkg.com/materialize-stepper@3.1.0/dist/js/mstepper.js"></script>
     <script>
         //Constants
-        const recipesIndexURL = 'https://raw.githubusercontent.com/citizenfx/txAdmin-recipes/refs/heads/main/indexv4.json';
+        const bundledRecipes = <%- escapeHtmlRawText(JSON.stringify(bundledRecipes)) %>;
         const txDataPath = '<%= dataPath %>';
         const forceGameName = '<%= forceGameName %>' || false;
         const deployerEngineVersion = parseInt('<%= deployerEngineVersion %>');
         const skipServerName = ('<%= skipServerName %>' === 'true');
         const SPINNER_HTMLSized = `<div style="min-height: 250px; margin: auto;">${SPINNER_HTML}</div>`;
-        const connectErrorMessage = `<b>Unable to connect to txAdmin.</b> <br> If you closed it, please start again and retry.`;
+        const connectErrorMessage = `<b>Unable to connect to <%= panelName %>.</b> <br> If you closed it, please start again and retry.`;
 
         //Vars
         const suggestions = {};
@@ -567,90 +577,26 @@
             }
         }
 
-        //Download Popular Recipe list and create cards
-        async function setFavTemplatesCards(){
-            //NOTE: mocked
-            // const tmpGETResponse = [
-            //     {
-            //         "engine": 3,
-            //         "name": "CFX Default",
-            //         "author": "Tabarra",
-            //         "version": "3.0.0",
-            //         "description": "Recipe for the base resources required to run a minimal FiveM server.",
-            //         "url": "https://raw.githubusercontent.com/tabarra/CFX-Default-recipe/main/recipe.yaml"
-            //     },
-            //     {
-            //         "engine": 3,
-            //         "name": "Plume ESX",
-            //         "author": "Tabarra & Chip",
-            //         "version": "2.0.0",
-            //         "description": "A full featured (13 jobs) and highly configurable yet lightweight ESX v1-final base that can be easily extendable.",
-            //         "url": "https://raw.githubusercontent.com/tabarra/PlumeESX-recipe/master/recipe.yaml"
-            //     }
-            // ];
-            s4PopularTemplateRow.innerText = `Loading templates...`;
-            loadedTemplates = [];
-            $.ajax({
-                type: "GET",
-                url: recipesIndexURL,
-                dataType: 'json',
-                success: function (templates) {
-                    if(!Array.isArray(templates)){
-                        s4PopularTemplateRow.innerText = `Failed to load recipe list. 
-                        Please click on the "back" button and try again.`;
-                    }else{
-                        loadedTemplates = templates;
-                        // loadedTemplates = tmpGETResponse;
-                        s4PopularTemplateRow.innerHTML = '';
-                        let hasIncompatible = false;
-                        loadedTemplates.forEach((recipe, key) => {
-                            //Filtering for forceGameName
-                            if (
-                                forceGameName
-                                && Array.isArray(recipe.tags)
-                                && !recipe.tags.includes(forceGameName)
-                            ) return;
-
-                            const newNode = document.createElement("div");
-                            newNode.innerHTML = s4PopularTemplateCardTemplate.innerHTML;
-                            // newNode.classList.add('col-12', 'col-md-6', 'p-0'); //2 per line
-                            newNode.classList.add('col-8');
-                            newNode.querySelector('.titleText > strong').innerText = recipe.name;
-                            newNode.querySelector('.description').innerText = recipe.description;
-                            if(recipe.engine !== deployerEngineVersion){
-                                hasIncompatible = true;
-                                newNode.querySelector('.bigbutton').classList.add('disabled');
-                                const newTag = document.createElement("span");
-                                newTag.classList.add('recipeTag', 'recipeTagDefault')
-                                newTag.textContent = 'INCOMPATIBLE';
-                                newNode.querySelector('.tagList').appendChild(newTag);
-                            }else{
-                                newNode.querySelector('.bigbutton').onclick = () => {selectTemplate(key)};
-                                if (Array.isArray(recipe.tags)) {
-                                    recipe.tags.forEach(tag => {
-                                        const newTag = document.createElement("span");
-                                        newTag.classList.add('recipeTag', tagToGlass(tag))
-                                        newTag.textContent = (tag || '').toUpperCase();
-                                        newNode.querySelector('.tagList').appendChild(newTag);
-                                    })
-                                }
-                            }
-                            s4PopularTemplateRow.appendChild(newNode);
-                        });
-                        if(hasIncompatible){
-                            const warningNode = document.createElement("span");
-                            warningNode.innerHTML = `Some recipes are not compatible with your txAdmin version.<br> Please update txAdmin to be able to use them.`;
-                            warningNode.classList.add('text-danger', 'font-weight-bold', 'ml-3');
-                            s4PopularTemplateRow.appendChild(warningNode);
-                        }
-                    }
-                },
-                error: function (xmlhttprequest, textstatus, message) {
-                    s4PopularTemplateRow.innerText = `Failed to load recipe list. 
-                    Please click on the "back" button and try again.`;
-                }
+        //Render the supported recipes bundled with this panel version.
+        function setFavTemplatesCards(){
+            loadedTemplates = bundledRecipes;
+            s4PopularTemplateRow.innerHTML = '';
+            loadedTemplates.forEach((recipe, key) => {
+                if (forceGameName && !recipe.tags.includes(forceGameName)) return;
+                const newNode = document.createElement('div');
+                newNode.innerHTML = s4PopularTemplateCardTemplate.innerHTML;
+                newNode.classList.add('col-8');
+                newNode.querySelector('.titleText > strong').innerText = recipe.name;
+                newNode.querySelector('.description').innerText = recipe.description;
+                newNode.querySelector('.bigbutton').onclick = () => selectTemplate(key);
+                [recipe.framework, ...recipe.tags].forEach(tag => {
+                    const newTag = document.createElement('span');
+                    newTag.classList.add('recipeTag', tagToGlass(tag));
+                    newTag.textContent = tag.toUpperCase();
+                    newNode.querySelector('.tagList').appendChild(newTag);
+                });
+                s4PopularTemplateRow.appendChild(newNode);
             });
-
         }
 
         // Deployment type selection
@@ -855,16 +801,19 @@
             if(selectedDeploymentType == 'popular'){
                 outData.isTrustedSource = true;
                 outData.recipeURL = loadedTemplates[selectedTemplateIndex].url;
+                outData.framework = loadedTemplates[selectedTemplateIndex].framework;
                 outData.targetPath = s5DeployerTargetInput.value.trim();
                 outData.deploymentID = deploymentID;
                 
             }else if(selectedDeploymentType == 'remote'){
                 outData.isTrustedSource = false;
+                outData.framework = 'custom';
                 outData.recipeURL = s4RemoteTemplateInput.value.trim();
                 outData.targetPath = s5DeployerTargetInput.value.trim();
                 outData.deploymentID = deploymentID;
 
             }else if(selectedDeploymentType == 'custom'){
+                outData.framework = 'custom';
                 outData.targetPath = s5DeployerTargetInput.value.trim();
                 outData.deploymentID = deploymentID;
                 

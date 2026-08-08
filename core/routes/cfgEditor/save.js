@@ -21,9 +21,10 @@ export default async function CFGEditorSave(ctx) {
     }
 
     //Check permissions
-    if (!ctx.admin.testPermission('server.cfg.editor', modulename)) {
+    if (!ctx.admin.testPermission('master', modulename)) {
         return ctx.send({
             type: 'danger',
+            code: 'permission_denied',
             message: 'You don\'t have permission to execute this action.',
         });
     }
@@ -31,7 +32,7 @@ export default async function CFGEditorSave(ctx) {
     //Check if file is set
     if (!txCore.fxRunner.isConfigured) {
         const message = 'CFG or Server Data Path not defined. Configure it in the settings page first.';
-        return ctx.send({type: 'danger', message});
+        return ctx.send({type: 'danger', code: 'not_configured', message});
     }
 
 
@@ -46,6 +47,8 @@ export default async function CFGEditorSave(ctx) {
     } catch (error) {
         return ctx.send({
             type: 'danger',
+            code: 'save_failed',
+            details: error.message,
             markdown: true,
             message: `**Failed to save \`server.cfg\` with error:**\n${error.message}`,
         });
@@ -55,6 +58,8 @@ export default async function CFGEditorSave(ctx) {
     if (result.errors) {
         return ctx.send({
             type: 'danger',
+            code: 'validation_errors',
+            details: result.errors,
             markdown: true,
             message: `**Cannot save \`server.cfg\` due to error(s) in your config file(s):**\n${result.errors}`,
         });
@@ -62,12 +67,15 @@ export default async function CFGEditorSave(ctx) {
     if (result.warnings) {
         return ctx.send({
             type: 'warning',
+            code: 'saved_with_warnings',
+            details: result.warnings,
             markdown: true,
             message: `**File saved, but there are warnings you should pay attention to:**\n${result.warnings}`,
         });
     }
     return ctx.send({
         type: 'success',
+        code: 'saved',
         markdown: true,
         message: '**File saved.**',
     });

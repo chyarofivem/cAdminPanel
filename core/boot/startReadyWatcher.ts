@@ -79,29 +79,6 @@ const awaitHttp = new Promise((resolve, reject) => {
     interval = setInterval(check, 150);
 });
 
-const awaitMasterPin = new Promise((resolve, reject) => {
-    const tickLimit = 100; //if over 15 seconds
-    let counter = 0;
-    let interval: NodeJS.Timeout;
-    const check = () => {
-        counter++;
-        if (txCore.adminStore && txCore.adminStore.admins !== null) {
-            clearInterval(interval);
-            const pin = (txCore.adminStore.admins === false) ? txCore.adminStore.addMasterPin : false;
-            resolve(pin);
-        } else if (counter == tickLimit) {
-            clearInterval(interval);
-            interval = setInterval(check, 2500);
-        } else if (counter > tickLimit) {
-            console.warn('The AdminStore is taking too long to start:', {
-                module: !!txCore.adminStore,
-                admins: txCore?.adminStore?.admins === null ? 'null' : 'not null',
-            });
-        }
-    };
-    interval = setInterval(check, 150);
-});
-
 const awaitDatabase = new Promise((resolve, reject) => {
     const tickLimit = 100; //if over 15 seconds
     let counter = 0;
@@ -126,10 +103,9 @@ const awaitDatabase = new Promise((resolve, reject) => {
 
 
 export const startReadyWatcher = async (cb: () => void) => {
-    const [publicIpResp, msgRes, adminPinRes] = await Promise.allSettled([
+    const [publicIpResp, msgRes] = await Promise.allSettled([
         getPublicIp(),
         getOSMessage(),
-        awaitMasterPin as Promise<undefined | string | false>,
         awaitHttp,
         awaitDatabase,
     ]);
@@ -151,14 +127,6 @@ export const startReadyWatcher = async (cb: () => void) => {
         ? [txHostConfig.txaUrl]
         : detectedUrls.map((addr) => `http://${addr}:${txHostConfig.txaPort}/`);
 
-    //Admin PIN
-    const adminMasterPin = 'value' in adminPinRes && adminPinRes.value ? adminPinRes.value : false;
-    const adminPinLines = !adminMasterPin ? [] : [
-        '',
-        'Use the PIN below to register:',
-        chalk.inverse(` ${adminMasterPin} `),
-    ];
-
     //Printing stuff
     const boxOptions = {
         padding: 1,
@@ -170,18 +138,16 @@ export const startReadyWatcher = async (cb: () => void) => {
     const boxLines = [
         'All ready! Please access:',
         ...bannerUrls.map(chalkInversePad),
-        ...adminPinLines,
     ];
     console.multiline(boxen(boxLines.join('\n'), boxOptions), chalk.bgGreen);
     if (!txDevEnv.ENABLED && !txHostConfig.netInterface && 'value' in msgRes && msgRes.value) {
         console.multiline(msgRes.value, chalk.bgBlue);
     }
 
-    //Opening page
-    if (txEnv.isWindows && adminMasterPin && bannerUrls[0]) {
+    //Open the SSO bootstrap/login page on a fresh Windows installation.
+    if (txEnv.isWindows && !txCore.adminStore.hasAdmins() && bannerUrls[0]) {
         const linkUrl = new URL(bannerUrls[0]);
-        linkUrl.pathname = '/addMaster/pin';
-        linkUrl.hash = adminMasterPin;
+        linkUrl.pathname = '/login';
         open(linkUrl.href);
     }
 

@@ -6,6 +6,7 @@ import { useAdminPerms } from "@/hooks/auth";
 import { useBackendApi } from "@/hooks/fetch";
 import type { GenericApiOkResp } from "@shared/genericApiTypes";
 import { ModalTabInner } from "@/components/modal-tabs";
+import { t } from '@/lib/i18n';
 
 
 type PlayerIdsTabProps = {
@@ -23,13 +24,13 @@ export default function PlayerIdsTab({ playerRef, player, refreshModalData }: Pl
     });
 
     const removePlayerIds = (ids: string[], onError: () => void) => {
-        if (!ids.length) throw new Error(`No IDs selected to remove.`);
+        if (!ids.length) throw new Error(t('No IDs selected to remove.'));
         removePlayerIdsApi({
             queryParams: playerRef,
             data: { ids },
-            toastLoadingMessage: 'Deleting selected IDs/HWIDs...',
+            toastLoadingMessage: t('Deleting selected IDs/HWIDs...'),
             genericHandler: {
-                successMsg: 'Player IDs/HWIDs deleted!',
+                successMsg: t('Player IDs/HWIDs deleted.'),
             },
             error: (error, toastId) => onError(),
             success: (data, toastId) => {

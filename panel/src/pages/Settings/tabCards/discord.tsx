@@ -10,6 +10,7 @@ import { getConfigEmptyState, getConfigAccessors, SettingsCardProps, getPageConf
 import SettingsCardShell from "../SettingsCardShell"
 import { Textarea } from "@/components/ui/textarea"
 import { txToast } from "@/components/TxToaster"
+import { t } from "@/lib/i18n"
 
 
 //We are not validating the JSON, only that it is a string
@@ -78,13 +79,13 @@ export default function ConfigCardDiscord({ cardCtx, pageCtx }: SettingsCardProp
 
         if (localConfigs.discordBot?.enabled) {
             if (!localConfigs.discordBot?.token) {
-                return txToast.error('You must provide a Discord Bot Token to enable the bot.');
+                return txToast.error(t('You must provide a Discord Bot Token to enable the bot.'));
             }
             if (!localConfigs.discordBot?.guild) {
-                return txToast.error('You must provide a Server ID to enable the bot.');
+                return txToast.error(t('You must provide a Server ID to enable the bot.'));
             }
             if (!localConfigs.discordBot?.embedJson || !localConfigs.discordBot?.embedConfigJson) {
-                return txToast.error('You must provide both the Embed JSON and Config JSON to enable the bot.');
+                return txToast.error(t('You must provide both the Embed JSON and Config JSON to enable the bot.'));
             }
         }
         pageCtx.saveChanges(cardCtx, localConfigs);

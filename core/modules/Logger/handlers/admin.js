@@ -1,27 +1,20 @@
 const modulename = 'Logger:Admin';
-import fsp from 'node:fs/promises';
-import path from 'node:path';
-import { getBootDivider } from '../loggerUtils';
 import consoleFactory from '@lib/console';
-import { LoggerBase } from '../LoggerBase';
-import { chalkInversePad, getTimeHms } from '@lib/misc';
+import { chalkInversePad } from '@lib/misc';
 const console = consoleFactory(modulename);
 
 
-export default class AdminLogger extends LoggerBase {
-    constructor(basePath, lrProfileConfig) {
-        const lrDefaultOptions = {
-            path: basePath,
-            intervalBoundary: true,
-            initialRotation: true,
-            history: 'admin.history',
-            interval: '7d',
-
-        };
-        super(basePath, 'admin', lrDefaultOptions, lrProfileConfig);
-        this.lrStream.write(getBootDivider());
-
+/**
+ * Compatibility facade for the existing action-logging call sites.
+ * Persistence is owned by TxAdminLogger so actions and in-server events share
+ * one daily-rotated stream.
+ */
+export default class AdminLogger {
+    constructor(combinedLogger) {
+        this.combinedLogger = combinedLogger;
         this.writeCounter = 0;
+        this.lrErrors = 0;
+        this.lrLastError = undefined;
     }
 
     /**
@@ -38,11 +31,7 @@ export default class AdminLogger extends LoggerBase {
      * Returns an string with everything in admin.log (the active log rotate file)
      */
     async getRecentBuffer() {
-        try {
-            return await fsp.readFile(path.join(this.basePath, 'admin.log'), 'utf8');
-        } catch (error) {
-            return false;
-        }
+        return this.combinedLogger.getRecentActionText();
     }
 
     /**
@@ -52,8 +41,7 @@ export default class AdminLogger extends LoggerBase {
      * @param {string} message
      */
     writeSystem(author, message) {
-        const timestamp = getTimeHms();
-        this.lrStream.write(`[${timestamp}][${author}] ${message}\n`);
+        this.combinedLogger.writeAction(author, message, 'SystemAction');
         this.writeCounter++;
     }
 
@@ -76,6 +64,11 @@ export default class AdminLogger extends LoggerBase {
             saveMsg = action;
             console.log(prefix, saveMsg);
         }
-        this.writeSystem(author, saveMsg);
+        this.combinedLogger.writeAction(
+            author,
+            saveMsg,
+            type === 'command' ? 'AdminCommand' : 'AdminAction',
+        );
+        this.writeCounter++;
     }
 };

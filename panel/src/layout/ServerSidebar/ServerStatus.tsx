@@ -4,6 +4,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { DiscordBotStatus, FxMonitorHealth } from '@shared/enums';
 import { msToShortDuration } from '@/lib/dateTime';
 import { cn } from '@/lib/utils';
+import { t } from '@/lib/i18n';
 
 
 const statusBadgeVariants = cva(
@@ -115,64 +116,64 @@ export default function ServerStatus() {
                     delimiter: ' ',
                 }
             );
-            serverUptimeDesc = 'Time since the server came online.';
+            serverUptimeDesc = t('Time since the server came online.');
         }
 
         //Server status
         serverHealthText = globalStatus.server.health;
-        serverHealthDescInfo = globalStatus.server.healthReason;
+        serverHealthDescInfo = t(globalStatus.server.healthReason);
         if (globalStatus.server.health === FxMonitorHealth.ONLINE) {
             serverHealthColor = 'success';
-            serverHealthDescTitle = 'Resources running, accepting connections.';
+            serverHealthDescTitle = t('Resources running, accepting connections.');
         } else if (globalStatus.server.health === FxMonitorHealth.PARTIAL) {
             serverHealthColor = 'warning';
-            serverHealthDescTitle = 'Resources not running or not accepting connections.';
+            serverHealthDescTitle = t('Resources not running or not accepting connections.');
         } else if (globalStatus.server.health === FxMonitorHealth.OFFLINE) {
             serverHealthColor = 'destructive';
-            serverHealthDescTitle = 'Server is offline.';
+            serverHealthDescTitle = t('Server is offline.');
         } else {
             serverHealthColor = 'destructive';
-            serverHealthDescTitle = 'Unknown server status.';
+            serverHealthDescTitle = t('Unknown server status.');
         }
 
         //Allowlist - FIXME:NEXT:UPDATE: rename backend var
         if (globalStatus.server.whitelist === 'disabled') {
             allowlistText = 'DISABLED';
-            allowlistDesc = 'Anyone can join.';
+            allowlistDesc = t('Anyone can join.');
         } else if (globalStatus.server.whitelist === 'adminOnly') {
             allowlistText = 'ADMIN';
             allowlistColor = 'warning';
-            allowlistDesc = 'Only admins can join.';
+            allowlistDesc = t('Only admins can join.');
         } else if (globalStatus.server.whitelist === 'discordMember') {
             allowlistText = 'MEMBER';
-            allowlistDesc = 'Only Discord server members can join.';
+            allowlistDesc = t('Only Discord server members can join.');
         } else if (globalStatus.server.whitelist === 'discordRoles') {
             allowlistText = 'ROLES';
-            allowlistDesc = 'Only Discord server members with the specified roles can join.';
+            allowlistDesc = t('Only Discord server members with the specified roles can join.');
         } else if (globalStatus.server.whitelist === 'approvedLicense') {
             allowlistText = 'LICENSE';
-            allowlistDesc = 'Only players with an approved license can join.';
+            allowlistDesc = t('Only players with an approved license can join.');
         } else if (globalStatus.server.whitelist === 'external') {
             allowlistText = 'EXTERNAL';
-            allowlistDesc = 'Player joins are handled by an external resource.';
+            allowlistDesc = t('Player joins are handled by an external resource.');
         }
 
         //Bot status - too long to show all the text, so just show the code
         if (globalStatus.discord in discordStatusMap) {
             discordStatusText = discordStatusMap[globalStatus.discord].text;
             discordStatusColor = discordStatusMap[globalStatus.discord].color;
-            discordStatusDesc = discordStatusMap[globalStatus.discord].description;
+            discordStatusDesc = t(discordStatusMap[globalStatus.discord].description);
         } else {
             discordStatusText = `CODE-${globalStatus.discord}`;
             discordStatusColor = 'destructive';
-            discordStatusDesc = 'Unknown status code';
+            discordStatusDesc = t('Unknown status code');
         }
     }
 
     return (
         <div className="flex flex-col gap-[0.375rem]">
             <div className="flex justify-between items-center text-muted-foreground text-sm gap-1.5">
-                Server:
+                {t('Server')}:
                 <StatusBadge
                     tooltip={{
                         title: serverHealthDescTitle,
@@ -182,20 +183,20 @@ export default function ServerStatus() {
                 >{serverHealthText}</StatusBadge>
             </div>
             <div className="flex justify-between items-center text-muted-foreground text-sm gap-1.5">
-                Uptime:
+                {t('Uptime')}:
                 <StatusBadge
                     tooltip={serverUptimeDesc}
                 >{serverUptimeText}</StatusBadge>
             </div>
             <div className="flex justify-between items-center text-muted-foreground text-sm gap-1.5">
-                Allowlist:
+                {t('Allowlist')}:
                 <StatusBadge
                     tooltip={allowlistDesc}
                     type={allowlistColor}
                 >{allowlistText}</StatusBadge>
             </div>
             <div className="flex justify-between items-center text-muted-foreground text-sm gap-1.5">
-                Discord Bot:
+                {t('Discord Bot')}:
                 <StatusBadge
                     tooltip={discordStatusDesc}
                     type={discordStatusColor}

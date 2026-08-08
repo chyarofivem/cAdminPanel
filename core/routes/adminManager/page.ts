@@ -28,6 +28,9 @@ export default async function AdminManagerPage(ctx: AuthedCtx) {
         const isSelf = ctx.admin.name.toLowerCase() === admin.name.toLowerCase();
 
         let identifiers: string[] = [];
+        if ('chyarologin' in admin.providers && typeof admin.providers.chyarologin?.identifier === 'string') {
+            identifiers.push(admin.providers.chyarologin.identifier);
+        }
         if ('citizenfx' in admin.providers && typeof admin.providers.citizenfx?.identifier === 'string') {
             identifiers.push(admin.providers.citizenfx.identifier);
         }

@@ -1,14 +1,12 @@
 const modulename = 'WebServer:AdminManagerActions';
-import { customAlphabet } from 'nanoid';
-import dict49 from 'nanoid-dictionary/nolookalikes';
 import got from '@lib/got';
 import consts from '@shared/consts';
 import consoleFactory from '@lib/console';
 import { AuthedCtx } from '@modules/WebServer/ctxTypes';
+import { checkRateLimit } from '@lib/rateLimiters/actionLimiter';
 const console = consoleFactory(modulename);
 
 //Helpers
-const nanoid = customAlphabet(dict49, 20);
 //NOTE: this desc misses that it should start and end with alphanum or _, and cannot have repeated -_.
 const nameRegexDesc = 'up to 20 characters containing only letters, numbers and the characters \`_.-\`';
 const cfxHttpReqOptions = {
@@ -57,6 +55,7 @@ async function handleAdd(ctx: AuthedCtx) {
     //Sanity check
     if (
         typeof ctx.request.body.name !== 'string'
+        || typeof ctx.request.body.chyaroEmail !== 'string'
         || typeof ctx.request.body.citizenfxID !== 'string'
         || typeof ctx.request.body.discordID !== 'string'
         || ctx.request.body.permissions === undefined
@@ -66,7 +65,7 @@ async function handleAdd(ctx: AuthedCtx) {
 
     //Prepare and filter variables
     const name = ctx.request.body.name.trim();
-    const password = nanoid();
+    const chyaroEmail = ctx.request.body.chyaroEmail.trim().toLowerCase();
     const citizenfxID = ctx.request.body.citizenfxID.trim();
     const discordID = ctx.request.body.discordID.trim();
     let permissions = (Array.isArray(ctx.request.body.permissions)) ? ctx.request.body.permissions : [];
@@ -77,6 +76,9 @@ async function handleAdd(ctx: AuthedCtx) {
     //Validate name
     if (!consts.regexValidFivemUsername.test(name)) {
         return ctx.send({ type: 'danger', markdown: true, message: `**Invalid username, it must follow the rule:**\n${nameRegexDesc}` });
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(chyaroEmail) || chyaroEmail.length > 254) {
+        return ctx.send({ type: 'danger', message: 'Enter a valid chyarologin email address.' });
     }
 
     //Validate & translate FiveM ID
@@ -137,14 +139,15 @@ async function handleAdd(ctx: AuthedCtx) {
     const changes = {
         cfxId: citizenfxData ? citizenfxData.identifier : undefined,
         discordId: discordData ? discordData.identifier : undefined,
+        chyaroEmail,
         permissions: permissions,
     };
 
     //Add admin and give output
     try {
-        await txCore.adminStore.addAdmin(name, citizenfxData, discordData, password, permissions);
+        await txCore.adminStore.addAdmin(name, citizenfxData, discordData, chyaroEmail, permissions);
         ctx.admin.logAction(`Adding user '${name}' with ${JSON.stringify(changes)}`);
-        return ctx.send({ type: 'showPassword', password });
+        return ctx.send({ type: 'success', message: 'Admin saved. They can now sign in with chyarologin.', refresh: true });
     } catch (error) {
         return ctx.send({ type: 'danger', message: (error as Error).message });
     }
@@ -158,6 +161,7 @@ async function handleEdit(ctx: AuthedCtx) {
     //Sanity check
     if (
         typeof ctx.request.body.name !== 'string'
+        || typeof ctx.request.body.chyaroEmail !== 'string'
         || typeof ctx.request.body.citizenfxID !== 'string'
         || typeof ctx.request.body.discordID !== 'string'
         || ctx.request.body.permissions === undefined
@@ -167,8 +171,12 @@ async function handleEdit(ctx: AuthedCtx) {
 
     //Prepare and filter variables
     const name = ctx.request.body.name.trim();
+    const chyaroEmail = ctx.request.body.chyaroEmail.trim().toLowerCase();
     const citizenfxID = ctx.request.body.citizenfxID.trim();
     const discordID = ctx.request.body.discordID.trim();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(chyaroEmail) || chyaroEmail.length > 254) {
+        return ctx.send({ type: 'danger', message: 'Enter a valid chyarologin email address.' });
+    }
 
     //Check if editing himself
     if (ctx.admin.name.toLowerCase() === name.toLowerCase()) {
@@ -278,6 +286,10 @@ async function handleEdit(ctx: AuthedCtx) {
     } else if (prevDiscordId && discordData && prevDiscordId !== discordData.identifier) {
         changes.push(`Changed Discord ID from ${prevDiscordId} to ${discordData.identifier}.`);
     }
+    const prevChyaroEmail = admin.providers?.chyarologin?.identifier;
+    if (prevChyaroEmail !== chyaroEmail) {
+        changes.push(`Changed chyarologin email from ${prevChyaroEmail || 'unset'} to ${chyaroEmail}.`);
+    }
 
     //Add admin and give output
     try {
@@ -287,7 +299,7 @@ async function handleEdit(ctx: AuthedCtx) {
         } else {
             logMessage += '. No changes were made.';
         }
-        await txCore.adminStore.editAdmin(name, null, citizenfxData, discordData, permissions);
+        await txCore.adminStore.editAdmin(name, citizenfxData, discordData, chyaroEmail, permissions);
         ctx.admin.logAction(logMessage);
         return ctx.send({ type: 'success', refresh: true });
     } catch (error) {
@@ -318,6 +330,16 @@ async function handleDelete(ctx: AuthedCtx) {
     //Check if editing an master admin
     if (admin.master) {
         return ctx.send({ type: 'danger', message: 'You cannot delete an admin master.' });
+    }
+
+    const rateLimit = checkRateLimit('deleteAdmin', ctx.admin.name);
+    if (!rateLimit.allowed) {
+        const retryAfterSeconds = Math.ceil(rateLimit.retryAfterMs / 1000);
+        ctx.admin.logAction(`Rate limit rejected admin deletion attempt for '${name}'. Retry after ${retryAfterSeconds}s.`);
+        return ctx.send({
+            type: 'danger',
+            message: `Admin deletion limit reached. Try again in ${retryAfterSeconds} seconds.`,
+        });
     }
 
     //Delete admin and give output

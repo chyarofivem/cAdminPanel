@@ -26,12 +26,15 @@ export default () => {
         id: (ctx: any) => ctx.txVars.realIP,
     });
 
+    //Public, content-addressed branding assets.
+    router.get('/branding/:kind', routes.branding);
+    router.post('/api/link/fivem', authLimiter, routes.cadmin_link);
+
     //Rendered Pages
     router.get('/legacy/adminManager', webAuthMw, routes.adminManager_page);
     router.get('/legacy/cfgEditor', webAuthMw, routes.cfgEditor_page);
     router.get('/legacy/masterActions', webAuthMw, routes.masterActions_page);
     router.get('/legacy/resources', webAuthMw, routes.resources);
-    router.get('/legacy/serverLog', webAuthMw, routes.serverLog);
     // FIXME:NEXT:UPDATE rename route handler
     router.get('/legacy/allowlist', webAuthMw, routes.whitelist_page);
     router.get('/legacy/setup', webAuthMw, routes.setup_get);
@@ -39,20 +42,35 @@ export default () => {
 
     //Authentication
     router.get('/auth/self', apiAuthMw, routes.auth_self);
-    router.post('/auth/password', authLimiter, routes.auth_verifyPassword);
     router.post('/auth/logout', authLimiter, routes.auth_logout);
-    router.post('/auth/addMaster/pin', authLimiter, routes.auth_addMasterPin);
-    router.post('/auth/addMaster/callback', authLimiter, routes.auth_addMasterCallback);
-    router.post('/auth/addMaster/save', authLimiter, routes.auth_addMasterSave);
-    router.get('/auth/cfxre/redirect', authLimiter, routes.auth_providerRedirect);
-    router.post('/auth/cfxre/callback', authLimiter, routes.auth_providerCallback);
-    router.post('/auth/changePassword', apiAuthMw, routes.auth_changePassword);
-    router.get('/auth/getIdentifiers', apiAuthMw, routes.auth_getIdentifiers);
-    router.post('/auth/changeIdentifiers', apiAuthMw, routes.auth_changeIdentifiers);
+    router.post('/auth/chyaro/setup', authLimiter, routes.auth_chyaroSetup);
+    router.get('/auth/chyaro/login', authLimiter, routes.auth_chyaroLogin);
+    router.get('/auth/chyaro/callback', authLimiter, routes.auth_chyaroCallback);
 
     //Admin Manager
+    router.get('/adminManager/data', apiAuthMw, routes.adminManager_data);
     router.post('/adminManager/getModal/:modalType', webAuthMw, routes.adminManager_getModal);
     router.post('/adminManager/:action', apiAuthMw, routes.adminManager_actions);
+
+    //Character Management
+    // Keep JSON endpoints away from client-side page URLs. Sharing paths such as
+    // `/cadmin/players` made a document refresh hit apiAuthMw without the CSRF
+    // header that only authenticated fetches attach.
+    router.get('/api/cadmin/ping', apiAuthMw, routes.cadmin_ping);
+    router.get('/api/cadmin/overview', apiAuthMw, routes.cadmin_overview);
+    router.get('/api/cadmin/players', apiAuthMw, routes.cadmin_players);
+    router.get('/api/cadmin/player/:identifier', apiAuthMw, routes.cadmin_player);
+    router.post('/api/cadmin/money', apiAuthMw, routes.cadmin_money);
+    router.post('/api/cadmin/job', apiAuthMw, routes.cadmin_job);
+    router.post('/api/cadmin/group', apiAuthMw, routes.cadmin_group);
+    router.get('/api/cadmin/inventory/items', apiAuthMw, routes.cadmin_inventory);
+    router.post('/api/cadmin/inventory/give', apiAuthMw, routes.cadmin_inventory);
+    router.get('/api/cadmin/garage/:identifier', apiAuthMw, routes.cadmin_garage);
+    router.post('/api/cadmin/garage/vehicle', apiAuthMw, routes.cadmin_garage);
+    router.get('/api/cadmin/jobs', apiAuthMw, routes.cadmin_jobs);
+    router.get('/api/cadmin/users', apiAuthMw, routes.cadmin_users);
+    router.post('/api/cadmin/users/:id/:action', apiAuthMw, routes.cadmin_userAction);
+    router.post('/api/cadmin/install/:action', apiAuthMw, routes.cadmin_install);
 
     //Settings
     router.post('/setup/:action', apiAuthMw, routes.setup_post);
@@ -75,6 +93,7 @@ export default () => {
     router.post('/fxserver/schedule', apiAuthMw, routes.fxserver_schedule);
 
     //CFG Editor
+    router.get('/cfgEditor/data', apiAuthMw, routes.cfgEditor_data);
     router.post('/cfgEditor/save', apiAuthMw, routes.cfgEditor_save);
 
     //Control routes
@@ -86,18 +105,10 @@ export default () => {
     router.post('/advanced/run', apiAuthMw, routes.advanced_runCommand);
 
     //Data routes
-    router.get('/serverLog/partial', apiAuthMw, routes.serverLogPartial);
-    router.get('/systemLog/:scope', apiAuthMw, routes.systemLogs);
+    router.get('/resources/data', apiAuthMw, routes.resources_data);
+    router.get('/api/logs/txadmin', apiAuthMw, routes.txAdminLog);
     router.get('/perfChartData/:thread', apiAuthMw, routes.perfChart);
     router.get('/playerDropsData', apiAuthMw, routes.playerDrops);
-
-    /*
-        FIXME: reorganizar TODAS rotas de logs, incluindo listagem e download
-        /logs/:logpage - WEB
-        /logs/:log/list - API
-        /logs/:log/partial - API
-        /logs/:log/download - WEB
-    */
 
     //History routes
     router.get('/history/stats', apiAuthMw, routes.history_stats);

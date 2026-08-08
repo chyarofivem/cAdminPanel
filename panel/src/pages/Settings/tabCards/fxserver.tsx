@@ -18,6 +18,7 @@ import { useAdminPerms } from "@/hooks/auth"
 import { useLocation } from "wouter"
 import type { ResetServerDataPathResp } from "@shared/otherTypes"
 import { useOpenConfirmDialog } from "@/hooks/dialogs"
+import { t } from "@/lib/i18n"
 
 
 // Remove duplicates and sort times
@@ -269,16 +270,16 @@ export default function ConfigCardFxserver({ cardCtx, pageCtx }: SettingsCardPro
 
         if (!localConfigs.server?.dataPath) {
             return txToast.error({
-                title: 'The Server Data Folder is required.',
+                title: t('The Server Data Folder is required.'),
                 md: true,
-                msg: 'If you want to return to the Setup page, click on the "Reset" button instead.',
+                msg: t('If you want to return to the Setup page, click on the "Reset" button instead.'),
             });
         }
         if (localConfigs.server.cfgPath !== undefined && !localConfigs.server.cfgPath) {
             return txToast.error({
-                title: 'The CFG File Path is required.',
+                title: t('The CFG File Path is required.'),
                 md: true,
-                msg: 'The value should probably be `server.cfg`.',
+                msg: t('The value should probably be `server.cfg`.'),
             });
         }
         if (
@@ -286,9 +287,9 @@ export default function ConfigCardFxserver({ cardCtx, pageCtx }: SettingsCardPro
             && localConfigs.server.startupArgs.some((arg) => arg.toLowerCase() === 'onesync')
         ) {
             return txToast.error({
-                title: 'You cannot set OneSync in Startup Arguments.',
+                title: t('You cannot set OneSync in Startup Arguments.'),
                 md: true,
-                msg: 'Please use the selectbox below it.',
+                msg: t('Please use the selectbox below it.'),
             });
         }
         pageCtx.saveChanges(cardCtx, localConfigs);

@@ -12,6 +12,10 @@ const defaultThemes = ['dark', 'light'];
 const initialAtomValue = availableCustomThemes.find((name) => root.classList.contains(`theme-${name}`))
     ?? defaultThemes.find((name) => root.classList.contains(name))
     ?? window.txConsts.defaultTheme;
+const accentIds = window.txConsts.accents.map(accent => accent.id);
+const initialAccent = accentIds.includes(window.txConsts.accent)
+    ? window.txConsts.accent
+    : 'blue';
 
 
 /**
@@ -59,6 +63,7 @@ const parseTheme = (themeName: string) => {
  * Atom
  */
 const themeAtom = atom(initialAtomValue);
+const accentAtom = atom(initialAccent);
 const isDarkModeAtom = atom((get) => {
     const currTheme = get(themeAtom);
     return parseTheme(currTheme).isDarkScheme;
@@ -143,3 +148,24 @@ export const useThemedImage = (baseImageUrl?: string) => {
     if(typeof baseImageUrl !== 'string') return;
     return baseImageUrl.replace(/{theme}/g, isDarkMode ? 'dark' : 'light');
 }
+
+const applyAccent = (accentId: string) => {
+    const accent = window.txConsts.accents.find(option => option.id === accentId);
+    if (!accent) throw new Error(`invalid accent ${accentId}`);
+    for (const [name, value] of Object.entries(accent.vars)) {
+        root.style.setProperty(`--${name}`, value);
+    }
+};
+
+export const useAccent = () => {
+    const [accent, setAccentAtom] = useAtom(accentAtom);
+    return {
+        accent,
+        accents: window.txConsts.accents,
+        setAccent: (newAccent: string) => {
+            if (newAccent === accent) return;
+            applyAccent(newAccent);
+            setAccentAtom(newAccent);
+        },
+    };
+};

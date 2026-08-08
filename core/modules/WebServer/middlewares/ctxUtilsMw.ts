@@ -11,6 +11,8 @@ import { Next } from 'koa';
 import { CtxWithVars } from '../ctxTypes';
 import consts from '@shared/consts';
 import { AuthedAdminType } from '../authLogic';
+import { brandingViewLocals } from '@lib/branding';
+import { accentVars } from '@lib/theme';
 const console = consoleFactory(modulename);
 
 //Types
@@ -173,10 +175,14 @@ export default async function ctxUtilsMw(ctx: CtxWithVars, next: Next) {
 
         // Setting up default render data:
         const baseViewData = {
+            ...brandingViewLocals(),
             isWebInterface,
             basePath: (isWebInterface) ? '/' : consts.nuiWebpipePath,
             resourcePath: (isWebInterface) ? '' : RESOURCE_PATH,
             serverName: txConfig.general.serverName,
+            accentStyle: Object.entries(accentVars(txConfig.general.accent))
+                .map(([name, value]) => `--${name}: ${value};`)
+                .join(' '),
             uiTheme: legacyTheme,
             fxServerVersion: txEnv.fxsVersionTag,
             txAdminVersion: txEnv.txaVersion,

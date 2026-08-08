@@ -5,6 +5,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useOpenPromptDialog } from "@/hooks/dialogs";
 import { shortenId } from "@shared/utils";
 import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
+import { t } from '@/lib/i18n';
 
 
 //MARK: Helpers
@@ -95,7 +96,7 @@ function IdLine({
                 <button
                     className="absolute right-0 top-0 h-full flex items-center bg-background hover:bg-background group/removal"
                     onClick={toggleMarkRemoval}
-                    title={isMarkedForRemoval ? 'Undo mark for deletion' : 'Mark for deletion'}
+                    title={isMarkedForRemoval ? t('Undo mark for deletion') : t('Mark for deletion')}
                     disabled={disableButtons}
                 >
                     {isMarkedForRemoval ? (
@@ -108,7 +109,7 @@ function IdLine({
                 <button
                     className="absolute right-0 top-0 h-full flex items-center opacity-0 group-hover/line:opacity-100 bg-background hover:bg-background group/copy transition-opacity"
                     onClick={onCopy}
-                    title='Copy to clipboard'
+                    title={t('Copy to clipboard')}
                     disabled={disableButtons}
                 >
                     <CopyIcon className="h-4 opacity-75 group-hover/copy:opacity-100 group-hover/copy:text-primary" />
@@ -154,11 +155,10 @@ function IdListControls({
                     </TooltipTrigger>
                     <TooltipContent className={cn(!canRemoveIds && 'text-destructive-inline text-center')}>
                         {canRemoveIds ? (
-                            <p>{`Mark ${typeStr}s for deletion.`}</p>
+                            <p>{t('Mark {type}s for deletion.', { type: `${typeStr}s` })}</p>
                         ) : (
                             <p>
-                                You do not have the permission <br />
-                                required to remove {typeStr}s
+                                {t('You do not have permission to remove {type}s.', { type: `${typeStr}s` })}
                             </p>
                         )}
                     </TooltipContent>
@@ -171,7 +171,7 @@ function IdListControls({
                     </button>
                 </TooltipTrigger>
                 <TooltipContent>
-                    Compare {typeStr}s
+                    {t('Compare {type}s', { type: typeStr })}
                 </TooltipContent>
             </Tooltip>
             <Tooltip>
@@ -181,7 +181,7 @@ function IdListControls({
                     </button>
                 </TooltipTrigger>
                 <TooltipContent>
-                    Copy all {typeStr}s
+                    {t('Copy all {type}s', { type: typeStr })}
                 </TooltipContent>
             </Tooltip>
         </>
@@ -240,7 +240,7 @@ export default function MultiIdsList({ idsOnline, idsOffline, type, src, onRemov
     const isHwids = type === 'hwid';
     const typeStr = isHwids ? 'HWID' : 'ID';
     const getPluralizedType = (count: number) => count === 1 ? typeStr : `${typeStr}s`;
-    const emptyMessage = `This ${src} has no ${typeStr}s.`;
+    const emptyMessage = t('This {source} has no {type}s.', { source: t(src), type: `${typeStr}s` });
     const isInCompareMode = Array.isArray(compareMatches);
     const isCompareIdMatch = (id: string) => isInCompareMode && compareMatches.includes(id);
     const isInRemovalMode = Array.isArray(markedForRemoval);
@@ -270,11 +270,11 @@ export default function MultiIdsList({ idsOnline, idsOffline, type, src, onRemov
 
     const handleStartMarkRemoval = () => {
         if (!hasAnyIdAvailable) {
-            txToast.warning(`There are no ${typeStr}s to remove.`);
+            txToast.warning(t('There are no {type}s to remove.', { type: typeStr }));
             return;
         }
         if (!idsOffline.length) {
-            txToast.warning(`You can only remove ${typeStr}s not being used by this player right now, and all the ${typeStr}s in the list are currently being used.`);
+            txToast.warning(t('Only inactive {type}s can be removed, and every one in this list is currently active.', { type: typeStr }));
             return;
         }
         setMarkedForRemoval([]);
@@ -296,7 +296,7 @@ export default function MultiIdsList({ idsOnline, idsOffline, type, src, onRemov
     const handleCommitRemoval = () => {
         if (!onRemoveIds || !isInRemovalMode || !markedForRemoval?.length) return;
         setActionFeedback({
-            msg: 'saving...',
+            msg: t('Saving...'),
             type: 'yellow',
         });
         setIsCommittingDeletions(true);
@@ -304,7 +304,7 @@ export default function MultiIdsList({ idsOnline, idsOffline, type, src, onRemov
             //We don't need to handle success cases because the modal refreshes
             setIsCommittingDeletions(false);
             setActionFeedback({
-                msg: 'Error:(',
+                msg: t('Error'),
                 type: 'red',
             });
         });
@@ -312,13 +312,10 @@ export default function MultiIdsList({ idsOnline, idsOffline, type, src, onRemov
 
     const handleCompareIds = () => {
         openPromptDialog({
-            title: `Compare ${typeStr}s`,
-            message: <p>
-                Paste in a list of {typeStr}s to compare with the current list. <br />
-                Separate each {typeStr} with a new line or comma.
-            </p>,
+            title: t('Compare {type}s', { type: typeStr }),
+            message: t('Paste a list to compare with the current list. Separate values with a new line or comma.'),
             placeholder: isHwids ? placeholderHwids : placeholderIds,
-            submitLabel: 'Compare',
+            submitLabel: t('Compare'),
             required: true,
             isMultiline: true,
             isWide: true,
@@ -337,19 +334,19 @@ export default function MultiIdsList({ idsOnline, idsOffline, type, src, onRemov
         copyToClipboard(strToCopy, divRef.current).then((res) => {
             if (res !== false) {
                 setActionFeedback({
-                    msg: 'Copied!',
+                    msg: t('Copied!'),
                     type: 'green',
                 });
             } else {
-                txToast.error('Failed to copy to clipboard :(');
+                txToast.error(t('Failed to copy to clipboard.'));
             }
         }).catch((error) => {
             txToast.error({
-                title: 'Failed to copy to clipboard:',
+                title: t('Failed to copy to clipboard.'),
                 msg: error.message,
             });
             setActionFeedback({
-                msg: 'Error :(',
+                msg: t('Error'),
                 type: 'red',
             });
         });
@@ -369,10 +366,10 @@ export default function MultiIdsList({ idsOnline, idsOffline, type, src, onRemov
     return <div>
         <div className="flex justify-between items-center pb-1" ref={divRef}>
             <h3 className="text-xl">
-                {isHwids ? 'Hardware IDs' : 'Player Identifiers'}
+                {isHwids ? t('Hardware IDs') : t('Player Identifiers')}
                 {isInCompareMode && compareMatches.length ? (
                     <span className="ml-2 text-sm font-normal italic text-success-inline">
-                        ({compareMatches.length} matches found)
+                        ({t('{count} matches found', { count: compareMatches.length })})
                     </span>
                 ) : null}
             </h3>
@@ -402,7 +399,7 @@ export default function MultiIdsList({ idsOnline, idsOffline, type, src, onRemov
                             "w-full text-right text-sm select-none cursor-pointer"
                         )}
                     >
-                        Clear<XIcon className="inline h-5" />
+                        {t('Clear')}<XIcon className="inline h-5" />
                     </span>
                 ) : isInRemovalMode ? (
                     <span
@@ -412,7 +409,7 @@ export default function MultiIdsList({ idsOnline, idsOffline, type, src, onRemov
                             "w-full text-right text-sm select-none cursor-pointer"
                         )}
                     >
-                        Cancel<XIcon className="inline h-5" />
+                        {t('Cancel')}<XIcon className="inline h-5" />
                     </span>
                 ) : (
                     <IdListControls
@@ -453,8 +450,8 @@ export default function MultiIdsList({ idsOnline, idsOffline, type, src, onRemov
                             )}
                         >
                             {markedForRemoval.length
-                                ? `Permanently delete ${markedForRemoval.length} ${getPluralizedType(markedForRemoval.length)}?`
-                                : 'Click above to mark IDs for deletion.'}
+                                ? t('Permanently delete {count} {type}?', { count: markedForRemoval.length, type: getPluralizedType(markedForRemoval.length) })
+                                : t('Click above to mark IDs for deletion.')}
                         </span>
                         <button
                             className={cn(
@@ -463,10 +460,10 @@ export default function MultiIdsList({ idsOnline, idsOffline, type, src, onRemov
                                 isCommittingDeletions && 'opacity-50 cursor-progress'
                             )}
                             onClick={handleCommitRemoval}
-                            title={`Confirm removal of marked ${typeStr}s.`}
+                            title={t('Confirm removal of marked {type}s.', { type: typeStr })}
                             disabled={isCommittingDeletions}
                         >
-                            {isCommittingDeletions ? 'saving...' : 'Confirm & Delete'}
+                            {isCommittingDeletions ? t('Saving...') : t('Confirm & Delete')}
                         </button>
                     </div>
                 )}
@@ -474,7 +471,7 @@ export default function MultiIdsList({ idsOnline, idsOffline, type, src, onRemov
             {isInCompareMode && !compareMatches.length && (
                 <>
                     <div className="absolute inset-0 dark:bg-black/25 rounded-[inherit] backdrop-blur-sm flex items-center justify-center p-4">
-                        <span className="text-xl tracking-wider text-warning-inline">No matching {typeStr} found.</span>
+                        <span className="text-xl tracking-wider text-warning-inline">{t('No matching {type} found.', { type: typeStr })}</span>
                     </div>
                 </>
             )}

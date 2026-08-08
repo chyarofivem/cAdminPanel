@@ -5,6 +5,7 @@ import { RECIPE_DEPLOYER_VERSION } from '@core/deployer/index';
 import consoleFactory from '@lib/console';
 import { TxConfigState } from '@shared/enums';
 import { AuthedCtx } from '@modules/WebServer/ctxTypes';
+import { BUNDLED_RECIPES } from '@core/deployer/bundledRecipes';
 const console = consoleFactory(modulename);
 
 
@@ -33,6 +34,7 @@ export default async function SetupGet(ctx: AuthedCtx) {
         forceGameName: txHostConfig.forceGameName ?? '', //ejs injection works better with strings
         dataPath: txHostConfig.dataPath,
         hasCustomDataPath: txHostConfig.hasCustomDataPath,
+        bundledRecipes: BUNDLED_RECIPES,
     };
     return ctx.utils.render('standalone/setup', renderData);
 };

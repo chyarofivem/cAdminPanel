@@ -97,7 +97,10 @@ export const useExpireAuthData = () => {
 export const useAuth = () => {
     const [authData, setAuthData] = useAtom(authDataAtom);
 
-    const logout = () => fetchWithTimeout<ApiLogoutResp>(`/auth/logout`, { method: 'POST' }).then(data => {
+    const logout = () => fetchWithTimeout<ApiLogoutResp>(`/auth/logout`, {
+        method: 'POST',
+        headers: authData?.csrfToken ? { 'X-TxAdmin-CsrfToken': authData.csrfToken } : undefined,
+    }).then(data => {
         if (data.logout) {
             console.log('[useAuth] Manually triggered logout.');
             setAuthData(false);

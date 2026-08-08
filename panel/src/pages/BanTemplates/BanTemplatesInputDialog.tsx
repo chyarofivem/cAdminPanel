@@ -9,6 +9,7 @@ import { BanTemplatesInputData } from "./BanTemplatesPage";
 import { BanDurationType } from "@shared/otherTypes";
 import { banDurationToString } from "@/lib/utils";
 import { txToast } from "@/components/TxToaster";
+import { t } from "@/lib/i18n";
 
 //Default dropdown options
 const dropdownOptions = [
@@ -78,7 +79,7 @@ export default function BanTemplatesInputDialog({
         form.reason.value = reason; //just to make sure the field is also trimmed
         if (reason.length < 3) {
             form.reason.focus();
-            return txToast.warning('Reason must be at least 3 characters long');
+            return txToast.warning(t('Reason must be at least 3 characters long'));
         }
         let duration: BanDurationType;
         if (selectedDuration === 'permanent') {
@@ -86,7 +87,7 @@ export default function BanTemplatesInputDialog({
         } else if (selectedDuration === 'custom') {
             if (form.durationMultiplier.value <= 0) {
                 form.durationMultiplier.focus();
-                return txToast.warning('Custom duration must be a positive number');
+                return txToast.warning(t('Custom duration must be a positive number'));
             }
             duration = {
                 value: parseInt(form.durationMultiplier.value),

@@ -20,6 +20,7 @@ import type {
 } from "@shared/advancedCommands";
 import { getUrlSearchParam, setUrlSearchParam } from "@/lib/navigation";
 import { useBackendApi } from "@/hooks/fetch";
+import { t } from "@/lib/i18n";
 
 
 function HelpPopover({ onCommandClick }: { onCommandClick: (c: string) => void }) {
@@ -156,7 +157,7 @@ export default function AdvancedPage() {
         const extension = 'error' in output ? 'txt' : output.type === 'md' ? 'md' : 'json';
         const success = downloadTextFile(content, command, extension);
         if (!success) {
-            txToast.error('Failed to download file. Please try again.');
+            txToast.error(t('Failed to download file. Please try again.'));
         }
     }
 

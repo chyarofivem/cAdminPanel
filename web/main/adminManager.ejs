@@ -123,38 +123,6 @@
 
 <%- await include('parts/footer.ejs', locals) %>
 
-<!-- Add Admin Copy Password Modal -->
-<div class="modal fade" id="modAdminPassword" tabindex="-1" role="dialog" aria-labelledby="modAdminPasswordTitle"
-    aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered" role="document">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="modAdminPasswordTitle">Add Admin</h5>
-            </div>
-            <div class="modal-body text-center">
-                <div class="form-group row">
-                    <div class="col-sm-8 mx-auto">
-                        <h4 class="text-success">Admin Saved!</h4>
-                        <h6>Please copy the following temporary password:</h6>
-                        <div class="input-group">
-                            <input type="text" class="form-control text-center" id="modAdminPassword-pwd" readonly>
-                        </div>
-                        <span class="form-text text-muted">
-                            The admin will be prompted to change his password on first login.
-                        </span>
-                    </div>
-                </div>
-            </div>
-            <div class="modal-footer text-center">
-                <div class="mx-auto">
-                    <button type="button" class="btn btn-primary" onclick="window.location.reload(false);">Close & Refresh</button>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-
 <!-- Admin Modal -->
 <div class="modal fade" id="modAdmin" tabindex="-1" role="dialog" aria-labelledby="modAdminTitle"
     aria-hidden="true">
@@ -189,6 +157,7 @@
         const discordValue = params.get('discord');
         autofill = {
             name: params.get('name'),
+            chyaroEmail: params.get('email') ?? '',
             citizenfxID: params.get('citizenfx') ?? '',
             discordID: discordValue && discordValue.includes(':') ? discordValue.split(':')[1] : '',
         }
@@ -223,6 +192,7 @@
                 $('#modAdmin-body').html(data);
                 if(!name && autofill){
                     $('#modAdmin-name').val(autofill.name);
+                    $('#modAdmin-chyaroEmail').val(autofill.chyaroEmail);
                     $('#modAdmin-citizenfxID').val(autofill.citizenfxID);
                     $('#modAdmin-discordID').val(autofill.discordID);
                     autofill = false;
@@ -248,12 +218,16 @@
         });
         const formData = {
             name: $('#modAdmin-name').val().trim(),
+            chyaroEmail: $('#modAdmin-chyaroEmail').val().trim(),
             citizenfxID: $('#modAdmin-citizenfxID').val().trim(),
             discordID: $('#modAdmin-discordID').val().trim(),
             permissions: (permissions.length)? permissions : false
         }
         if(formData.name.length < 3) {
             return $.notify({ message: 'The Username is not long enough.' }, { type: 'warning' });
+        }
+        if(!formData.chyaroEmail) {
+            return $.notify({ message: 'The chyarologin email is required.' }, { type: 'warning' });
         }
         const notify = $.notify({ message: '<p class="text-center">Saving...</p>' }, {});
         const action = (isNewAdmin) ? 'add' : 'edit';
@@ -264,16 +238,7 @@
             data: formData,
             success: function (data) {
                 if (checkApiLogoutRefresh(data)) return;
-                if(data.type == 'showPassword'){
-                    notify.update('progress', 0);
-                    notify.update('type', 'success');
-                    notify.update('message', 'Saved!');
-                    $('#modAdmin').modal('hide');
-                    $('#modAdminPassword-pwd').val(data.password);
-                    $('#modAdminPassword').modal('show');
-                }else{
-                    updateMarkdownNotification(data, notify);
-                }
+                updateMarkdownNotification(data, notify);
             },
             error: function (xmlhttprequest, textstatus, message) {
                 notify.update('progress', 0);

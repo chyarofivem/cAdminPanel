@@ -7,6 +7,7 @@ import { useAdminPerms } from '@/hooks/auth';
 import { useLiveConsoleHistory } from '@/pages/LiveConsole/liveConsoleHooks';
 import { useAtomValue } from 'jotai';
 import { fxRunnerStateAtom } from '@/hooks/status';
+import { t } from '@/lib/i18n';
 
 
 type ConsoleFooterButtonProps = {
@@ -18,20 +19,18 @@ type ConsoleFooterButtonProps = {
 
 function ConsoleFooterButton({ icon: Icon, title, disabled, onClick }: ConsoleFooterButtonProps) {
     return (
-        <div
-            tabIndex={0}
+        <button
+            type="button"
+            aria-label={title}
+            title={title}
+            disabled={disabled}
             className={cn(
-                'group bg-secondary xs:bg-transparent 2xl:hover:bg-secondary w-full rounded-lg px-1.5 py-2 cursor-pointer flex items-center justify-center transition-all ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
-                disabled && 'opacity-50 pointer-events-none'
+                'group grid size-10 shrink-0 place-items-center rounded-lg border border-white/10 bg-white/5 text-zinc-500 transition-colors hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-600 disabled:pointer-events-none disabled:opacity-40',
             )}
-            onClick={() => !disabled && onClick()}
-            onKeyDown={(e) => (e.code === 'Enter' || e.code === 'Space') && !disabled && onClick()}
+            onClick={onClick}
         >
-            <Icon className="w-6 h-6 2xl:w-5 2xl:h-5 text-muted-foreground group-hover:scale-110 group-hover:text-secondary-foreground inline" />
-            <span className="hidden 2xl:inline ml-1 align-middle">
-                {title}
-            </span>
-        </div>
+            <Icon className="size-4 transition-transform group-hover:scale-110" />
+        </button>
     )
 }
 
@@ -115,37 +114,24 @@ export default function LiveConsoleFooter(props: LiveConsoleFooterProps) {
 
     let inputError: string | undefined;
     if (!hasWritePerm) {
-        inputError = 'You do not have permission to write to the console.';
+        inputError = t('You do not have permission to write to the console.');
     } else if (!fxRunnerState.isChildAlive) {
-        inputError = 'The server is not running.';
+        inputError = t('The server is not running.');
     } else if (!props.isConnected) {
-        inputError = 'Socket connection lost.';
+        inputError = t('Socket connection lost.');
     }
 
     return (
-        <div className="flex flex-col xs:flex-row xs:items-center gap-2 px-1 sm:px-4 py-2 border-t justify-center">
-            <div className="flex items-center grow">
-                <svg
-                    className="hidden sm:block w-4 h-4 mr-2 text-warning-inline shrink-0"
-                    fill="none"
-                    height="24"
-                    stroke="currentColor"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    viewBox="0 0 24 24"
-                    width="24"
-                    xmlns="http://www.w3.org/2000/svg"
-                >
-                    <path d="m9 18 6-6-6-6" />
-                </svg>
+        <footer className="flex flex-col gap-3 border-t border-white/10 bg-black/20 px-3 py-3 sm:flex-row sm:items-center sm:px-4">
+            <div className="flex min-w-0 grow items-center rounded-xl border border-white/10 bg-black/25 px-3 focus-within:border-brand-500/40 focus-within:ring-1 focus-within:ring-brand-500/20">
+                <span className="mr-2 select-none font-mono text-sm text-brand-400">$</span>
                 <Input
                     ref={termInputRef}
                     className={cn(
-                        "w-full",
+                        'h-10 w-full border-0 bg-transparent px-0 font-mono text-sm shadow-none focus-visible:ring-0 focus-visible:ring-offset-0',
                         !!inputError && 'placeholder:text-destructive placeholder:opacity-100'
                     )}
-                    placeholder={inputError ?? "Type a command..."}
+                    placeholder={inputError ?? t('Type a command...')}
                     type="text"
                     disabled={!!inputError}
                     onKeyDown={handleInputKeyDown}
@@ -154,32 +140,32 @@ export default function LiveConsoleFooter(props: LiveConsoleFooterProps) {
                     autoCorrect='off'
                 />
             </div>
-            <div className="flex flex-row justify-evenly gap-3 2xl:gap-1 select-none">
+            <div className="flex flex-row justify-end gap-2 select-none">
                 <ConsoleFooterButton
                     icon={BookMarkedIcon}
-                    title="Saved"
+                    title={t('Saved commands')}
                     onClick={props.toggleSaveSheet}
                 />
                 <ConsoleFooterButton
                     icon={SearchIcon}
-                    title="Search"
+                    title={t('Search console')}
                     disabled={!props.isConnected}
                     onClick={props.toggleSearchBar}
                 />
                 <ConsoleFooterButton
                     icon={Trash2Icon}
-                    title="Clear"
+                    title={t('Clear console')}
                     disabled={!props.isConnected}
                     onClick={props.consoleClear}
                 />
                 <ConsoleFooterButton
                     icon={FileDownIcon}
-                    title="Download"
+                    title={t('Download console log')}
                     disabled={!props.isConnected}
                     onClick={() => {
                         openExternalLink('/fxserver/downloadLog');
                     }} />
             </div>
-        </div>
+        </footer>
     );
 }

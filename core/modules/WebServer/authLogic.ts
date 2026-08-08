@@ -16,17 +16,24 @@ export class AuthedAdmin {
     public readonly permissions: string[];
     public readonly isTempPassword: boolean;
     public readonly profilePicture: string | undefined;
+    public readonly email: string | undefined;
+    public readonly discordAvatar: string | undefined;
     public readonly csrfToken?: string;
 
     constructor(vaultAdmin: any, csrfToken?: string) {
         this.name = vaultAdmin.name;
         this.isMaster = vaultAdmin.master;
         this.permissions = vaultAdmin.permissions;
-        this.isTempPassword = (typeof vaultAdmin.password_temporary !== 'undefined');
+        this.isTempPassword = false;
         this.csrfToken = csrfToken;
 
         const cachedPfp = txCore.cacheStore.get(`admin:picture:${vaultAdmin.name}`);
         this.profilePicture = typeof cachedPfp === 'string' ? cachedPfp : undefined;
+        const chyaroData = vaultAdmin.providers?.chyarologin?.data || {};
+        this.email = chyaroData.email || vaultAdmin.providers?.chyarologin?.identifier;
+        this.discordAvatar = chyaroData.discordId && chyaroData.discordAvatar
+            ? `https://cdn.discordapp.com/avatars/${chyaroData.discordId}/${chyaroData.discordAvatar}.jpg?size=128`
+            : undefined;
     }
 
     /**
@@ -79,10 +86,12 @@ export class AuthedAdmin {
     getAuthData(): ReactAuthDataType {
         return {
             name: this.name,
+            email: this.email,
             permissions: this.isMaster ? ['all_permissions'] : this.permissions,
             isMaster: this.isMaster,
             isTempPassword: this.isTempPassword,
             profilePicture: this.profilePicture,
+            discordAvatar: this.discordAvatar,
             csrfToken: this.csrfToken ?? 'not_set',
         }
     }
@@ -114,28 +123,16 @@ const failResp = (reason?: string) => ({
 /**
  * ZOD schemas for session auth
  */
-const validPassSessAuthSchema = z.object({
-    type: z.literal('password'),
-    username: z.string(),
-    csrfToken: z.string(),
-    expiresAt: z.literal(false),
-    password_hash: z.string(),
-});
-export type PassSessAuthType = z.infer<typeof validPassSessAuthSchema>;
-
-const validCfxreSessAuthSchema = z.object({
-    type: z.literal('cfxre'),
+const validChyaroSessAuthSchema = z.object({
+    type: z.literal('chyarologin'),
     username: z.string(),
     csrfToken: z.string(),
     expiresAt: z.number(),
     identifier: z.string(),
 });
-export type CfxreSessAuthType = z.infer<typeof validCfxreSessAuthSchema>;
+export type ChyaroSessAuthType = z.infer<typeof validChyaroSessAuthSchema>;
 
-const validSessAuthSchema = z.discriminatedUnion('type', [
-    validPassSessAuthSchema,
-    validCfxreSessAuthSchema
-]);
+const validSessAuthSchema = validChyaroSessAuthSchema;
 
 
 /**
@@ -184,23 +181,11 @@ export const normalAuthLogic = (
             return failResp(`Admin '${sessAuth.username}' not found.`);
         }
 
-        // Checking for auth types
-        if (sessAuth.type === 'password') {
-            if (vaultAdmin.password_hash !== sessAuth.password_hash) {
-                return failResp(`Password hash doesn't match for '${sessAuth.username}'.`);
-            }
-            return successResp(vaultAdmin, sessAuth.csrfToken);
-        } else if (sessAuth.type === 'cfxre') {
-            if (
-                typeof vaultAdmin.providers.citizenfx !== 'object'
-                || vaultAdmin.providers.citizenfx.identifier !== sessAuth.identifier
-            ) {
-                return failResp(`Cfxre identifier doesn't match for '${sessAuth.username}'.`);
-            }
-            return successResp(vaultAdmin, sessAuth.csrfToken);
-        } else {
-            return failResp('Invalid auth type.');
+        const configuredEmail = vaultAdmin.providers.chyarologin?.identifier;
+        if (configuredEmail?.toLowerCase() !== sessAuth.identifier.toLowerCase()) {
+            return failResp(`chyarologin identity doesn't match for '${sessAuth.username}'.`);
         }
+        return successResp(vaultAdmin, sessAuth.csrfToken);
     } catch (error) {
         console.debug(`Error validating session data: ${(error as Error).message}`);
         return failResp('Error validating session data.');

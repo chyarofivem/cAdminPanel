@@ -9,6 +9,7 @@ import { SYM_CURRENT_MUTEX } from '@lib/symbols';
 import { z } from 'zod';
 import { shortenId } from '@shared/utils';
 import { summarizeIdsArray } from '@lib/player/idUtils';
+import { checkRateLimit } from '@lib/rateLimiters/actionLimiter';
 const console = consoleFactory(modulename);
 
 
@@ -169,6 +170,13 @@ async function handleBan(ctx: AuthedCtx, player: PlayerClass): Promise<GenericAp
     //Check permissions
     if (!ctx.admin.testPermission('players.ban', modulename)) {
         return { error: 'You don\'t have permission to execute this action.' }
+    }
+
+    const rateLimit = checkRateLimit('ban', ctx.admin.name);
+    if (!rateLimit.allowed) {
+        const retryAfterSeconds = Math.ceil(rateLimit.retryAfterMs / 1000);
+        ctx.admin.logAction(`Rate limit rejected ban attempt. Retry after ${retryAfterSeconds}s.`);
+        return { error: `Ban limit reached. Try again in ${retryAfterSeconds} seconds.` };
     }
 
     //Validating player - hwids.length can be zero 
@@ -390,6 +398,13 @@ async function handleKick(ctx: AuthedCtx, player: PlayerClass): Promise<GenericA
     //Check permissions
     if (!ctx.admin.testPermission('players.kick', modulename)) {
         return { error: 'You don\'t have permission to execute this action.' };
+    }
+
+    const rateLimit = checkRateLimit('kick', ctx.admin.name);
+    if (!rateLimit.allowed) {
+        const retryAfterSeconds = Math.ceil(rateLimit.retryAfterMs / 1000);
+        ctx.admin.logAction(`Rate limit rejected kick attempt. Retry after ${retryAfterSeconds}s.`);
+        return { error: `Kick limit reached. Try again in ${retryAfterSeconds} seconds.` };
     }
 
     //Validating server & player

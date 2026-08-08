@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { ErrorBoundary } from "react-error-boundary";
-import { Route as WouterRoute, Switch } from "wouter";
+import { Route as WouterRoute, Switch, useRoute } from "wouter";
 import { PageErrorFallback } from "@/components/ErrorFallback";
 import { useAtomValue, useSetAtom } from "jotai";
 import { contentRefreshKeyAtom, pageErrorStatusAtom, useSetPageTitle } from "@/hooks/pages";
@@ -11,10 +11,8 @@ import Iframe from "@/pages/Iframe";
 import NotFound from "@/pages/NotFound";
 import TestingPage from "@/pages/TestingPage/TestingPage";
 import LiveConsolePage from "@/pages/LiveConsole/LiveConsolePage";
-import PlayersPage from "@/pages/Players/PlayersPage";
 import HistoryPage from "@/pages/History/HistoryPage";
 import BanTemplatesPage from "@/pages/BanTemplates/BanTemplatesPage";
-import SystemLogPage from "@/pages/SystemLogPage";
 import AddLegacyBanPage from "@/pages/AddLegacyBanPage";
 import DashboardPage from "@/pages/Dashboard/DashboardPage";
 import PlayerDropsPage from "@/pages/PlayerDropsPage/PlayerDropsPage";
@@ -22,6 +20,15 @@ import SettingsPage from "@/pages/Settings/SettingsPage";
 import UnauthorizedPage from "@/pages/UnauthorizedPage";
 import DiagnosticsPage from "@/pages/Diagnostics/DiagnosticsPage";
 import AdvancedPage from "@/pages/AdvancedPage";
+import CadminUsersPage from '@/pages/CAdmin/UsersPage';
+import AdminsPage from '@/pages/Admins/AdminsPage';
+import AllowlistPage from '@/pages/Allowlist/AllowlistPage';
+import CfgEditorPage from '@/pages/CfgEditor/CfgEditorPage';
+import PlayerDetailPage from '@/pages/PlayerManagement/PlayerDetailPage';
+import PlayerManagementPage from '@/pages/PlayerManagement/PlayerManagementPage';
+import ResourcesPage from '@/pages/Resources/ResourcesPage';
+import TxAdminLogPage from '@/pages/TxAdminLogPage';
+import { t } from '@/lib/i18n';
 
 
 type RouteType = {
@@ -29,19 +36,52 @@ type RouteType = {
     title: string;
     permission?: string;
     Page: JSX.Element;
+    requiresCadmin?: boolean;
 };
 
 const allRoutes: RouteType[] = [
     //Global Routes
     {
-        path: '/players',
-        title: 'Players',
-        Page: <PlayersPage />
+        path: '/administration/players',
+        title: 'Player Management',
+        Page: <PlayerManagementPage />,
+    },
+    {
+        path: '/administration/players/:license',
+        title: 'Player Management',
+        Page: <PlayerDetailPage />,
     },
     {
         path: '/history',
         title: 'History',
         Page: <HistoryPage />
+    },
+    {
+        path: '/players',
+        title: 'Player Management',
+        Page: <LegacyRedirect to="/administration/players" />,
+    },
+    {
+        path: '/cadmin/players',
+        title: 'Player Management',
+        Page: <LegacyRedirect to="/administration/players" />,
+    },
+    {
+        path: '/cadmin/player/:identifier',
+        title: 'Player Management',
+        Page: <LegacyPlayerRedirect />,
+    },
+    {
+        path: '/cadmin/garage',
+        title: 'Player Management',
+        Page: <LegacyRedirect to="/administration/players" />,
+    },
+    {
+        path: '/cadmin/users',
+        title: 'Linked Accounts',
+        permission: 'master',
+        requiresCadmin: true,
+        Page: <CadminUsersPage />,
     },
     {
         path: '/insights/player-drops',
@@ -51,12 +91,13 @@ const allRoutes: RouteType[] = [
     {
         path: '/allowlist',
         title: 'Allowlist',
-        Page: <Iframe legacyUrl="allowlist" />
+        Page: <AllowlistPage />,
     },
     {
         path: '/admins',
-        title: 'Admins',
-        Page: <Iframe legacyUrl="adminManager" />
+        title: 'Staff & Permissions',
+        permission: 'manage.admins',
+        Page: <AdminsPage />
     },
     {
         path: '/settings',
@@ -76,16 +117,10 @@ const allRoutes: RouteType[] = [
         Page: <DiagnosticsPage />
     },
     {
-        path: '/system/console-log',
-        title: 'Console Log',
-        permission: 'txadmin.log.view',
-        Page: <SystemLogPage pageName="console" />
-    },
-    {
-        path: '/system/action-log',
-        title: 'Action Log',
-        permission: 'txadmin.log.view',
-        Page: <SystemLogPage pageName="action" />
+        path: '/system/txadmin-log',
+        title: 'txAdmin Log',
+        permission: 'txadmin.log.combined',
+        Page: <TxAdminLogPage />,
     },
 
     //Server Routes
@@ -95,27 +130,21 @@ const allRoutes: RouteType[] = [
         Page: <DashboardPage />
     },
     {
-        path: '/server/console',
-        title: 'Live Console',
+        path: '/server/console-log',
+        title: 'Console Log',
         permission: 'console.view',
-        Page: <LiveConsolePage />
+        Page: <LiveConsolePage />,
     },
     {
         path: '/server/resources',
         title: 'Resources',
-        Page: <Iframe legacyUrl="resources" />
-    },
-    {
-        path: '/server/server-log',
-        title: 'Server Log',
-        permission: 'server.log.view',
-        Page: <Iframe legacyUrl="serverLog" />
+        Page: <ResourcesPage />,
     },
     {
         path: '/server/cfg-editor',
         title: 'CFG Editor',
-        permission: 'server.cfg.editor',
-        Page: <Iframe legacyUrl="cfgEditor" />
+        permission: 'master',
+        Page: <CfgEditorPage />,
     },
     {
         path: '/server/setup',
@@ -134,6 +163,33 @@ const allRoutes: RouteType[] = [
         title: 'Advanced',
         permission: 'all_permissions',
         Page: <AdvancedPage />
+    },
+
+    // Retain old bookmarks while keeping every document URL separate from JSON APIs.
+    {
+        path: '/server/console',
+        title: 'Console Log',
+        Page: <LegacyRedirect to="/server/console-log" />,
+    },
+    {
+        path: '/system/console-log',
+        title: 'Console Log',
+        Page: <LegacyRedirect to="/server/console-log" />,
+    },
+    {
+        path: '/system/action-log',
+        title: 'txAdmin Log',
+        Page: <LegacyRedirect to="/system/txadmin-log" />,
+    },
+    {
+        path: '/server/server-log',
+        title: 'txAdmin Log',
+        Page: <LegacyRedirect to="/system/txadmin-log" />,
+    },
+    {
+        path: '/cadmin/logs',
+        title: 'txAdmin Log',
+        Page: <LegacyRedirect to="/system/txadmin-log" />,
     },
 
     //No nav routes
@@ -157,13 +213,26 @@ const allRoutes: RouteType[] = [
     // },
 ];
 
+function LegacyRedirect({ to }: { to: string }) {
+    useEffect(() => setLocation(to, { replace: true }), [to]);
+    return null;
+}
+
+function LegacyPlayerRedirect() {
+    const [, params] = useRoute('/cadmin/player/:identifier');
+    const identifier = params?.identifier ? decodeURIComponent(params.identifier) : '';
+    return <LegacyRedirect to={`/administration/players?mode=playerIds&q=${encodeURIComponent(identifier)}`} />;
+}
+
 
 function Route(route: RouteType) {
     const { hasPerm } = useAdminPerms();
     const setPageTitle = useSetPageTitle();
-    setPageTitle(route.title);
-    const nodeToRender = route.permission && !hasPerm(route.permission)
-        ? <UnauthorizedPage pageName={route.title} permission={route.permission} />
+    setPageTitle(t(route.title));
+    const nodeToRender = route.requiresCadmin && !window.txConsts.cadminEnabled
+        ? <UnauthorizedPage pageName={t(route.title)} permission={t('Character Management enabled')} />
+        : route.permission && !hasPerm(route.permission)
+        ? <UnauthorizedPage pageName={t(route.title)} permission={route.permission} />
         : route.Page;
     return <WouterRoute path={route.path}>{nodeToRender}</WouterRoute>
 }

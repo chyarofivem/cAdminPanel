@@ -11,6 +11,7 @@ import BanForm, { BanFormType } from "@/components/BanForm";
 import { txToast } from "@/components/TxToaster";
 import { GenericApiOkResp } from "@shared/genericApiTypes";
 import useSWR from "swr";
+import { t } from "@/lib/i18n";
 
 
 export default function AddLegacyBanPage() {
@@ -37,13 +38,13 @@ export default function AddLegacyBanPage() {
         const { reason, duration } = banFormRef.current.getData();
 
         if (!reason || reason.length < 3) {
-            txToast.warning(`The reason must be at least 3 characters long.`);
+            txToast.warning(t('The reason must be at least 3 characters long.'));
             banFormRef.current.focusReason();
             return;
         }
         const rawIds = idsTextareaRef.current.value;
         if (!rawIds) {
-            txToast.warning(`You must enter at least one identifier.`);
+            txToast.warning(t('You must enter at least one identifier.'));
             idsTextareaRef.current.focus();
             return;
         }
@@ -53,7 +54,7 @@ export default function AddLegacyBanPage() {
             .map(id => id.trim())
             .filter(Boolean);
         if (!identifiers.length) {
-            txToast.warning(`You must enter at least one valid identifier.`);
+            txToast.warning(t('You must enter at least one valid identifier.'));
             idsTextareaRef.current.focus();
             return;
         }

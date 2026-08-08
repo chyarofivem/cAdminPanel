@@ -10,6 +10,7 @@ import { ApiTimeout, useBackendApi } from '@/hooks/fetch';
 import { useCloseAllSheets } from '@/hooks/sheets';
 import { useAdminPerms } from '@/hooks/auth';
 import { TxConfigState } from '@shared/enums';
+import { t } from '@/lib/i18n';
 
 
 const controlButtonsVariants = cva(
@@ -56,7 +57,7 @@ export default function ServerControls() {
             stop: 'Stopping server',
             restart: 'Restarting server',
         }
-        const toastLoadingMessage = `${messageMap[action]}...`;
+        const toastLoadingMessage = t('{action}...', { action: t(messageMap[action]) });
         const callApi = () => {
             closeAllSheets();
             fxsControlApi({
@@ -69,8 +70,10 @@ export default function ServerControls() {
             callApi();
         } else {
             openConfirmDialog({
-                title: messageMap[action],
-                message: `Are you sure you want to ${action} the server?`,
+                title: t(messageMap[action]),
+                message: t(action === 'stop'
+                    ? 'Are you sure you want to stop the server?'
+                    : 'Are you sure you want to restart the server?'),
                 onConfirm: callApi,
             });
         }
@@ -86,16 +89,16 @@ export default function ServerControls() {
     const handleAnnounce = () => {
         if (!fxRunnerState.isChildAlive) return;
         openPromptDialog({
-            title: 'Send Announcement',
-            message: 'Type the message to be broadcasted to all players.',
-            placeholder: 'announcement message',
-            submitLabel: 'Send',
+            title: t('Send Announcement'),
+            message: t('Type the message to be broadcasted to all players.'),
+            placeholder: t('announcement message'),
+            submitLabel: t('Send'),
             required: true,
             onSubmit: (input) => {
                 closeAllSheets();
                 fxsCommandsApi({
                     data: { action: 'admin_broadcast', parameter: input },
-                    toastLoadingMessage: 'Sending announcement...',
+                    toastLoadingMessage: t('Sending announcement...'),
                 });
             }
         });
@@ -104,15 +107,15 @@ export default function ServerControls() {
     const handleKickAll = () => {
         if (!fxRunnerState.isChildAlive) return;
         openPromptDialog({
-            title: 'Kick All Players',
-            message: 'Type the kick reason or leave it blank (press enter)',
-            placeholder: 'kick reason',
-            submitLabel: 'Send',
+            title: t('Kick All Players'),
+            message: t('Type the kick reason or leave it blank (press enter)'),
+            placeholder: t('kick reason'),
+            submitLabel: t('Send'),
             onSubmit: (input) => {
                 closeAllSheets();
                 fxsCommandsApi({
                     data: { action: 'kick_all', parameter: input },
-                    toastLoadingMessage: 'Kicking players...',
+                    toastLoadingMessage: t('Kicking players...'),
                 });
             }
         });
@@ -124,7 +127,7 @@ export default function ServerControls() {
     if (txConfigState !== TxConfigState.Ready) {
         return (
             <div className='w-full h-8 text-center tracking-wider font-light opacity-75'>
-                Server not configured.
+                {t('Server not configured.')}
             </div>
         )
     }
@@ -155,12 +158,9 @@ export default function ServerControls() {
                 </TooltipTrigger>
                 <TooltipContent className={cn(!hasControlPerms && 'text-destructive-inline text-center')}>
                     {hasControlPerms ? (
-                        <p>{fxRunnerState.isIdle ? 'Start the server! 🚀' : 'Stop the server'}</p>
+                        <p>{fxRunnerState.isIdle ? t('Start the server! 🚀') : t('Stop the server')}</p>
                     ) : (
-                        <p>
-                            You do not have permission <br />
-                            to control the server.
-                        </p>
+                        <p>{t('You do not have permission to control the server.')}</p>
                     )}
                 </TooltipContent>
             </Tooltip>
@@ -176,12 +176,9 @@ export default function ServerControls() {
                 </TooltipTrigger>
                 <TooltipContent className={cn(!hasControlPerms && 'text-destructive-inline text-center')}>
                     {hasControlPerms ? (
-                        <p>Restart Server</p>
+                        <p>{t('Restart Server')}</p>
                     ) : (
-                        <p>
-                            You do not have permission <br />
-                            to control the server.
-                        </p>
+                        <p>{t('You do not have permission to control the server.')}</p>
                     )}
                 </TooltipContent>
             </Tooltip>
@@ -197,12 +194,9 @@ export default function ServerControls() {
                 </TooltipTrigger>
                 <TooltipContent className={cn(!hasControlPerms && 'text-destructive-inline text-center')}>
                     {hasControlPerms ? (
-                        <p>Kick All Players</p>
+                        <p>{t('Kick All Players')}</p>
                     ) : (
-                        <p>
-                            You do not have permission <br />
-                            to control the server.
-                        </p>
+                        <p>{t('You do not have permission to control the server.')}</p>
                     )}
                 </TooltipContent>
             </Tooltip>
@@ -218,12 +212,9 @@ export default function ServerControls() {
                 </TooltipTrigger>
                 <TooltipContent className={cn(!hasAnnouncementPerm && 'text-destructive-inline text-center')}>
                     {hasAnnouncementPerm ? (
-                        <p>Send Announcement</p>
+                        <p>{t('Send Announcement')}</p>
                     ) : (
-                        <p>
-                            You do not have permission <br />
-                            to send an Announcement.
-                        </p>
+                        <p>{t('You do not have permission to send an announcement.')}</p>
                     )}
                 </TooltipContent>
             </Tooltip>

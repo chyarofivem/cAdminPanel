@@ -4,6 +4,7 @@ import { useAtomValue } from 'jotai';
 import { dashPerfCursorAtom, dashServerStatsAtom, dashSvRuntimeAtom, useGetDashDataAge } from './dashboardHooks';
 import { cn } from '@/lib/utils';
 import { dateToLocaleDateString, dateToLocaleTimeString, isDateToday } from '@/lib/dateTime';
+import { t } from '@/lib/i18n';
 
 //NOTE: null and undefined are semantically equal here
 type HostStatsDataProps = {
@@ -39,21 +40,21 @@ const HostStatsData = memo(({ uptimePct, medianPlayerCount, fxsMemory, nodeMemor
                 <TimerIcon className="hidden sm:block sm:size-6 md:size-12 mr-2 opacity-75" />
                 <div className="flex flex-col mr-auto ml-auto sm:mr-0 sm:ml-auto">
                     <span className="text-center sm:text-right text-xl text-primary">{uptimePart}</span>
-                    <span className="text-center sm:text-right text-sm">Uptime 24h</span>
+                    <span className="text-center sm:text-right text-sm">{t('Uptime 24h')}</span>
                 </div>
             </div>
             <div className="flex items-center">
                 <TrendingUpIcon className="hidden sm:block sm:size-6 md:size-12 mr-2 opacity-75" />
                 <div className="flex flex-col mr-auto ml-auto sm:mr-0 sm:ml-auto">
                     <span className="text-center sm:text-right text-xl text-primary">{medianPlayerPart}</span>
-                    <span className="text-center sm:text-right text-sm">Median Players 24h</span>
+                    <span className="text-center sm:text-right text-sm">{t('Median Players 24h')}</span>
                 </div>
             </div>
             <div className="flex items-center">
                 <MemoryStickIcon className="hidden sm:block sm:size-6 md:size-12 mr-2 opacity-75" />
                 <div className="flex flex-col mr-auto ml-auto sm:mr-0 sm:ml-auto">
                     <span className="text-center sm:text-right text-xl text-primary">{fxsPart}</span>
-                    <span className="text-center sm:text-right text-sm">FXServer Memory</span>
+                    <span className="text-center sm:text-right text-sm">{t('FXServer Memory')}</span>
                 </div>
             </div>
             <div
@@ -65,7 +66,7 @@ const HostStatsData = memo(({ uptimePct, medianPlayerCount, fxsMemory, nodeMemor
                     <span className={cn("text-center sm:text-right text-xl", nodeCustomClass ?? 'text-primary')}>
                         {nodePart}
                     </span>
-                    <span className="text-center sm:text-right text-sm">Node.js Memory</span>
+                    <span className="text-center sm:text-right text-sm">{t('Node.js Memory')}</span>
                 </div>
             </div>
         </div>
@@ -102,7 +103,7 @@ export default function ServerStatsCard() {
             return {
                 fxsMemory: svRuntimeData.fxsMemory,
                 nodeMemory: svRuntimeData.nodeMemory,
-                titleTimeIndicator: dataAge.isStale ? '(minutes ago)' : '(live)',
+                titleTimeIndicator: dataAge.isStale ? t('(minutes ago)') : t('(live)'),
             };
         }
     }, [svRuntimeData, perfCursorData]);
@@ -130,7 +131,7 @@ export default function ServerStatsCard() {
         <div className="col-span-3 sm:col-span-1 3xl:col-span-2 min-w-52 py-2 px-4 flex flex-col md:rounded-xl border shadow-sm bg-card">
             <div className="flex flex-row items-center justify-between space-y-0 pb-2 text-muted-foreground">
                 <h3 className="tracking-tight text-sm font-medium line-clamp-1">
-                    Server stats {titleNode}
+                    {t('Server stats')} {titleNode}
                 </h3>
                 <div className='hidden xs:block'><GaugeIcon /></div>
             </div>

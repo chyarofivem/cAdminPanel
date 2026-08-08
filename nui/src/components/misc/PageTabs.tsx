@@ -35,7 +35,7 @@ export const PageTabs: React.FC = () => {
       >
         <StyledTab label="Main" wrapped disableFocusRipple />
         <StyledTab label="Players" wrapped disableFocusRipple />
-        <StyledTab label="txAdmin" wrapped disableFocusRipple />
+        <StyledTab label="Panel" wrapped disableFocusRipple />
       </Tabs>
     </Box>
   );

@@ -4,6 +4,7 @@ import { useOpenPromptDialog } from "@/hooks/dialogs";
 import { useLiveConsoleBookmarks, useLiveConsoleHistory } from "@/pages/LiveConsole/liveConsoleHooks";
 import { cn } from "@/lib/utils";
 import { PlusIcon, StarIcon, StarOffIcon, XIcon } from "lucide-react";
+import { t } from '@/lib/i18n';
 
 
 type SheetProps = {
@@ -32,9 +33,11 @@ function SheetBackdrop({ isOpen, closeSheet }: Omit<SheetProps, 'toTermInput'>) 
 function SheetCloseButton({ closeSheet }: Pick<SheetProps, 'closeSheet'>) {
     return (
         <button
+            type="button"
             className="absolute right-4 top-4 rounded-sm opacity-70 ring-0 transition-opacity hover:opacity-100 focus:outline-none cursor-pointer"
             onClick={closeSheet}
-            title="Close"
+            title={t('Close')}
+            aria-label={t('Close')}
         >
             <XIcon className="h-8 w-8" />
         </button>
@@ -65,15 +68,17 @@ function SheetCommand({ cmd, type, onClick, onFavAction }: SheetCommandProps) {
             </span>
             <div className="min-w-max">
                 <button
+                    type="button"
                     className="size-7 rounded-lg flex items-center justify-center hover:bg-primary hover:text-primary-foreground invisible group-hover:visible"
                     onClick={handleFavAction}
+                    aria-label={type === 'history' ? t('Save command') : t('Remove saved command')}
                 >
                     {type === 'history' ? (<>
                         <StarIcon className="size-5" />
-                        <span className="sr-only">Save</span>
+                        <span className="sr-only">{t('Save')}</span>
                     </>) : (<>
                         <StarOffIcon className="size-5" />
-                        <span className="sr-only">Remove</span>
+                        <span className="sr-only">{t('Remove')}</span>
                     </>)}
                 </button>
             </div>
@@ -88,14 +93,14 @@ function SheetContent({ toTermInput }: Pick<SheetProps, 'toTermInput'>) {
     const openPromptDialog = useOpenPromptDialog();
 
     const handleWipeHistory = () => {
-        txToast.success('History cleared');
+        txToast.success(t('Command history cleared.'));
         wipeHistory();
     }
     const handleSaveCommand = () => {
         openPromptDialog({
-            title: 'Save Command',
-            message: 'Enter the command to save:',
-            submitLabel: 'Save',
+            title: t('Save command'),
+            message: t('Enter the command to save:'),
+            submitLabel: t('Save'),
             onSubmit: (cmd) => {
                 if (cmd) addBookmark(cmd);
             }
@@ -104,15 +109,16 @@ function SheetContent({ toTermInput }: Pick<SheetProps, 'toTermInput'>) {
     return (
         <div className="flex flex-row gap-4 max-h-full">
             <div className="flex flex-col flex-grow gap-2 w-1/2">
-                <h2 className="text-xl font-bold">History</h2>
+                <h2 className="text-xl font-bold">{t('Command history')}</h2>
                 <ScrollArea className="max-h-full w-full pr-3 text-sm text-muted-foreground" style={{ wordBreak: 'break-word' }}>
                     <button
+                        type="button"
                         onClick={handleWipeHistory}
                         className="w-full py-2 rounded-lg bg-secondary hover:bg-primary hover:text-primary-foreground font-sans tracking-wider mb-2"
                     >
                         <div className="flex items-center justify-center gap-2">
                             <XIcon className="w-4 h-4 inline" />
-                            Clear History
+                            {t('Clear history')}
                         </div>
                     </button>
                     <div className="space-y-2 line-clamp-1 text-sm font-mono tracking-wide  pb-4">
@@ -128,21 +134,22 @@ function SheetContent({ toTermInput }: Pick<SheetProps, 'toTermInput'>) {
                     </div>
                     {history.length === 0 && (
                         <div className="w-full h-auto text-center italic tracking-wider">
-                            The command history is empty.
+                            {t('The command history is empty.')}
                         </div>
                     )}
                 </ScrollArea>
             </div>
             <div className="flex flex-col flex-grow gap-2 w-1/2">
-                <h2 className="text-xl font-bold">Saved</h2>
+                <h2 className="text-xl font-bold">{t('Saved commands')}</h2>
                 <ScrollArea className="max-h-full w-full pr-3 text-sm text-muted-foreground" style={{ wordBreak: 'break-word' }}>
                     <button
+                        type="button"
                         onClick={handleSaveCommand}
                         className="w-full py-2 rounded-lg bg-secondary hover:bg-primary hover:text-primary-foreground font-sans tracking-wider mb-2"
                     >
                         <div className="flex items-center justify-center gap-2">
                             <PlusIcon className="w-4 h-4 inline" />
-                            Add New
+                            {t('Add command')}
                         </div>
                     </button>
                     <div className="space-y-2 line-clamp-1 text-sm font-mono tracking-wide  pb-4">
@@ -158,8 +165,8 @@ function SheetContent({ toTermInput }: Pick<SheetProps, 'toTermInput'>) {
                     </div>
                     {bookmarks.length === 0 && (
                         <div className="w-full h-auto text-center italic tracking-wider">
-                            There are no saved commands. <br />
-                            To save a command, click the star icon next to it.
+                            {t('There are no saved commands.')} <br />
+                            {t('Use the star beside a history entry to save it.')}
                         </div>
                     )}
                 </ScrollArea>
@@ -176,7 +183,7 @@ export default function LiveConsoleSaveSheet({ isOpen, closeSheet, toTermInput }
             data-state={isOpen ? 'open' : 'closed'}
             className={cn(
                 'absolute z-20 inset-y-0 w-full md:max-w-2xl',
-                'bg-background px-4 pt-6 shadow-lg border-l',
+                'border-l border-white/10 bg-zinc-950/95 px-4 pt-6 shadow-2xl backdrop-blur',
                 'data-[state=open]:pointer-events-auto data-[state=closed]:pointer-events-none',
                 'transition-all duration-300 ease-in-out',
                 isOpen ? 'right-0 opacity-100' : '-right-full opacity-0',

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useMemo } from "react";
 import { createRoot } from "react-dom/client";
 import MenuWrapper from "./MenuWrapper";
 import "./index.css";
@@ -12,6 +12,7 @@ import styled from "@emotion/styled";
 import rawMenuTheme from "./styles/theme";
 import rawMenuRedmTheme from "./styles/theme-redm";
 import { useIsRedm } from "./state/isRedm.state";
+import { useServerCtxValue } from "./state/server.state";
 
 registerDebugFunctions();
 
@@ -29,7 +30,6 @@ declare module '@mui/material/styles' {
   }
 }
 const menuRedmTheme = createTheme(rawMenuRedmTheme);
-const menuTheme = createTheme(rawMenuTheme);
 
 //Overwriting the notistack colors
 //Actually using the colors from the RedM theme, but could start using `theme` if needed
@@ -59,14 +59,29 @@ const StyledMaterialDesignContent = styled(MaterialDesignContent)(({ theme }) =>
 
 const App = () => {
   const [isRedm, setIsRedm] = useIsRedm();
+  const serverCtx = useServerCtxValue();
 
   useNuiEvent<string>("setGameName", (gameName: string) => {
     setIsRedm(gameName === 'redm')
   });
 
+  const selectedTheme = useMemo(() => {
+    const rawTheme = isRedm ? rawMenuRedmTheme : rawMenuTheme;
+    return createTheme({
+      ...rawTheme,
+      palette: {
+        ...rawTheme.palette,
+        primary: {
+          ...rawTheme.palette.primary,
+          main: serverCtx.accentColor || rawTheme.palette.primary.main,
+        },
+      },
+    } as any);
+  }, [isRedm, serverCtx.accentColor]);
+
   return (
     <StyledEngineProvider injectFirst>
-      <ThemeProvider theme={isRedm ? menuRedmTheme : menuTheme}>
+      <ThemeProvider theme={selectedTheme}>
         <KeyboardNavProvider>
           <SnackbarProvider
             maxSnack={5}

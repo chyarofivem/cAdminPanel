@@ -17,9 +17,9 @@ const rfsOptionValidator = z.union([
 
 //NOTE: don't fallback to default because storage issues might crash the server
 export default {
-    //admin & some system logs
+    //Legacy keys retained so existing profiles continue to parse cleanly.
     admin: typeDefinedConfig({
-        name: 'Admin Logs',
+        name: 'Legacy Admin Logs',
         default: {},
         validator: rfsOptionValidator,
         fixer: SYM_FIXER_FATAL,
@@ -33,7 +33,14 @@ export default {
     }),
     //in-game logs
     server: typeDefinedConfig({
-        name: 'Server Logs',
+        name: 'Legacy Server Logs',
+        default: {},
+        validator: rfsOptionValidator,
+        fixer: SYM_FIXER_FATAL,
+    }),
+    //combined in-game events and administrative actions
+    txadmin: typeDefinedConfig({
+        name: 'txAdmin Logs',
         default: {},
         validator: rfsOptionValidator,
         fixer: SYM_FIXER_FATAL,

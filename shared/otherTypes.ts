@@ -31,6 +31,12 @@ export type ThemeType = {
     style: { [key: string]: string };
 };
 
+export type AccentType = {
+    id: string;
+    label: string;
+    vars: Record<string, string>;
+};
+
 
 export type InjectedTxConsts = {
     //Env
@@ -44,8 +50,18 @@ export type InjectedTxConsts = {
     isWebInterface: boolean;
     showAdvanced: boolean;
     hasMasterAccount: boolean;
+    chyaroConfigured: boolean;
+    chyaroUrl: string;
+    cadminEnabled: boolean;
+    uiLocale: 'en' | 'hr';
     defaultTheme: string;
     customThemes: Omit<ThemeType, 'style'>[];
+    accent: string;
+    accents: AccentType[];
+    panelName: string;
+    logoUrl: string;
+    faviconUrl: string;
+    bannerUrl: string;
     providerLogo: string | undefined;
     providerName: string | undefined;
     hostConfigSource: string;

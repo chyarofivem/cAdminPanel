@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useEffect } from "react";
 import { LocalStorageKey } from "@/lib/localStorage";
+import { t } from '@/lib/i18n';
 
 //Used for global errors
 export function AppErrorFallback({ error }: FallbackProps) {
@@ -19,10 +20,10 @@ export function AppErrorFallback({ error }: FallbackProps) {
     return (
         <div className="w-screen h-screen flex flex-col items-center justify-center">
             <GenericErrorBoundaryCard
-                title="App Error:"
-                description="Due to an unexpected error, the panel has crashed."
+                title={t('App Error:')}
+                description={t('Due to an unexpected error, the panel has crashed.')}
                 error={error}
-                resetButton={<Button variant="outline" onClick={refreshPage}>Refresh</Button>}
+                resetButton={<Button variant="outline" onClick={refreshPage}>{t('Refresh')}</Button>}
             />
         </div>
     );
@@ -33,10 +34,10 @@ export function PageErrorFallback({ error, resetErrorBoundary }: FallbackProps) 
     return (
         <div className="w-full flex flex-col items-center justify-center">
             <GenericErrorBoundaryCard
-                title="Page Error:"
-                description="There was an error rendering this page."
+                title={t('Page Error:')}
+                description={t('There was an error rendering this page.')}
                 error={error}
-                resetButton={<Button variant="outline" onClick={resetErrorBoundary}>Go Back</Button>}
+                resetButton={<Button variant="outline" onClick={resetErrorBoundary}>{t('Go Back')}</Button>}
             />
         </div>
     );
@@ -79,23 +80,23 @@ export function GenericErrorBoundaryCard(props: GenericErrorBoundaryCardProps) {
             </CardHeader>
             <CardContent>
                 <p className="truncate">
-                    Page:&nbsp;
+                    {t('Page')}:&nbsp;
                     <code className="text-muted-foreground ">
                         {window.location.pathname ?? 'unknown'}
                         {window.location.search ?? ''}
                     </code>
                 </p>
                 <p>
-                    Versions:&nbsp;
+                    {t('Versions')}:&nbsp;
                     <code className="text-muted-foreground">
                         txAdmin v{window.txConsts.txaVersion} atop FXServer b{window.txConsts.fxsVersion}
                     </code>
                 </p>
                 <p>
-                    Message:&nbsp;
+                    {t('Message')}:&nbsp;
                     <code className="text-muted-foreground">{props.error.message ?? 'unknown'}</code>
                 </p>
-                <p>Stack:</p>
+                <p>{t('Stack')}:</p>
                 <pre className="mt-1">
                     <ScrollArea
                         className="p-2 border border-red-800 rounded-sm 
@@ -112,7 +113,7 @@ export function GenericErrorBoundaryCard(props: GenericErrorBoundaryCardProps) {
                     className="bg-discord hover:bg-discord-active animate-pulse hover:animate-none"
                 >
                     <a href="http://discord.gg/txAdmin" target="_blank" rel="noopener noreferrer">
-                        Support Discord
+                        {t('Support Discord')}
                     </a>
                 </Button>
             </CardFooter>

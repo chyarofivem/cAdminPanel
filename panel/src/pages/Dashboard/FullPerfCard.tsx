@@ -11,6 +11,7 @@ import { useIsDarkMode } from '@/hooks/theme';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { useSetAtom } from 'jotai';
+import { t } from '@/lib/i18n';
 
 
 type FullPerfChartProps = {
@@ -146,13 +147,13 @@ const FullPerfChart = memo(({ threadName, apiData, apiDataAge, width, height, is
 
 function ChartErrorMessage({ error }: { error: Error | string }) {
     const errorMessageMaps: Record<string, ReactNode> = {
-        bad_request: 'Chart data loading failed: bad request.',
-        invalid_thread_name: 'Chart data loading failed: invalid thread name.',
-        data_unavailable: 'Chart data loading failed: data not yet available.',
+        bad_request: t('Chart data loading failed: bad request.'),
+        invalid_thread_name: t('Chart data loading failed: invalid thread name.'),
+        data_unavailable: t('Chart data loading failed: data not yet available.'),
         not_enough_data: (<p className='text-center'>
-            <strong>There is not enough data to display the chart just yet.</strong><br />
+            <strong>{t('There is not enough data to display the chart just yet.')}</strong><br />
             <span className='text-base italic'>
-                The chart requires at least 30 minutes of server runtime data to be available.
+                {t('The chart requires at least 30 minutes of server runtime data to be available.')}
             </span>
         </p>),
     };
@@ -160,13 +161,13 @@ function ChartErrorMessage({ error }: { error: Error | string }) {
     if (typeof error === 'string') {
         return (
             <div className="absolute inset-0 flex flex-col items-center justify-center text-2xl text-muted-foreground">
-                {errorMessageMaps[error] ?? 'Unknown BackendApiError'}
+                {errorMessageMaps[error] ?? t('Unknown backend error')}
             </div>
         );
     } else {
         return (
             <div className="absolute inset-0 flex flex-col items-center justify-center text-2xl text-destructive-inline">
-                Error: {error.message ?? 'Unknown Error'}
+                {t('Error')}: {error.message ?? t('Unknown error')}
             </div>
         );
     }
@@ -227,12 +228,12 @@ export default function FullPerfCard() {
         <div className="w-full h-[28rem] pt-2 md:rounded-xl border bg-card shadow-sm flex flex-col fill-primary">
             <div className="px-4 flex flex-row items-center justify-between space-y-0 pb-2 text-muted-foreground">
                 <h3 className="tracking-tight text-sm font-medium line-clamp-1">
-                    Server performance
+                    {t('Server performance')}
                 </h3>
                 <div className="flex gap-4">
                     <Select defaultValue={selectedThread} onValueChange={setSelectedThread}>
                         <SelectTrigger className="w-32 grow md:grow-0 h-6 px-3 py-1 text-sm" >
-                            <SelectValue placeholder="Filter by admin" />
+                            <SelectValue placeholder={t('Select thread')} />
                         </SelectTrigger>
                         <SelectContent className="px-0">
                             <SelectItem value={'svMain'} className="cursor-pointer">

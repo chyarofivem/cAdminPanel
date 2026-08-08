@@ -8,6 +8,7 @@ import { txEnv, txHostConfig } from '@core/globalData';
 import { validateModifyServerConfig } from '@lib/fxserver/fxsConfigHelper';
 import consoleFactory from '@lib/console';
 import { SYM_RESET_CONFIG } from '@lib/symbols';
+import { installCadminResource } from '@lib/cadminInstaller';
 const console = consoleFactory(modulename);
 
 //Helper functions
@@ -42,6 +43,8 @@ export default async function DeployerActions(ctx) {
         return await handleSetVariables(ctx);
     } else if (action == 'commit') {
         return await handleSaveConfig(ctx);
+    } else if (action == 'finishCadmin') {
+        return await handleFinishCadmin(ctx);
     } else if (action == 'cancel') {
         return await handleCancel(ctx);
     } else {
@@ -172,8 +175,8 @@ async function handleSetVariables(ctx) {
     const admin = txCore.adminStore.getAdminByName(ctx.admin.name);
     if (!admin) return ctx.send({ type: 'danger', message: 'Admin not found.' });
     const addPrincipalLines = [];
-    Object.keys(admin.providers).forEach((providerName) => {
-        if (admin.providers[providerName].identifier) {
+    ['citizenfx', 'discord'].forEach((providerName) => {
+        if (admin.providers[providerName]?.identifier) {
             addPrincipalLines.push(`add_principal identifier.${admin.providers[providerName].identifier} group.admin #${ctx.admin.name}`);
         }
     });
@@ -206,6 +209,7 @@ async function handleSaveConfig(ctx) {
     const serverCFG = ctx.request.body.serverCFG;
     const cfgFilePath = path.join(txManager.deployer.deployPath, 'server.cfg');
     txCore.cacheStore.set('deployer:recipe', txManager.deployer?.recipe?.name ?? 'unknown');
+    txCore.cacheStore.set('deployer:framework', txManager.deployer?.framework ?? 'custom');
 
     //Validating config contents + saving file and backup
     try {
@@ -251,6 +255,62 @@ async function handleSaveConfig(ctx) {
     }
 
     ctx.admin.logAction('Completed and committed server deploy.');
+
+    if (['esx', 'qbox'].includes(txManager.deployer.framework)) {
+        return ctx.send({
+            success: true,
+            installCadminDialog: true,
+            framework: txManager.deployer.framework,
+        });
+    }
+
+    return finalizeDeployment(ctx);
+}
+
+
+//================================================================
+async function handleFinishCadmin(ctx) {
+    const rawInstall = ctx.request.body?.install;
+    if (![true, false, 'true', 'false'].includes(rawInstall)) {
+        return ctx.utils.error(400, 'Invalid Character Management choice.');
+    }
+    const install = rawInstall === true || rawInstall === 'true';
+    const framework = txManager.deployer.framework;
+    if (!['esx', 'qbox'].includes(framework)) return ctx.utils.error(400, 'No supported framework was deployed.');
+
+    try {
+        if (install) {
+            const installed = await installCadminResource({
+                dataPath: txManager.deployer.deployPath,
+                cfgPath: path.join(txManager.deployer.deployPath, 'server.cfg'),
+                framework,
+                dirtyMoneyItem: txConfig.cadmin.dirtyMoneyItem,
+            });
+            txCore.configStore.saveConfigs({ cadmin: {
+                enabled: true,
+                installSkipped: false,
+                apiUrl: installed.apiUrl,
+                apiSecret: installed.secret,
+                dirtyMoneyItem: txConfig.cadmin.dirtyMoneyItem,
+                framework,
+            } }, ctx.admin.name);
+            ctx.admin.logAction(`cadmin: installed resource after ${framework} deployment.`);
+        } else {
+            txCore.configStore.saveConfigs({ cadmin: {
+                enabled: false,
+                installSkipped: true,
+                framework,
+            } }, ctx.admin.name);
+            ctx.admin.logAction('cadmin: skipped post-deploy resource installation.');
+        }
+    } catch (error) {
+        return ctx.send({ type: 'danger', message: `Character Management installation failed: ${error.message}` });
+    }
+    return finalizeDeployment(ctx);
+}
+
+
+async function finalizeDeployment(ctx) {
 
     //If running (for some reason), kill it first 
     if (!txCore.fxRunner.isIdle) {

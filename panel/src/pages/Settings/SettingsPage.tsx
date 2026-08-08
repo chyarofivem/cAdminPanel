@@ -19,24 +19,30 @@ import ConfigCardGameMenu from "./tabCards/gameMenu";
 import ConfigCardGameNotifications from "./tabCards/gameNotifications";
 import ConfigCardGeneral from "./tabCards/general";
 import ConfigCardWhitelist from "./tabCards/whitelist";
+import AppearanceCard from "./tabCards/AppearanceCard";
+import CadminCard from "./tabCards/CadminCard";
 import SettingsCardTemplate from "./tabCards/_template";
 import SettingsCardBlank from "./tabCards/_blank";
 import { PageHeader, PageHeaderChangelog } from "@/components/page-header";
+import { t } from "@/lib/i18n";
 
 
 
 //Tab configuration
 const settingsTabsBase = [
-    { name: 'General', Component: ConfigCardGeneral }, //TODO: cards [Server Listing, txAdmin]
-    { name: 'FXServer', Component: ConfigCardFxserver },
-    { name: 'Bans', Component: ConfigCardBans },
-    { name: 'Whitelist', Component: ConfigCardWhitelist },
-    { name: 'Discord', Component: ConfigCardDiscord },
+    { id: 'general', name: t('General'), Component: ConfigCardGeneral }, //TODO: cards [Server Listing, txAdmin]
+    { id: 'appearance', name: t('Appearance'), Component: AppearanceCard },
+    { id: 'cadmin', name: t('Character Management'), Component: CadminCard },
+    { id: 'fxserver', name: t('FXServer'), Component: ConfigCardFxserver },
+    { id: 'bans', name: t('Bans'), Component: ConfigCardBans },
+    { id: 'whitelist', name: t('Allowlist'), Component: ConfigCardWhitelist },
+    { id: 'discord', name: t('Discord'), Component: ConfigCardDiscord },
     {
-        name: 'Game',
+        id: 'game',
+        name: t('Game'),
         cards: [
-            { name: 'Menu', Component: ConfigCardGameMenu },
-            { name: 'Notifications', Component: ConfigCardGameNotifications },
+            { id: 'menu', name: t('Menu'), Component: ConfigCardGameMenu },
+            { id: 'notifications', name: t('Notifications'), Component: ConfigCardGameNotifications },
         ]
     },
     //Dev only
@@ -59,10 +65,9 @@ export type SettingTabsDatum = SettingTabMulti | SettingTabSingle;
 
 
 //Massaging the data into the expected format
-const nameToId = (name: string) => name.toLowerCase().replace(/[^a-z0-9]/g, '-');
 export const settingsTabs: SettingTabsDatum[] = settingsTabsBase.map((tab) => {
     const tabCtx = {
-        tabId: nameToId(tab.name),
+        tabId: tab.id,
         tabName: tab.name,
     } satisfies SettingsTabInfo;
     if ('cards' in tab && tab.cards) {
@@ -71,7 +76,7 @@ export const settingsTabs: SettingTabsDatum[] = settingsTabsBase.map((tab) => {
             cards: tab.cards.map((card) => ({
                 ctx: {
                     ...tabCtx,
-                    cardId: `${tabCtx.tabId}-${nameToId(card.name)}`,
+                    cardId: `${tabCtx.tabId}-${card.id}`,
                     cardName: card.name,
                     cardTitle: `${tabCtx.tabName} ${card.name}`,
                 },
@@ -111,7 +116,11 @@ export default function SettingsPage() {
         const pageHash = window.location?.hash.slice(1);
 
         // FIXME:NEXT:UPDATE remove
-        const requestedTab = pageHash === 'allowlist' ? 'whitelist' : pageHash;
+        const requestedTab = pageHash === 'allowlist'
+            ? 'whitelist'
+            : pageHash === 'character-management'
+                ? 'cadmin'
+                : pageHash;
         if (pageHash === 'whitelist') setUrlHash('allowlist');
 
         return settingsTabs.find(tab => tab.ctx.tabId === requestedTab)?.ctx.tabId ?? settingsTabs[0].ctx.tabId;
@@ -173,6 +182,13 @@ export default function SettingsPage() {
                 changelog: saveResp.changelog,
             }, false);
             setCardPendingSave(null);
+            if (
+                source.cardId === 'general'
+                && typeof changes.general?.language === 'string'
+                && changes.general.language !== window.txConsts.uiLocale
+            ) {
+                window.location.reload();
+            }
         } catch (error) {
             txToast.error({
                 title: `Error saving ${source.cardTitle} settings:`,
@@ -212,7 +228,7 @@ export default function SettingsPage() {
 
     return (
         <div className="w-full mb-10">
-            <PageHeader title="Settings" icon={<Settings2Icon />}>
+            <PageHeader title={t('Settings')} icon={<Settings2Icon />}>
                 <PageHeaderChangelog
                     changelogData={swr?.data?.changelog}
                 />
@@ -232,8 +248,7 @@ export default function SettingsPage() {
                                 value={tab.ctx.tabId}
                                 className="hover:text-primary"
                             >
-                                {/* FIXME:NEXT:UPDATE remove */}
-                                {tab.ctx.tabName === 'Whitelist' ? 'Allowlist' : tab.ctx.tabName}
+                                {tab.ctx.tabName}
 
                                 {/* <TriangleAlertIcon className="inline-block size-4 mt-0.5 ml-1 text-destructive self-center" /> */}
                                 {/* <DynamicNewBadge size='xs' featName="ignore" /> */}
@@ -246,7 +261,7 @@ export default function SettingsPage() {
                                 tab={tab}
                                 pageCtx={{
                                     apiData: swr.data,
-                                    isReadOnly: swr.isLoading || isSaving || !swr.data || !hasPerm('settings.write'),
+                                    isReadOnly: swr.isLoading || isSaving || !swr.data || !hasPerm(tab.ctx.tabId === 'appearance' ? 'settings.appearance' : 'settings.write'),
                                     isLoading: swr.isLoading,
                                     isSaving,
                                     swrError: swr.error ? swr.error.message : undefined,

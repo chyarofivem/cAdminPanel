@@ -24,7 +24,7 @@ console.log('code block');
 \`\`\`
 
 [external link](https://google.com)
-[internal link](/server/server-log)
+[internal link](/system/txadmin-log)
 `;
 
 const toastProps: Omit<Toast, 'type' | 'id'> = {

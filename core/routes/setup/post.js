@@ -10,6 +10,7 @@ import consoleFactory from '@lib/console';
 import recipeParser from '@core/deployer/recipeParser';
 import { validateTargetPath } from '@core/deployer/utils';
 import { TxConfigState } from '@shared/enums';
+import { BUNDLED_RECIPES } from '@core/deployer/bundledRecipes';
 const console = consoleFactory(modulename);
 
 //Helper functions
@@ -58,7 +59,7 @@ export default async function SetupPost(ctx) {
     const action = ctx.params.action;
 
     //Check permissions
-    if (!ctx.admin.testPermission('all_permissions', modulename)) {
+    if (!ctx.admin.testPermission('master', modulename)) {
         return ctx.send({
             success: false,
             message: 'You need to be the admin master or have all permissions to use the setup page.',
@@ -327,9 +328,16 @@ async function handleSaveDeployerImport(ctx) {
     ) {
         return ctx.utils.error(400, 'Invalid Request - missing parameters');
     }
-    const isTrustedSource = (ctx.request.body.isTrustedSource === 'true');
+    const bundledRecipe = ctx.request.body.type === 'popular'
+        ? BUNDLED_RECIPES.find(recipe => recipe.url === ctx.request.body.recipeURL && recipe.framework === ctx.request.body.framework)
+        : undefined;
+    if (ctx.request.body.type === 'popular' && !bundledRecipe) {
+        return ctx.send({ success: false, message: 'Unsupported bundled recipe selection.' });
+    }
+    const isTrustedSource = !!bundledRecipe;
     const serverName = ctx.request.body.name.trim();
-    const recipeURL = ctx.request.body.recipeURL.trim();
+    const recipeURL = bundledRecipe?.url ?? ctx.request.body.recipeURL.trim();
+    const framework = bundledRecipe?.framework ?? 'custom';
     const targetPath = slash(path.normalize(ctx.request.body.targetPath + '/'));
     const deploymentID = ctx.request.body.deploymentID;
 
@@ -363,7 +371,7 @@ async function handleSaveDeployerImport(ctx) {
 
     //Start deployer (constructor will validate the recipe)
     try {
-        txManager.startDeployer(recipeText, deploymentID, targetPath, isTrustedSource, {serverName});
+        txManager.startDeployer(recipeText, deploymentID, targetPath, isTrustedSource, { serverName, framework });
         txCore.webServer.webSocket.pushRefresh('status');
     } catch (error) {
         return ctx.send({success: false, message: error.message});
@@ -410,6 +418,7 @@ async function handleSaveDeployerCustom(ctx) {
     const customMetaData = {
         author: ctx.admin.name,
         serverName,
+        framework: 'custom',
     };
     try {
         txManager.startDeployer(false, deploymentID, targetPath, false, customMetaData);

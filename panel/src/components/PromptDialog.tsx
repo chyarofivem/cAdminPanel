@@ -12,6 +12,7 @@ import { useClosePromptDialog, usePromptDialogState } from "@/hooks/dialogs";
 import { useRef } from "react";
 import { cn } from "@/lib/utils";
 import { AutosizeTextarea } from "./ui/autosize-textarea";
+import { t } from '@/lib/i18n';
 
 
 export default function PromptDialog() {
@@ -88,7 +89,7 @@ export default function PromptDialog() {
                                     }}
                                     variant="outline"
                                 >
-                                    <span className="sm:hidden mr-auto text-muted-foreground">Suggestion:</span>
+                                    <span className="sm:hidden mr-auto text-muted-foreground">{t('Suggestion')}:</span>
                                     {suggestion}
                                 </Button>
                             ))}
@@ -114,7 +115,7 @@ export default function PromptDialog() {
                             type="submit"
                             variant={dialogState.submitBtnVariant ?? 'default'}
                         >
-                            {dialogState.submitLabel ?? 'Submit'}
+                            {dialogState.submitLabel ?? t('Submit')}
                         </Button>
                     </DialogFooter>
                 </form>

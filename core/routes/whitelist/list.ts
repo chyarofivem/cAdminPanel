@@ -32,6 +32,7 @@ async function handleRequests(ctx: AuthedCtx) {
     type resp = {
         cntTotal: number;
         cntFiltered: number;
+        currentWhitelistMode: string;
         newest: number; //for the ignore all button not remove any that hasn't been seeing by the admin
         totalPages: number;
         currPage: number;
@@ -74,6 +75,7 @@ async function handleRequests(ctx: AuthedCtx) {
     return sendTypedResp({
         cntTotal: requests.length,
         cntFiltered: filtered.length,
+        currentWhitelistMode: txConfig.whitelist.mode,
         newest: (requests.length) ? requests[0].tsLastAttempt : 0,
         totalPages: Math.ceil(filtered.length/pageSize),
         currPage,

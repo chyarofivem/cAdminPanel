@@ -5,12 +5,12 @@ import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "@/lib/utils"
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
+  "inline-flex items-center justify-center whitespace-nowrap rounded-lg text-sm font-medium ring-offset-background transition-all hover:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-600 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 disabled:hover:scale-100",
   {
     variants: {
       variant: {
         //Default behaviors
-        default: "bg-primary text-primary-foreground hover:bg-primary/75",
+        default: "bg-brand-600 text-white hover:bg-brand-700",
         muted: "bg-muted text-muted-foreground hover:bg-secondary hover:text-seconbg-secondary-foreground",
         link: "text-accent underline-offset-4 hover:underline",
 
@@ -44,7 +44,7 @@ const buttonVariants = cva(
 
         // Outline buttons have a border and change background and text color on hover
         outline:
-          "border border-foreground hover:bg-primary hover:text-primary-foreground",
+          "border border-white/10 bg-white/5 hover:bg-white/10 hover:text-white",
         "outline-destructive":
           "border border-destructive text-destructive hover:bg-destructive hover:text-destructive-foreground",
         "outline-warning":

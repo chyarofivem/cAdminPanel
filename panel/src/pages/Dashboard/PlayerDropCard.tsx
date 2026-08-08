@@ -7,6 +7,7 @@ import DebouncedResizeContainer from "@/components/DebouncedResizeContainer";
 import { useAtomValue } from 'jotai';
 import { dashPlayerDropAtom, useGetDashDataAge } from './dashboardHooks';
 import { playerDropCategories, playerDropCategoryDefaultColor } from '@/lib/playerDropCategories';
+import { t } from '@/lib/i18n';
 
 
 type PlayerDropChartDatum = {
@@ -62,7 +63,7 @@ const PieCenterText = ({ centerX, centerY, dataWithArc, innerRadius, active }: P
                 dominantBaseline="central"
                 className='text-2xl font-bold fill-muted-foreground'
             >
-                Total:
+                {t('Total')}:
             </text>
             <text
                 x={centerX}
@@ -193,7 +194,7 @@ export default function PlayerDropCard() {
     } else if (typeof chartData === 'string') {
         contentNode = <div className="absolute inset-0 flex flex-col items-center justify-center text-muted-foreground text-center">
             <p className='max-w-80'>
-                No players have disconnected from the server in the last 6 hours.
+                {t('No players have disconnected from the server in the last 6 hours.')}
             </p>
         </div>;
     } else {
@@ -205,7 +206,7 @@ export default function PlayerDropCard() {
     return (
         <div className="col-span-3 sm:col-span-2 3xl:col-span-3 py-2 md:rounded-xl border bg-card shadow-sm flex flex-col min-w-64 h-[20rem] max-h-[20rem]">
             <div className="px-4 flex flex-row items-center justify-between space-y-0 pb-2 text-muted-foreground">
-                <h3 className="tracking-tight text-sm font-medium line-clamp-1">Player drop cause (last 6h)</h3>
+                <h3 className="tracking-tight text-sm font-medium line-clamp-1">{t('Player drop cause (last 6h)')}</h3>
                 <div className='hidden sm:block'><DoorOpenIcon /></div>
             </div>
             {/* <div className='font-mono'>

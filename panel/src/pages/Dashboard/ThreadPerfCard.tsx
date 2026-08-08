@@ -11,6 +11,7 @@ import { SvRtPerfThreadNamesType } from '@shared/otherTypes';
 import { cn } from '@/lib/utils';
 import { dateToLocaleDateString, dateToLocaleTimeString, isDateToday } from '@/lib/dateTime';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { t } from '@/lib/i18n';
 
 
 /**
@@ -63,13 +64,13 @@ const ThreadPerfChart = memo(({ data, minTickIntervalMarker, width, height }: Th
         return (
             <div className="p-3 text-gray-900 bg-white rounded-md shadow-md">
                 <div>
-                    Tick duration: <strong>{formatTickBoundary(lowerLimit)}</strong> ~ <strong>{formatTickBoundary(upperLimit)}</strong>
+                    {t('Tick duration')}: <strong>{formatTickBoundary(lowerLimit)}</strong> ~ <strong>{formatTickBoundary(upperLimit)}</strong>
                 </div>
                 <div>
-                    Time spent: <strong>~{pctString}</strong>
+                    {t('Time spent')}: <strong>~{pctString}</strong>
                 </div>
                 <div>
-                    Tick count: {datum.data.count}
+                    {t('Tick count')}: {datum.data.count}
                 </div>
             </div>
         );
@@ -113,7 +114,7 @@ const ThreadPerfChart = memo(({ data, minTickIntervalMarker, width, height }: Th
             }}
             axisBottom={{
                 format: '.0%',
-                legend: 'percent of total time',
+                legend: t('percent of total time'),
                 legendPosition: 'middle',
                 legendOffset: 32,
             }}
@@ -252,7 +253,7 @@ export default function ThreadPerfCard() {
                 (<span className="text-xs text-warning-inline font-mono">{fullStr}</span>)
             </>);
         } else {
-            return dataAge.isStale ? '(minutes ago)' : '(last minute)';
+            return dataAge.isStale ? t('(minutes ago)') : t('(last minute)');
         }
     }, [svRuntimeData, perfCursorData]);
 
@@ -266,8 +267,8 @@ export default function ThreadPerfCard() {
     } else if (typeof chartData === 'string') {
         contentNode = <div className="absolute inset-0 flex flex-col items-center justify-center text-muted-foreground text-center">
             <p className='max-w-80'>
-                Data not yet available. <br />
-                The thread performance chart will appear soon after the server is online.
+                {t('Data not yet available.')} <br />
+                {t('The thread performance chart will appear soon after the server is online.')}
             </p>
         </div>;
     } else {
@@ -281,7 +282,7 @@ export default function ThreadPerfCard() {
         <div className="py-2 md:rounded-xl border bg-card shadow-sm flex flex-col col-span-3 fill-primary h-[20rem] max-h-[20rem]">
             <div className="px-4 flex flex-row items-center justify-between space-y-0 pb-2 text-muted-foreground">
                 <h3 className="tracking-tight text-sm font-medium line-clamp-1">
-                    {cursorThreadLabel ?? selectedThread} performance {titleTimeIndicator}
+                    {t('{thread} performance', { thread: cursorThreadLabel ?? selectedThread })} {titleTimeIndicator}
                 </h3>
                 <div className="flex gap-4">
                     <Select
@@ -293,7 +294,7 @@ export default function ThreadPerfCard() {
                             "w-32 grow md:grow-0 h-6 px-3 py-1 text-sm",
                             !!perfCursorData && 'hidden'
                         )} >
-                            <SelectValue placeholder="Filter by admin" />
+                            <SelectValue placeholder={t('Select thread')} />
                         </SelectTrigger>
                         <SelectContent className="px-0">
                             <SelectItem value={'svMain'} className="cursor-pointer">

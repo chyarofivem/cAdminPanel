@@ -6,13 +6,13 @@
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no">
-    <meta name="description" content="txAdmin - remotely Manage & Monitor your GTA5 FiveM Server">
+    <meta name="description" content="Manage and monitor <%= panelName %>">
     <meta name="author" content="André Tabarra">
-    <title>Server Deployer</title>
+    <title><%= panelName %></title>
     <link href="css/simple-line-icons.css?txVer=<%= txAdminVersion %>" rel="stylesheet">
     <link href="css/coreui.min.css?txVer=<%= txAdminVersion %>" rel="stylesheet">
     <link href="css/dark.css?txVer=<%= txAdminVersion %>" rel="stylesheet">
-    <link rel="shortcut icon" type="image/png" href="img/favicon_default.png" id="favicon" />
+    <link rel="shortcut icon" href="<%= faviconUrl %>" id="favicon" />
     <link rel="stylesheet" href="css/txAdmin.css?txVer=<%= txAdminVersion %>">
 
     <!-- Page CSS -->
@@ -41,13 +41,40 @@
             word-break: break-all;
         }
     </style>
+    <link rel="stylesheet" href="css/cadmin-legacy.css?txVer=<%= txAdminVersion %>">
+    <style>:root { <%- accentStyle %> }</style>
     
     <!-- injected consts -->
     <script><%- jsInjection %></script>
 </head>
 
-<body class="c-app flex-row <%= uiTheme %>">
+<body class="c-app flex-row theme--dark <%= uiTheme %>">
     <div class="container">
+        <% const deploymentSteps = [
+            { id: 'review', label: 'Review recipe', detail: 'Inspect the deployment plan' },
+            { id: 'input', label: 'Configuration', detail: 'Add server credentials' },
+            { id: 'run', label: 'Install', detail: 'Deploy files and database' },
+            { id: 'configure', label: 'Server config', detail: 'Review and launch' },
+        ]; %>
+        <% const deploymentStepIndex = Math.max(0, deploymentSteps.findIndex(item => item.id === step)); %>
+
+        <section class="ca-workflow-intro">
+            <div>
+                <p class="ca-workflow-kicker">Server deployment</p>
+                <h1>Build your game server</h1>
+                <p class="ca-workflow-description">Follow the guided process below. Your current work is saved between each stage.</p>
+            </div>
+            <span class="ca-workflow-count">Step <%= deploymentStepIndex + 1 %> of <%= deploymentSteps.length %></span>
+        </section>
+
+        <ol class="ca-workflow-progress" aria-label="Deployment progress">
+            <% deploymentSteps.forEach(function (item, index) { %>
+                <li class="<%= index < deploymentStepIndex ? 'is-complete' : index === deploymentStepIndex ? 'is-active' : '' %>">
+                    <span class="ca-workflow-number"><%= index < deploymentStepIndex ? '✓' : index + 1 %></span>
+                    <span class="ca-workflow-step-copy"><strong><%= item.label %></strong><small><%= item.detail %></small></span>
+                </li>
+            <% }); %>
+        </ol>
 
         <!-- Stepper Row -->
         <div class="row justify-content-center">
@@ -63,8 +90,7 @@
                         <div class="card-body">
                             <div class="row mb-1 mt-0 text-center">
                                 <div class="col-8 mx-auto card d-block border-primary p-2 mb-1">
-                                    Please review the Recipe below and apply any changes you want, <br>
-                                    then press the <strong>Run Recipe</strong> button below.
+                                    Review the recipe below and make any required changes before continuing.
         
                                     <% if (!recipe.isTrustedSource) { %>
                                         <br><span class="text-danger font-weight-bold">Warning: Only run Recipes from trusted sources!</span>
@@ -81,6 +107,8 @@
                                     <%= recipe.description %>
                                 <% } %>
                             </p>
+                            <div class="ca-editor-shell">
+                                <div class="ca-editor-toolbar"><span>recipe.yaml</span><span>Deployment recipe</span></div>
                             <textarea 
                                 id="codeMirrorTarget"
                                 style="width: 100%;"
@@ -88,8 +116,8 @@
                                 name="code"
                             >
                                 <%= recipe.raw %>
-                            </textarea>
-                            <div class="row justify-content-center m-2">
+                            </textarea></div>
+                            <div class="ca-editor-actions">
                                 <button class="btn btn-outline-danger" type="button" 
                                     onclick="cancelAction()">Cancel and Return to Setup</button>
                                 &nbsp; &nbsp;
@@ -261,7 +289,7 @@
                             </div>
                             <div class="row mb-3">
                                 <div class="col-10 mx-auto card d-block p-2 m-0">
-                                    <pre id="step3Log" class="text-body"><h3 class="text-center">🐌🐌🐌</h3></pre>
+                                    <pre id="step3Log" class="text-body"><span class="ca-log-placeholder">Preparing deployment…</span></pre>
                                 </div>
                             </div>
                             <div class="mx-auto col-8">
@@ -299,8 +327,8 @@
                                 </div>
                             </div>
         
-                            <textarea id="codeMirrorTarget" style="width: 100%;" class="cms-s-lucario" name="code"><%= serverCFG %></textarea>
-                            <div class="row justify-content-center m-2">
+                            <div class="ca-editor-shell"><div class="ca-editor-toolbar"><span>server.cfg</span><span>FiveM CFG</span></div><textarea id="codeMirrorTarget" style="width: 100%;" class="cms-s-lucario" name="code"><%= serverCFG %></textarea></div>
+                            <div class="ca-editor-actions">
                                 <button class="btn btn-outline-danger" type="button" onclick="cancelAction()">Cancel and Return to Setup</button>
                                 &nbsp; &nbsp;
                                 <button class="btn btn-success" type="button" onclick="step4Action();">Save & Run Server</button>
@@ -316,6 +344,18 @@
             </div>
         </div>
 
+    </div>
+    <div id="cadminInstallDialog" class="ca-confirm-backdrop d-none" role="dialog" aria-modal="true" aria-labelledby="cadminInstallTitle">
+        <section class="ca-confirm-card">
+            <p class="ca-workflow-kicker">Optional integration</p>
+            <h2 id="cadminInstallTitle">Add Character Management?</h2>
+            <p id="cadminInstallMessage">Install and configure the cadminpanel resource for this server?</p>
+            <p class="ca-confirm-note">The resource, API secret, framework, and bridge URL will be configured automatically. You can also install it later from Settings.</p>
+            <div class="ca-confirm-actions">
+                <button type="button" class="btn btn-outline-secondary" onclick="chooseCadminInstall(false)">Not now</button>
+                <button type="button" class="btn btn-primary" onclick="chooseCadminInstall(true)">Install Character Management</button>
+            </div>
+        </section>
     </div>
     <!-- CoreUI and necessary plugins-->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" 
@@ -521,6 +561,21 @@
 
         if(currentStep == 'run') setInterval(refreshStatus, 1000);
 
+        let cadminInstallDecisionPending = false;
+        function showCadminInstallDialog(framework) {
+            cadminInstallDecisionPending = true;
+            const displayFramework = typeof framework === 'string' ? framework.toUpperCase() : 'this framework';
+            document.getElementById('cadminInstallMessage').textContent =
+                `Install and configure the cadminpanel resource for ${displayFramework}?`;
+            document.getElementById('cadminInstallDialog').classList.remove('d-none');
+        }
+
+        function chooseCadminInstall(install) {
+            if (!cadminInstallDecisionPending) return;
+            cadminInstallDecisionPending = false;
+            document.getElementById('cadminInstallDialog').classList.add('d-none');
+            finishCadminInstall(install === true);
+        }
 
         //============================================== Step4 action
         function step4Action(){
@@ -542,10 +597,34 @@
                 success: function (data) {
                     if (checkApiLogoutRefresh(data)) return;
                     if (data.success == true){
-                        navigateParentTo('/server/console');
+                        if (data.installCadminDialog) {
+                            showCadminInstallDialog(data.framework);
+                        } else {
+                            navigateParentTo('/server/console');
+                        }
                     }else{
                         updateMarkdownNotification(data, notify);
                     }
+                },
+                error: function (xmlhttprequest, textstatus, message) {
+                    notify.update('progress', 0);
+                    notify.update('type', 'danger');
+                    notify.update('message', message);
+                }
+            });
+        }
+
+        function finishCadminInstall(install) {
+            const notify = $.notify({ message: `<p class="text-center">${install ? 'Installing Character Management...' : 'Finishing deployment...'}</p>` }, {});
+            txAdminAPI({
+                type: 'POST',
+                url: '/deployer/recipe/finishCadmin',
+                timeout: REQ_TIMEOUT_REALLY_LONG,
+                data: { install },
+                success: function (data) {
+                    if (checkApiLogoutRefresh(data)) return;
+                    if (data.success === true) navigateParentTo('/server/console');
+                    else updateMarkdownNotification(data, notify);
                 },
                 error: function (xmlhttprequest, textstatus, message) {
                     notify.update('progress', 0);

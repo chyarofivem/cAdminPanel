@@ -29,6 +29,7 @@ import { useIsDarkMode } from '@/hooks/theme';
 import { darkThemeColors, lightThemeColors, ANSI } from './liveConsoleColors';
 import { useTerminalOptions } from './liveConsoleHooks';
 import { DensityModes } from './xtermOptions';
+import { t } from '@/lib/i18n';
 
 
 //Consts
@@ -160,11 +161,11 @@ export default function LiveConsolePage() {
                     ).then((res) => {
                         //undefined if no error
                         if (res === false) {
-                            txToast.error('Failed to copy to clipboard :(');
+                            txToast.error(t('Failed to copy to clipboard :('));
                         }
                     }).catch((error) => {
                         txToast.error({
-                            title: 'Failed to copy to clipboard:',
+                            title: t('Failed to copy to clipboard:'),
                             msg: error.message,
                         });
                     });
@@ -364,7 +365,7 @@ export default function LiveConsolePage() {
         term.clear();
         searchAddon.clearDecorations();
         setShowSearchBar(false);
-        term.write(`${ANSI.ORANGE}[console cleared]${ANSI.RESET}\n`);
+        term.write(`${ANSI.ORANGE}[${t('console cleared')}]${ANSI.RESET}\n`);
     }
     const toggleSearchBar = () => {
         setShowSearchBar(!showSearchBar);
@@ -382,21 +383,20 @@ export default function LiveConsolePage() {
 
 
     return (
-        <div className="text-primary flex flex-col h-contentvh w-full bg-card border md:rounded-xl overflow-clip">
+        <section className="flex h-contentvh min-h-[38rem] w-full flex-col overflow-hidden rounded-2xl border border-white/10 bg-zinc-950/70 shadow-2xl shadow-black/20">
             <LiveConsoleHeader
                 options={savedOptions}
                 setOptions={updateTerminalOptions}
+                isConnected={isConnected}
             />
 
-            <div className="flex flex-col relative grow overflow-hidden">
+            <div className="relative m-2 flex grow flex-col overflow-hidden rounded-xl border border-white/[0.07] bg-[#08090b] sm:m-3">
                 {/* Connecting overlay */}
                 {!isConnected ? (
-                    <div className='absolute inset-0 z-20 bg-black/60 flex items-center justify-center'>
-                        <div className='flex flex-col gap-6 items-center justify-center text-muted-foreground select-none'>
-                            <Loader2Icon className='w-16 h-16 animate-spin' />
-                            <h2 className='text-3xl tracking-wider font-light animate-pulse'>
-                                &nbsp;&nbsp;&nbsp;Connecting...
-                            </h2>
+                    <div className="absolute inset-0 z-20 grid place-items-center bg-black/65 backdrop-blur-[2px]">
+                        <div className="flex select-none items-center gap-3 rounded-xl border border-white/10 bg-zinc-950/90 px-5 py-3 text-sm text-zinc-400 shadow-xl">
+                            <Loader2Icon className="size-5 animate-spin text-brand-400" />
+                            <span>{t('Connecting to FXServer console...')}</span>
                         </div>
                     </div>
                 ) : null}
@@ -408,7 +408,7 @@ export default function LiveConsolePage() {
                 />
 
                 {/* Terminal container */}
-                <div ref={containerRef} className='absolute top-1 left-2 right-0 bottom-0' />
+                <div ref={containerRef} className="absolute inset-y-2 left-3 right-1" />
 
                 {/* Search bar */}
                 <LiveConsoleSearchBar
@@ -420,10 +420,11 @@ export default function LiveConsolePage() {
                 {/* Scroll to bottom */}
                 <button
                     ref={jumpBottomBtnRef}
-                    className='absolute bottom-0 right-2 z-10 hidden opacity-75'
+                    className="absolute bottom-3 right-3 z-10 hidden rounded-full border border-white/10 bg-zinc-900/90 p-2 text-zinc-400 shadow-lg transition-colors hover:bg-zinc-800 hover:text-white"
                     onClick={() => { term.scrollToBottom() }}
+                    aria-label={t('Jump to latest console output')}
                 >
-                    <ChevronsDownIcon className='w-20 h-20 animate-pulse hover:animate-none hover:scale-110' />
+                    <ChevronsDownIcon className="size-5" />
                 </button>
             </div>
 
@@ -435,6 +436,6 @@ export default function LiveConsolePage() {
                 toggleSaveSheet={toggleSaveSheet}
                 toggleSearchBar={toggleSearchBar}
             />
-        </div>
+        </section>
     )
 }

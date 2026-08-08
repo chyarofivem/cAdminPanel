@@ -8,13 +8,20 @@ import { useDebounce } from "@nui/src/hooks/useDebouce";
 
 interface TxAdminLogoProps {
   themeName: string;
+  bannerUrl: string;
+  panelName: string;
 }
 
-const TxAdminLogo: React.FC<TxAdminLogoProps> = ({ themeName }) => {
+const TxAdminLogo: React.FC<TxAdminLogoProps> = ({ themeName, bannerUrl, panelName }) => {
   const imgName = themeName === 'fivem' ? 'txadmin.png' : 'txadmin-redm.png';
   return (
     <Box my={1} display="flex" justifyContent="center">
-      <img src={`images/${imgName}`} alt="txAdmin logo" />
+      <img
+        src={bannerUrl || `images/${imgName}`}
+        alt={panelName}
+        title={panelName}
+        style={{ maxWidth: 290, maxHeight: 58, objectFit: 'contain' }}
+      />
     </Box>
   )
 };
@@ -44,7 +51,7 @@ export const MenuRootContent: React.FC = React.memo(() => {
 
   return (
     <StyledRoot p={2} pb={1}>
-      <TxAdminLogo themeName={theme.name}/>
+      <TxAdminLogo themeName={theme.name} bannerUrl={serverCtx.bannerUrl} panelName={serverCtx.panelName}/>
       <Typography
         color="textSecondary"
         style={{

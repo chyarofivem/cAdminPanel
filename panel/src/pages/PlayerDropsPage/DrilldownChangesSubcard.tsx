@@ -8,21 +8,21 @@ import { tsToLocaleDateString, tsToLocaleDateTimeString, tsToLocaleTimeString } 
 
 function DiffOld({ children }: { children: React.ReactNode }) {
     return (
-        <span className="font-mono px-1 text-sm text-primary dark:text-background bg-destructive-inline/60 dark:bg-destructive-inline/90">
+        <span className="rounded px-1.5 py-0.5 font-mono text-xs text-primary dark:bg-destructive-inline/90 dark:text-background bg-destructive-inline/60">
             {children}
         </span>
     );
 }
 function DiffNew({ children }: { children: React.ReactNode }) {
     return (
-        <span className="font-mono px-1 text-sm text-primary dark:text-background bg-success-inline/60 dark:bg-success-inline/90">
+        <span className="rounded px-1.5 py-0.5 font-mono text-xs text-primary dark:bg-success-inline/90 dark:text-background bg-success-inline/60">
             {children}
         </span>
     );
 }
 function DiffUpdated({ children }: { children: React.ReactNode }) {
     return (
-        <span className="font-mono px-1 text-sm text-primary dark:text-background bg-warning/60 dark:bg-warning/90">
+        <span className="rounded px-1.5 py-0.5 font-mono text-xs text-primary dark:bg-warning/90 dark:text-background bg-warning/60">
             {children}
         </span>
     );
@@ -107,7 +107,7 @@ export default function DrilldownChangesSubcard({ changes }: DrilldownChangesSub
     };
 
     const sortedChanges = useMemo(() => {
-        return changes.sort((a, b) => b.ts - a.ts);
+        return [...changes].sort((a, b) => b.ts - a.ts);
     }, [changes]);
 
     if (!changes.length) {
@@ -115,23 +115,23 @@ export default function DrilldownChangesSubcard({ changes }: DrilldownChangesSub
     }
 
     return (
-        <div className="md:grid md:grid-cols-[auto_minmax(0,1fr)] gap-4 md:px-4 pt-2 ">
+        <div className="grid gap-3 p-4 md:grid-cols-[auto_minmax(0,1fr)]">
             {sortedChanges.map((change, index) => (
                 <Fragment key={index}>
-                    <div className="hidden mx-auto md:flex items-center gap-4 divide-y">
-                        <div className="flex flex-col items-center justify-center px-2 py-1 rounded-lg text-xs font-medium bg-muted">
+                    <div className="hidden items-start md:flex">
+                        <div className="flex min-w-24 flex-col items-center justify-center rounded-lg border border-white/[0.06] bg-black/[0.1] px-2 py-2 text-xs font-medium text-muted-foreground">
                             <span>{tsToLocaleDateString(change.ts, 'medium')}</span>
                             <span>{tsToLocaleTimeString(change.ts)}</span>
                         </div>
                     </div>
                     <div
                         className={cn(
-                            'flex-1 col-span-2 md:col-span-1 px-2 md:px-0 py-2 md:py-0',
-                            index % 2 === 0 && 'bg-secondary/25 md:bg-transparent',
+                            'col-span-2 flex-1 rounded-xl border border-white/[0.06] bg-black/[0.08] px-4 py-3 md:col-span-1',
+                            index % 2 === 0 && 'bg-white/[0.025]',
                         )}
                     >
                         <div className="flex flex-wrap-reverse justify-between">
-                            <h3 className="flex-grow inline text-lg font-semibold">
+                            <h3 className="inline flex-grow text-sm font-semibold">
                                 {change.type in eventTitles ? eventTitles[change.type] : change.type}
                             </h3>
                             <div className="md:hidden mx-auto">
@@ -140,7 +140,7 @@ export default function DrilldownChangesSubcard({ changes }: DrilldownChangesSub
                                 </span>
                             </div>
                         </div>
-                        <div className="text-gray-500 dark:text-gray-400">
+                        <div className="mt-1 text-sm leading-6 text-gray-500 dark:text-gray-400">
                             {change.type === 'fxsChanged' && <ChangedFxsEvent change={change} />}
                             {change.type === 'gameChanged' && <ChangedGameEvent change={change} />}
                             {change.type === 'resourcesChanged' && <ChangedResourcesEvent change={change} />}

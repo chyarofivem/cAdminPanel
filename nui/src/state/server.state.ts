@@ -17,6 +17,10 @@ export interface ServerCtx {
   switchPageKey: string;
   announceNotiPos: string;
   txAdminVersion: string;
+  panelName: string;
+  accent: string;
+  accentColor: string;
+  bannerUrl: string;
   alignRight: boolean;
 }
 

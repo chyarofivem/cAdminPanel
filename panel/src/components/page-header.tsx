@@ -5,6 +5,7 @@ import { dateToLocaleDateString, dateToLocaleTimeString, isDateToday, tsToLocale
 import TxAnchor from "@/components/TxAnchor";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Link } from "wouter";
+import { t } from '@/lib/i18n';
 
 
 //MARK: PageHeaderChangelog
@@ -35,7 +36,7 @@ export function PageHeaderChangelog({ changelogData }: PageHeaderChangelogProps)
         setIsModalOpen(true);
     }
 
-    const placeholder = Array.isArray(changelogData) ? 'No changes yet' : 'loading...';
+    const placeholder = Array.isArray(changelogData) ? t('No changes yet') : t('loading...');
 
     return (<>
         <div className='flex xs:flex-col max-xs:items-center max-xs:gap-2 max-xs:w-full px-2 py-1 rounded-lg text-muted-foreground group relative'>
@@ -44,11 +45,11 @@ export function PageHeaderChangelog({ changelogData }: PageHeaderChangelogProps)
                     className="absolute inset-0 flex items-center justify-center rounded-[inherit] bg-card opacity-0 border group-hover:opacity-100 transition-opacity text-primary group-active:bg-primary group-active:text-primary-foreground group-active:border-none select-none cursor-pointer"
                     onClick={handleOpenChangelog}
                 >
-                    View Changelog
+                    {t('View Changelog')}
                 </div>
             ) : null}
             <div className='tracking-wider leading-3 font-semibold'>
-                <SaveIcon className='max-xs:hidden size-4 inline-block align-text-bottom' /> Last Updated
+                <SaveIcon className='max-xs:hidden size-4 inline-block align-text-bottom' /> {t('Last Updated')}
                 <span className="xs:hidden">:</span>
             </div>
             <div className='text-xs'>
@@ -61,7 +62,7 @@ export function PageHeaderChangelog({ changelogData }: PageHeaderChangelogProps)
         <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
             <DialogContent className='max-sm:p-4 max-w-xl'>
                 <DialogHeader>
-                    <DialogTitle>Recent Changes</DialogTitle>
+                    <DialogTitle>{t('Recent Changes')}</DialogTitle>
                 </DialogHeader>
                 <div
                     className="pr-3 max-h-[80vh] overflow-auto space-y-3"
@@ -94,7 +95,7 @@ function ChangelogEntry({ entry }: { entry: ConfigChangelogEntry }) {
                         {index < entry.keys.length - 1 && ','}
                     </span>
                 )) : (
-                    <div className='italic'>No changes</div>
+                    <div className='italic'>{t('No changes')}</div>
                 )}
             </div>
         </div>
@@ -140,10 +141,10 @@ export function PageHeader(props: PageHeaderProps) {
         }
     }, [props]);
     return (
-        <header className='border-b mb-4'>
-            <div className='xbg-blue-700 max-xs:pb-2 xs:min-h-16 flex max-xs:flex-col gap-2 xs:gap-4 max-xs:items-start justify-between items-center px-4 py-2'>
-                <ol className='xbg-green-500 flex flex-wrap items-center gap-1 sm:gap-2.5 text-2xl text-muted-foreground leading-none'>
-                    <span className='opacity-75'>{props.icon}</span>
+        <header className='mb-6 mt-6'>
+            <div className='flex max-xs:flex-col gap-2 xs:gap-4 max-xs:items-start justify-between items-center'>
+                <ol className='flex flex-wrap items-center gap-1 sm:gap-2.5 text-2xl font-semibold text-zinc-400 leading-none'>
+                    <span className='text-brand-500/60'>{props.icon}</span>
                     {titleNodes}
                 </ol>
                 {props.children}

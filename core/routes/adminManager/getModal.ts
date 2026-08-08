@@ -65,6 +65,7 @@ export default async function AdminManagerGetModal(ctx: AuthedCtx) {
         const renderData = {
             isNewAdmin: true,
             username: '',
+            chyaro_email: '',
             citizenfx_id: '',
             discord_id: '',
             permsGeneral,
@@ -95,6 +96,7 @@ export default async function AdminManagerGetModal(ctx: AuthedCtx) {
     const renderData = {
         isNewAdmin: false,
         username: admin.name,
+        chyaro_email: admin.providers.chyarologin?.identifier ?? '',
         citizenfx_id: (admin.providers.citizenfx) ? admin.providers.citizenfx.id : '',
         discord_id: (admin.providers.discord) ? admin.providers.discord.id : '',
         permsGeneral,

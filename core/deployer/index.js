@@ -39,6 +39,7 @@ export class Deployer {
         this.deploymentID = deploymentID;
         this.progress = 0;
         this.serverName = customMetaData.serverName || txConfig.general.serverName || '';
+        this.framework = customMetaData.framework || 'custom';
         this.logLines = [];
 
         //Load recipe

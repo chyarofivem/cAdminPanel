@@ -66,7 +66,7 @@ if (window.location.pathname === '/whitelist') {
 }
 
 //Rendering auth or main pages depending on if the user is authenticated
-const authRoutePrefixes = ['/login', '/addMaster'];
+const authRoutePrefixes = ['/login'];
 const isAuthRoute = (pathname: string) => {
     return authRoutePrefixes.some(prefix => pathname.startsWith(prefix));
 }
@@ -93,10 +93,7 @@ export function AuthContextSwitch() {
             }
         } else {
             //Unless the user is already in the auth pages, redirect to the login page
-            if (!window.txConsts.hasMasterAccount && !window.location.pathname.startsWith('/addMaster')) {
-                console.log('No master account detected. Redirecting to addMaster page.');
-                window.history.replaceState(null, '', '/addMaster/pin');
-            } else if (!isAuthRoute(window.location.pathname)) {
+            if (!isAuthRoute(window.location.pathname)) {
                 console.log('User is not authenticated. Redirecting to login page.');
                 redirectToLogin();
             }

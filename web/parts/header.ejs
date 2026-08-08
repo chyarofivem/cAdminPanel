@@ -6,21 +6,23 @@
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no">
-    <meta name="description" content="txAdmin - remotely Manage & Monitor your GTA5 FiveM Server">
+    <meta name="description" content="Manage and monitor <%= panelName %>">
     <meta name="author" content="André Tabarra">
-    <title>txAdmin</title>
+    <title><%= panelName %></title>
     <!--style-->
     <link rel="stylesheet" href="<%= resourcePath %>css/simple-line-icons.css?txVer=<%= txAdminVersion %>">
     <link rel="stylesheet" href="<%= resourcePath %>css/coreui.min.css?txVer=<%= txAdminVersion %>">
     <link rel="stylesheet" href="<%= resourcePath %>css/jquery-confirm.min.css?txVer=<%= txAdminVersion %>">
     <link rel="stylesheet" href="<%= resourcePath %>css/txAdmin.css?txVer=<%= txAdminVersion %>">
     <link rel="stylesheet" href="<%= resourcePath %>css/dark.css?txVer=<%= txAdminVersion %>">
-    <link rel="shortcut icon" href="img/favicon_default.png" type="image/png" id="favicon" />
+    <link rel="stylesheet" href="<%= resourcePath %>css/cadmin-legacy.css?txVer=<%= txAdminVersion %>">
+    <link rel="shortcut icon" href="<%= faviconUrl %>" id="favicon" />
+    <style>:root { <%- accentStyle %> }</style>
     <!-- injected consts -->
     <script><%- jsInjection %></script>
 </head>
 
-<body class="c-app <%= uiTheme %>">
+<body class="c-app theme--dark <%= uiTheme %>" data-page="<%= headerTitle || '' %>">
     <!-- Center Content -->
     <div class="c-wrapper c-fixed-components">
 

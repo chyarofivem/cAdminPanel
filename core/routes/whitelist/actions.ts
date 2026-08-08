@@ -113,6 +113,28 @@ async function handleApprovals(ctx: AuthedCtx, action: any): Promise<GenericApiR
  * Handle actions regarding the whitelist requests table
  */
 async function handleRequests(ctx: AuthedCtx, action: any): Promise<GenericApiResp> {
+    if (action === 'deny_visible') {
+        const requestIds = ctx.request.body?.requestIds;
+        if (!Array.isArray(requestIds) || requestIds.length < 1 || requestIds.length > 50
+            || requestIds.some(id => typeof id !== 'string' || !id.length || id.length > 100)) {
+            return { error: 'requestIds must contain between 1 and 50 request IDs' };
+        }
+        const visibleIds = new Set(requestIds);
+        try {
+            const removed = txCore.database.whitelist.removeManyRequests(
+                (request: DatabaseWhitelistRequestsType) => visibleIds.has(request.id),
+            );
+            ctx.admin.logAction(`Denied ${removed.length} visible whitelist requests.`);
+            txCore.fxRunner.sendEvent('whitelistRequest', {
+                action: 'deniedAll',
+                adminName: ctx.admin.name,
+            });
+            return { success: true };
+        } catch (error) {
+            return { error: `Failed to remove visible whitelist requests: ${(error as Error).message}` };
+        }
+    }
+
     //Checkinf for the deny all action, the others need reqId
     if (action === 'deny_all') {
         const cutoff = parseInt(ctx.request.body?.newestVisible);

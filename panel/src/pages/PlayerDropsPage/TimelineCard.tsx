@@ -68,11 +68,11 @@ const TimelineCard = memo(({
     }, [summaryData, displayLod]);
 
     return (
-        <div className="md:rounded-xl border bg-card shadow-sm flex flex-col">
-            <div className="flex flex-row items-center justify-between px-1 sm:px-4 border-b rounded-t-[inherit] bg-secondary/35">
-                <div className="flex items-center py-2 space-x-2">
+        <section className="flex flex-col overflow-hidden rounded-2xl border border-white/[0.07] bg-white/[0.03] shadow-[0_18px_60px_rgba(0,0,0,0.12)]">
+            <div className="flex flex-row items-center justify-between border-b border-dashed border-white/[0.07] px-4 sm:px-5">
+                <div className="flex items-center py-3 space-x-2">
                     <div className='hidden xs:block'><DoorOpenIcon className="size-4" /></div>
-                    <h2 className="font-mono text-sm">Expected Player Drops</h2>
+                    <h2 className="text-sm font-medium">Expected disconnects</h2>
                 </div>
                 <Select defaultValue={displayLod} onValueChange={setDisplayLod}>
                     <SelectTrigger
@@ -90,7 +90,7 @@ const TimelineCard = memo(({
                     </SelectContent>
                 </Select>
             </div>
-            <div className="h-32 max-h-32">
+            <div className="h-36 max-h-36 bg-black/[0.08]">
                 <DebouncedResizeContainer onDebouncedResize={setExpectedDropsChartSize}>
                     {chartsData ? (
                         <TimelineDropsChart
@@ -107,13 +107,13 @@ const TimelineCard = memo(({
                 </DebouncedResizeContainer>
             </div>
 
-            <div className="flex flex-row items-center justify-between px-1 sm:px-4 border-t border-b bg-secondary/35">
-                <div className="flex items-center py-2 gap-2">
+            <div className="flex flex-row items-center justify-between border-b border-t border-dashed border-white/[0.07] px-4 sm:px-5">
+                <div className="flex items-center py-3 gap-2">
                     <div className='hidden xs:block'><DoorOpenIcon className="size-4" /></div>
-                    <h2 className="font-mono text-sm">Unexpected Player Drops</h2>
+                    <h2 className="text-sm font-medium">Unexpected disconnects</h2>
                 </div>
             </div>
-            <div className="h-52 max-h-52">
+            <div className="h-56 max-h-56 bg-black/[0.08]">
                 <DebouncedResizeContainer onDebouncedResize={setUnexpectedDropsChartSize}>
                     {chartsData ? (
                         <TimelineDropsChart
@@ -129,7 +129,7 @@ const TimelineCard = memo(({
                     )}
                 </DebouncedResizeContainer>
             </div>
-        </div>
+        </section>
     );
 });
 

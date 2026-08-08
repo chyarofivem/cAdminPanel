@@ -36,9 +36,18 @@
     }
 </style>
 
+<div class="ca-legacy-page ca-allowlist-page">
+    <header class="ca-legacy-page-header">
+        <div>
+            <p class="ca-workflow-kicker">Player access</p>
+            <h1>Allowlist</h1>
+            <p>Review new join requests and manage players who are approved but have not joined yet.</p>
+        </div>
+    </header>
+
 <% if (currentWhitelistMode !== 'approvedLicense') { %>
-    <div class="row justify-content-md-center">
-        <div class="col-md-6">
+    <div class="row justify-content-md-center ca-page-notice">
+        <div class="col-12">
             <div class="alert alert-warning text-center" role="alert">
                 <strong>Warning: The server is not in the "Approved License" allowlist mode.</strong> <br>
                 This means that any changes made in this page will not reflect in the ability of players to connect to the server while the allowlist is in another mode or disabled. <br>
@@ -48,11 +57,11 @@
     </div>
 <% } %>
 
-<div class="row justify-content-md-center">
+<div class="row ca-allowlist-grid">
     <!-- Requests card -->
-    <div class="col-md-6 mw-col8">
-        <div class="card card-accent-success">
-            <div class="card-header" style="display: flex; justify-content: space-between;">
+    <div class="col-12 col-xl-6">
+        <div class="card card-accent-success ca-section-card">
+            <div class="card-header ca-section-card-header">
                 <div>
                     <span style="font-size: large">Allowlist Requests: <span id="reqs-counter"></span></span> <br>
                     <small>Players that tried to join the server but were not allowlisted.</small>
@@ -114,9 +123,9 @@
     </div>
 
     <!-- Approved card -->
-    <div class="col-md-6 mw-col8">
-        <div class="card card-accent-success">
-            <div class="card-header" style="display: flex; justify-content: space-between;">
+    <div class="col-12 col-xl-6">
+        <div class="card card-accent-success ca-section-card">
+            <div class="card-header ca-section-card-header">
                 <div>
                     <span style="font-size: large">Approved Allowlists Pending Join: <span id="approved-counter"></span></span> <br>
                     <small>Players that are already approved, but haven't joined the server yet.</small>
@@ -193,6 +202,7 @@
     </td>
 </template>
 
+</div>
 
 <%- await include('parts/footer.ejs', locals) %>
 

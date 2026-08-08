@@ -24,7 +24,8 @@ export default function Iframe({ legacyUrl }: Props) {
             ref={iframeRef}
             id="legacyPageIframe" //required for the theme switcher
             src={`./legacy/${legacyUrl}${searchParams}${hashParams}`}
-            className="w-full"
+            title={`${legacyUrl} tool`}
+            className="block h-[calc(100vh-5.75rem)] min-h-[32rem] w-full border-0 bg-transparent"
         ></iframe>
     );
 }

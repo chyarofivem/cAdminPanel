@@ -1,235 +1,235 @@
 {
     "$meta": {
-        "label": "Croatian",
+        "label": "Hrvatski",
         "humanizer_language": "hr"
     },
     "restarter": {
-        "server_unhealthy_kick_reason": "server se mora restartati, molim te ponovo se spoji",
-        "partial_hang_warn": "Zbog djelomičnog zastoja, ovaj će se server ugasiti za 1 minutu . Molimo vas da izađete sa servera.",
-        "partial_hang_warn_discord": "Zbog djelomičnog zastoja, **%{servername}** će se restartati za 1 minutu.",
-        "schedule_reason": "Restart je zakazan za %{time}",
-        "schedule_warn": "Ovaj server je zakazan da se restarta za %{smart_count} minutu. Molimo da izađete sa servera. |||| Ovaj server će se restartati za %{smart_count} minuta.",
-        "schedule_warn_discord": "**%{servername}** se restarta za %{smart_count} minutu. |||| **%{servername}** se restarta za %{smart_count} minuta."
+        "server_unhealthy_kick_reason": "server se mora ponovno pokrenuti; ponovno se povežite",
+        "partial_hang_warn": "Zbog djelomičnog zastoja server će se ponovno pokrenuti za 1 minutu. Odspojite se sada.",
+        "partial_hang_warn_discord": "Zbog djelomičnog zastoja **%{servername}** ponovno će se pokrenuti za 1 minutu.",
+        "schedule_reason": "zakazano ponovno pokretanje u %{time}",
+        "schedule_warn": "Server će se ponovno pokrenuti za %{smart_count} minutu. Odspojite se sada. |||| Server će se ponovno pokrenuti za %{smart_count} minute. Odspojite se sada. |||| Server će se ponovno pokrenuti za %{smart_count} minuta. Odspojite se sada.",
+        "schedule_warn_discord": "**%{servername}** ponovno će se pokrenuti za %{smart_count} minutu. |||| **%{servername}** ponovno će se pokrenuti za %{smart_count} minute. |||| **%{servername}** ponovno će se pokrenuti za %{smart_count} minuta."
     },
     "kick_messages": {
-        "everyone": "Svi igrači izbačeni: %{reason}.",
-        "player": "Izbačen si: %{reason}.",
+        "everyone": "Svi su igrači izbačeni: %{reason}.",
+        "player": "Izbačeni ste: %{reason}.",
         "unknown_reason": "iz nepoznatog razloga"
     },
     "ban_messages": {
-        "kick_temporary": "(%{author}) Zabranjeni ste sa servera zbog \"%{reason}\". Vaša zabrana ističe za: %{expiration}.",
-        "kick_permanent": "(%{author}) Zabranjeni ste sa servera zauvijek zbog \"%{reason}\".",
+        "kick_temporary": "(%{author}) Privremeno vam je zabranjen pristup serveru zbog: \"%{reason}\". Zabrana istječe za %{expiration}.",
+        "kick_permanent": "(%{author}) Trajno vam je zabranjen pristup serveru zbog: \"%{reason}\".",
         "reject": {
-            "title_permanent": "Zabranjeni ste sa servera zauvijek.",
-            "title_temporary": "Privremeno ste zabranjeni sa servera.",
-            "label_expiration": "Vaša zabrana će isteči za",
-            "label_date": "Datum zabrane",
-            "label_author": "Zabranjen od",
+            "title_permanent": "Trajno vam je zabranjen pristup serveru.",
+            "title_temporary": "Privremeno vam je zabranjen pristup serveru.",
+            "label_expiration": "Zabrana istječe za",
+            "label_date": "Datum izricanja zabrane",
+            "label_author": "Zabranu izrekao",
             "label_reason": "Razlog zabrane",
             "label_id": "ID zabrane",
-            "note_multiple_bans": "Poruka: Imaš više od jedne zabrane na ovom profilu.",
-            "note_diff_license": "Poruka: Gornja zabrana je stavljen na <code>license</code>, što znači da jedan od tvojih IDova/HWIDova se slažu sa tim koji ima zabranu."
+            "note_multiple_bans": "Napomena: Na ovom profilu imate više zabrana.",
+            "note_diff_license": "Napomena: Gornja je zabrana postavljena na drugi <code>license</code>, što znači da se jedan od vaših identifikatora ili HWID-ova podudara sa zabranjenim profilom."
         }
     },
     "whitelist_messages": {
         "admin_only": {
-            "mode_title": "Ovaj server je u  <strong>Admin-only</strong> modu.",
-            "insufficient_ids": "Nemaš Discord <code>discord</code> ili <code>fivem</code> profil, i barem jedan od njih je potreban za potvrdu ako ste txAdmin administrator.",
-            "deny_message": "Ni jedan tvoj profil nije spojen sa txAdmin administratorom."
+            "mode_title": "Server je u načinu rada <strong>samo za administratore</strong>.",
+            "insufficient_ids": "Nemate <code>discord</code> ili <code>fivem</code> identifikator. Za provjeru txAdmin administratorskog računa potreban je barem jedan od njih.",
+            "deny_message": "Nijedan vaš identifikator nije povezan s txAdmin administratorskim računom."
         },
         "guild_member": {
-            "mode_title": "Ovaj server je u <strong>Discord Whitelist</strong> modu.",
-            "insufficient_ids": "Nemaš Discord <code>Discord</code> profil, koji je potreban kako bi se potvrdilo da si ušao na Discord server. Molim vas otvorite Discord da radnoj površini i pokušajte ponovno (Web aplikacija neće raditi).",
-            "deny_title": "Moraš se pridružiti Discord da bi mogao ući na server.",
-            "deny_message": "Molim vas uđite na  %{guildname} pa pokušajte ponovno."
+            "mode_title": "Server koristi <strong>Discord popis dopuštenih</strong>.",
+            "insufficient_ids": "Nemate <code>discord</code> identifikator potreban za provjeru članstva. Otvorite Discord aplikaciju za računalo i pokušajte ponovno; web-aplikacija neće raditi.",
+            "deny_title": "Za pristup serveru morate se pridružiti Discord serveru.",
+            "deny_message": "Pridružite se serveru %{guildname} i pokušajte ponovno."
         },
         "guild_roles": {
-            "mode_title": "Ovaj server je u <strong>Discord Role Whitelist</strong> modu.",
-            "insufficient_ids": "Nemaš Discord <code>Discord</code> profil, koji je potreban kako bi se potvrdilo da si ušao na Discord server. Molim vas otvorite Discord da radnoj površini i pokušajte ponovno (Web aplikacija neće raditi).",
-            "deny_notmember_title": "Moraš se pridružiti Discord da bi mogao ući na server.",
-            "deny_notmember_message": "Molim vas uđite na  %{guildname}, zatraži jedan od traženih rolova, pa pokušaj ponovno.",
-            "deny_noroles_title": "Nemaš traženi rol koji se traži da bi ušao na server.",
-            "deny_noroles_message": "Da bi ušao na ovaj server moraš imati barem jedan od traženih rolova na %{guildname}."
+            "mode_title": "Server koristi <strong>popis dopuštenih prema Discord ulogama</strong>.",
+            "insufficient_ids": "Nemate <code>discord</code> identifikator potreban za provjeru članstva. Otvorite Discord aplikaciju za računalo i pokušajte ponovno; web-aplikacija neće raditi.",
+            "deny_notmember_title": "Za pristup serveru morate se pridružiti Discord serveru.",
+            "deny_notmember_message": "Pridružite se serveru %{guildname}, zatražite jednu od potrebnih uloga i pokušajte ponovno.",
+            "deny_noroles_title": "Nemate Discord ulogu potrebnu za pristup serveru.",
+            "deny_noroles_message": "Za pristup morate imati barem jednu od potrebnih uloga na serveru %{guildname}."
         },
         "approved_license": {
-            "mode_title": "Ovaj server je u <strong>License Whitelist</strong> modu.",
-            "insufficient_ids": "Nemaš <code>fivem</code> profil, što znači da server ima <code>sv_lan</code> upaljen. Ako si vlasnik servera, mozes ga ugasit u <code>server.cfg</code> fajlu.",
-            "deny_title": "Nisi whitelistan da bi ušao na server.",
-            "request_id_label": "Zatraženi ID"
+            "mode_title": "Server koristi <strong>popis dopuštenih prema licenci</strong>.",
+            "insufficient_ids": "Nemate <code>fivem</code> identifikator, što obično znači da je <code>sv_lan</code> uključen. Vlasnik servera može ga isključiti u datoteci <code>server.cfg</code>.",
+            "deny_title": "Niste na popisu dopuštenih za pristup serveru.",
+            "request_id_label": "ID zahtjeva"
         }
     },
     "server_actions": {
-        "restarting": "Server se restarta: (%{reason}).",
-        "restarting_discord": "**%{servername}** se restarta zbog: (%{reason}).",
-        "stopping": "Server je ugašen: (%{reason}).",
-        "stopping_discord": "**%{servername}** se gasi: (%{reason}).",
-        "spawning_discord": "**%{servername}** se pali"
+        "restarting": "Server se ponovno pokreće: %{reason}.",
+        "restarting_discord": "**%{servername}** ponovno se pokreće: %{reason}.",
+        "stopping": "Server se zaustavlja: %{reason}.",
+        "stopping_discord": "**%{servername}** zaustavlja se: %{reason}.",
+        "spawning_discord": "**%{servername}** pokreće se."
     },
     "nui_warning": {
         "title": "UPOZORENJE",
-        "warned_by": "Vas je upozorio",
+        "warned_by": "Upozorenje izdao",
         "stale_message": "Ovo upozorenje je izdano prije nego što ste se spojili na server.",
         "dismiss_key": "SPACE",
-        "instruction": "Držite %{key} na %{smart_count} sekundu da vam se skine ova poruka. |||| Držite %{key} na %{smart_count} sekunde da vam se skine ova poruka."
+        "instruction": "Držite %{key} %{smart_count} sekundu za zatvaranje poruke. |||| Držite %{key} %{smart_count} sekunde za zatvaranje poruke. |||| Držite %{key} %{smart_count} sekundi za zatvaranje poruke."
     },
     "nui_menu": {
         "misc": {
-            "help_message": "txAdmin Meni upaljen, napiši /tx da bi ga otvorio.\nIsto tako možeš staviti svoji keybind u  [Game Settings > Key Bindings > FiveM > Menu: Open Main Page].",
-            "menu_not_admin": "Vaši profili ne odgovaraju niti jednom registriranom adminu na txAdmin.\nAko ste registrirani na txAdmin, idite na Admin Manager i provjerite jesu li vaši identifikatori spremljeni.",
-            "menu_auth_failed": "Provjera autentičnosti izbornika txAdmin nije uspjela s razlogom: %{reason}",
-            "no_perms": "Nemaš permisiju.",
-            "unknown_error": "Nepoznata greška se desila.",
-            "not_enabled": "txAdmin Meni nije omogučen! Možete ga omogučiti u txAdmin web postavkama.",
-            "announcement_title": "Server obavještenje od %{author}:",
-            "dialog_empty_input": "Ne možete imati prazan unos.",
-            "directmessage_title": "DM od admina %{author}:",
-            "onesync_error": "Ova akcija zahtjeva da OneSnyc bude omogučen."
+            "help_message": "txAdmin izbornik je uključen. Upišite /tx kako biste ga otvorili.\nMožete postaviti i vlastitu tipku u [Postavke igre > Dodjela tipki > FiveM > Izbornik: otvori glavnu stranicu].",
+            "menu_not_admin": "Vaši identifikatori ne odgovaraju nijednom registriranom txAdmin administratoru.\nOtvorite Upravljanje administratorima i provjerite jesu li identifikatori spremljeni.",
+            "menu_auth_failed": "Provjera autentičnosti txAdmin izbornika nije uspjela: %{reason}",
+            "no_perms": "Nemate dopuštenje.",
+            "unknown_error": "Dogodila se nepoznata pogreška.",
+            "not_enabled": "txAdmin izbornik nije omogućen. Možete ga omogućiti u web-postavkama.",
+            "announcement_title": "Obavijest servera — %{author}:",
+            "dialog_empty_input": "Unos ne može biti prazan.",
+            "directmessage_title": "Izravna poruka administratora %{author}:",
+            "onesync_error": "Za ovu radnju OneSync mora biti omogućen."
         },
         "frozen": {
-            "froze_player": "Zaledio si igrača!",
-            "unfroze_player": "Odledio si igrača!",
-            "was_frozen": "Zaleđen si od strane administracije!"
+            "froze_player": "Igrač je zamrznut.",
+            "unfroze_player": "Igrač više nije zamrznut.",
+            "was_frozen": "Administrator vas je zamrznuo."
         },
         "common": {
-            "cancel": "Prekini",
+            "cancel": "Odustani",
             "submit": "Potvrdi",
-            "error": "Desila se greška",
+            "error": "Dogodila se pogreška",
             "copied": "Kopirano."
         },
         "page_main": {
             "tooltips": {
-                "tooltip_1": "Koristi %{key} da bi promijenio stranice i strelice kako bi navigirao izbornikom",
-                "tooltip_2": "Određene stavke izbornika imaju podopcije koje se mogu odabrati pomoću tipki sa strelicama lijevo i desno"
+                "tooltip_1": "Tipkom %{key} mijenjate stranice, a strelicama se krećete kroz izbornik",
+                "tooltip_2": "Neke stavke imaju dodatne mogućnosti koje odabirete strelicama lijevo i desno"
             },
             "player_mode": {
-                "title": "Modovi igrača",
+                "title": "Način rada igrača",
                 "noclip": {
                     "title": "NoClip",
-                    "label": "Leti okolo",
-                    "success": "NoClip upaljen"
+                    "label": "Slobodno letenje",
+                    "success": "NoClip je uključen"
                 },
                 "godmode": {
                     "title": "Nepobjediv",
                     "label": "Nepobjedivi mod",
-                    "success": "Nepobjedivi mod upaljen"
+                    "success": "Nepobjedivi način rada je uključen"
                 },
                 "superjump": {
-                    "title": "Super Moći",
-                    "label": "Upali Super Moći, igrač će također brže trčati i skakati",
-                    "success": "Super Moći upaljene"
+                    "title": "Supermoći",
+                    "label": "Uključi brže trčanje i više skokove",
+                    "success": "Supermoći su uključene"
                 },
                 "normal": {
                     "title": "Normalan",
                     "label": "Normalan mod",
-                    "success": "Vračen u normalan mod."
+                    "success": "Vraćeno na normalan način rada."
                 }
             },
             "teleport": {
                 "title": "Teleport",
                 "generic_success": "Poslan u svemir!",
                 "waypoint": {
-                    "title": "Putna Točka",
+                    "title": "Putna točka",
                     "label": "Idi do putne točke",
                     "error": "Nemaš postavljenu putnu točku."
                 },
                 "coords": {
-                    "title": "Kordinate",
-                    "label": "Idi na određenu kordinatu",
+                    "title": "Koordinate",
+                    "label": "Idi na određene koordinate",
                     "dialog_title": "Teleport",
-                    "dialog_desc": "Postavi kordinate u  x, y, z formatu da bih se teleportao.",
-                    "dialog_error": "Krive kordinate. Moraju biti u formatu: 111, 222, 33"
+                    "dialog_desc": "Unesite koordinate u formatu x, y, z.",
+                    "dialog_error": "Neispravne koordinate. Očekivani format: 111, 222, 33"
                 },
                 "back": {
                     "title": "Natrag",
                     "label": "Idi natrag na zadnju lokaciju",
-                    "error": "Nemas zadnju lokaciju na koju bi otišao!"
+                    "error": "Nema prethodne lokacije na koju se možete vratiti."
                 },
                 "copy": {
-                    "title": "Kopiraj kordinate",
-                    "label": "Kordinate kopirane."
+                    "title": "Kopiraj koordinate",
+                    "label": "Koordinate su kopirane."
                 }
             },
             "vehicle": {
-                "title": "Auto",
+                "title": "Vozilo",
                 "not_in_veh_error": "Trenutno nisi u vozilu!",
                 "spawn": {
                     "title": "Stvori",
-                    "label": "Stvori auto preko imena modela",
-                    "dialog_title": "Stvori auto",
-                    "dialog_desc": "Napiši model vozila koji želiš stvoriti.",
-                    "dialog_success": "Auto stvoreno!",
-                    "dialog_error": "Ime za model vozila '%{modelName}' ne postoji!",
-                    "dialog_info": "Pokušavam stvoriti %{modelName}."
+                    "label": "Stvori vozilo prema nazivu modela",
+                    "dialog_title": "Stvori vozilo",
+                    "dialog_desc": "Unesite naziv modela vozila koje želite stvoriti.",
+                    "dialog_success": "Vozilo je stvoreno.",
+                    "dialog_error": "Model vozila '%{modelName}' ne postoji.",
+                    "dialog_info": "Stvaranje modela %{modelName}..."
                 },
                 "fix": {
                     "title": "Popravi",
-                    "label": "Popravi trenutno auto",
-                    "success": "Auto popravljeno!"
+                    "label": "Popravi trenutačno vozilo",
+                    "success": "Vozilo je popravljeno."
                 },
                 "delete": {
                     "title": "Izbriši",
-                    "label": "Izbriši trenutno auto",
-                    "success": "Auto izbrisano!"
+                    "label": "Izbriši trenutačno vozilo",
+                    "success": "Vozilo je izbrisano."
                 },
                 "boost": {
                     "title": "Pojačanje",
-                    "label": "Pojačaj auto da bi osjetio pravu zabavu (možda i brzinu)",
-                    "success": "Auto pojačano!",
-                    "already_boosted": "Ovaj auto je več pojačan.",
-                    "unsupported_class": "Ova klasa auta nije podržana.",
-                    "redm_not_mounted": "Jedino možeš pojačati ako si na konju."
+                    "label": "Pojačaj performanse vozila",
+                    "success": "Vozilo je pojačano.",
+                    "already_boosted": "Vozilo je već pojačano.",
+                    "unsupported_class": "Ova klasa vozila nije podržana.",
+                    "redm_not_mounted": "Pojačanje je dostupno samo dok ste na konju."
                 }
             },
             "heal": {
                 "title": "Izliječi",
                 "myself": {
                     "title": "Sebe",
-                    "label": "Puni vaše zdravlje",
+                    "label": "Vrati zdravlje",
                     "success_0": "Svi su izliječeni!",
-                    "success_1": "Sada bi se trebao osječati puno bolje!",
+                    "success_1": "Sada biste se trebali osjećati mnogo bolje.",
                     "success_2": "Napunjen do kraja!",
                     "success_3": "Bolovi uklonjeni!"
                 },
                 "everyone": {
                     "title": "Sve",
-                    "label": "Će izlječiti i oživiti sve igrače",
-                    "success": "Izlječeni i oživljeni su svi igrači."
+                    "label": "Izliječi i oživi sve igrače",
+                    "success": "Svi su igrači izliječeni i oživljeni."
                 }
             },
             "announcement": {
-                "title": "Pošalji obavještenje",
-                "label": "Pošalji obavještenje svim online igračima.",
-                "dialog_desc": "Pošalji obavještenje svim online igračima.",
-                "dialog_placeholder": "Tvoje obavještenje...",
-                "dialog_success": "Slanje obavještenja."
+                "title": "Pošalji obavijest",
+                "label": "Pošalji obavijest svim igračima na serveru.",
+                "dialog_desc": "Unesite obavijest za sve igrače na serveru.",
+                "dialog_placeholder": "Vaša obavijest...",
+                "dialog_success": "Obavijest se šalje."
             },
             "clear_area": {
                 "title": "Očisti područje mape",
-                "label": "Očisti specificiranu mapu",
-                "dialog_desc": "Molim vas unesite radius u kojem želite očistiti mapu na početno u (0-300). Ovo neče očistiti stvorene stvari od strane servera.",
-                "dialog_success": "Čišćenje mape u radiusu od %{radius}m",
-                "dialog_error": "Krivi input radiusa. Pokušaj ponovno."
+                "label": "Očisti odabrano područje mape",
+                "dialog_desc": "Unesite polumjer čišćenja od 0 do 300. Entiteti koje je stvorio server neće biti uklonjeni.",
+                "dialog_success": "Čišćenje područja u polumjeru od %{radius} m.",
+                "dialog_error": "Neispravan polumjer. Pokušajte ponovno."
             },
             "player_ids": {
-                "title": "Upali ID-ove",
-                "label": "Upali ID-ove (i ostale informacije) iznad glava svih igrača koji su u blizini",
-                "alert_show": "Pokazivanje ID-ova svih igrača u blizini.",
+                "title": "Prikaži ID-ove",
+                "label": "Prikaži ID-ove i ostale podatke iznad obližnjih igrača",
+                "alert_show": "Prikazuju se ID-ovi obližnjih igrača.",
                 "alert_hide": "Sakrivanje ID-ova svih igrača u blizini."
             }
         },
         "page_players": {
             "misc": {
-                "online_players": "Online igrači",
+                "online_players": "Igrači na serveru",
                 "players": "Igrači",
                 "search": "Pretraži",
                 "zero_players": "Nema pronađenih igrača"
             },
             "filter": {
                 "label": "Filtriraj po",
-                "no_filter": "Bez Filtera",
-                "is_admin": "Je Admin",
-                "is_injured": "Je Ranjen/ Mrtav",
-                "in_vehicle": "U Vozilu"
+                "no_filter": "Bez filtra",
+                "is_admin": "Administrator",
+                "is_injured": "Ozlijeđen ili mrtav",
+                "in_vehicle": "U vozilu"
             },
             "sort": {
                 "label": "Poredaj po",
@@ -246,8 +246,8 @@
         },
         "player_modal": {
             "misc": {
-                "error": "Došlo je do pogreške prilikom dohvaćanja pojedinosti o ovom igraču. Greška je prikazana u nastavku:",
-                "target_not_found": "Nije moguće pronaći online igrača s ID-om ili imenom profila od %{target}"
+                "error": "Dogodila se pogreška pri dohvaćanju podataka o igraču. Pojedinosti su prikazane u nastavku:",
+                "target_not_found": "Nije pronađen igrač na serveru s ID-om ili imenom %{target}."
             },
             "tabs": {
                 "actions": "Akcije",
@@ -258,32 +258,32 @@
             },
             "actions": {
                 "title": "Akcije igrača",
-                "command_sent": "Komanda poslana!",
+                "command_sent": "Naredba je poslana.",
                 "moderation": {
                     "title": "Moderacija",
                     "options": {
                         "dm": "DM",
                         "warn": "Upozori",
                         "kick": "Izbaci",
-                        "set_admin": "Daj admina"
+                        "set_admin": "Dodijeli administratora"
                     },
                     "dm_dialog": {
                         "title": "Direktna poruka",
-                        "description": "Koji je razlog slanja direktne poruke?",
+                        "description": "Koji je razlog slanja izravne poruke?",
                         "placeholder": "Razlog...",
-                        "success": "Tvoj DM je uspješno poslan!"
+                        "success": "Izravna poruka uspješno je poslana."
                     },
                     "warn_dialog": {
                         "title": "Upozori",
-                        "description": "Koji je razlog za upozoravanje igrača?",
+                        "description": "Unesite razlog upozorenja igrača.",
                         "placeholder": "Razlog...",
-                        "success": "Igrač je upozoren!"
+                        "success": "Igrač je upozoren."
                     },
                     "kick_dialog": {
                         "title": "Izbaci",
-                        "description": "Koji je razlog da bi izbacio ovog igrača?",
+                        "description": "Unesite razlog izbacivanja igrača.",
                         "placeholder": "Razlog...",
-                        "success": "Igrač je izbačen!"
+                        "success": "Igrač je izbačen."
                     }
                 },
                 "interaction": {
@@ -291,18 +291,18 @@
                     "options": {
                         "heal": "Zaliječi",
                         "go_to": "Idi do",
-                        "bring": "Dovuci",
-                        "spectate": "Gledaj",
-                        "toggle_freeze": "Zaledi"
+                        "bring": "Dovedi",
+                        "spectate": "Promatraj",
+                        "toggle_freeze": "Zamrzni"
                     },
                     "notifications": {
                         "heal_player": "Liječenje igrača",
-                        "tp_player": "Teleportiranje do igrača",
-                        "bring_player": "Dovuci igrača",
-                        "spectate_failed": "Neuspješno dohvaćanje igrača! Izlaženje iz gledanja.",
-                        "spectate_yourself": "Ne možeš sam sebe gledat.",
-                        "freeze_yourself": "Ne možeš sam sebe zalediti.",
-                        "spectate_cycle_failed": "Nema igrača koje bi gledao."
+                        "tp_player": "Teleportiranje do igrača...",
+                        "bring_player": "Dovođenje igrača...",
+                        "spectate_failed": "Igrača nije moguće dohvatiti. Promatranje je prekinuto.",
+                        "spectate_yourself": "Ne možete promatrati sami sebe.",
+                        "freeze_yourself": "Ne možete zamrznuti sami sebe.",
+                        "spectate_cycle_failed": "Nema dostupnih igrača za promatranje."
                     }
                 },
                 "troll": {
@@ -315,19 +315,19 @@
                 }
             },
             "info": {
-                "title": "Info igrača",
-                "session_time": "Trenutno vrijeme na serveru",
+                "title": "Podaci o igraču",
+                "session_time": "Vrijeme trenutačne sesije",
                 "play_time": "Vrijeme igranja",
                 "joined": "Ušao",
-                "whitelisted_label": "Whitelistan",
-                "whitelisted_notyet": "ne još",
-                "btn_wl_add": "DAJ WL",
-                "btn_wl_remove": "MAKNI WL",
-                "btn_wl_success": "Status Whiteliste promijenjen.",
-                "log_label": "Log",
-                "log_empty": "Nema zabrana/upozorenja pronađenih.",
-                "log_ban_count": "%{smart_count} zabrani |||| %{smart_count} zabrana",
-                "log_warn_count": "%{smart_count} upozori |||| %{smart_count} upozorenja",
+                "whitelisted_label": "Na popisu dopuštenih",
+                "whitelisted_notyet": "još nije",
+                "btn_wl_add": "DODAJ",
+                "btn_wl_remove": "UKLONI",
+                "btn_wl_success": "Status popisa dopuštenih je promijenjen.",
+                "log_label": "Evidencija",
+                "log_empty": "Nema pronađenih zabrana ili upozorenja.",
+                "log_ban_count": "%{smart_count} zabrana |||| %{smart_count} zabrane |||| %{smart_count} zabrana",
+                "log_warn_count": "%{smart_count} upozorenje |||| %{smart_count} upozorenja |||| %{smart_count} upozorenja",
                 "log_btn": "DETALJI",
                 "notes_changed": "Bilješka promijenjena.",
                 "notes_placeholder": "Bilješke o igraču..."
@@ -335,11 +335,11 @@
             "history": {
                 "title": "Povezana povijest",
                 "btn_revoke": "MAKNI",
-                "revoked_success": "Akcija maknuta!",
-                "banned_by": "Zabrana data od %{author}",
-                "warned_by": "UPOZOREN od %{author}",
-                "revoked_by": "Maknut od %{author}.",
-                "expired_at": "Isteko u %{date}.",
+                "revoked_success": "Radnja je opozvana.",
+                "banned_by": "Zabranu izrekao %{author}",
+                "warned_by": "Upozorenje izdao %{author}",
+                "revoked_by": "Opozvao %{author}.",
+                "expired_at": "Isteklo %{date}.",
                 "expires_at": "Ističe u %{date}."
             },
             "ban": {
@@ -351,15 +351,15 @@
                 "weeks": "tjedana",
                 "months": "mjeseca",
                 "permanent": "Zauvijek",
-                "custom": "Custom",
-                "helper_text": "Odaberi dužinu",
+                "custom": "Prilagođeno",
+                "helper_text": "Odaberite trajanje",
                 "submit": "Potvrdi zabranu",
                 "reason_required": "Polje za razlog mora biti popunjeno.",
-                "success": "Igraču zabranjen ulazak!"
+                "success": "Igraču je zabranjen pristup."
             },
             "ids": {
                 "current_ids": "Trenutni profili",
-                "previous_ids": "Prijašnji igračevi profili",
+                "previous_ids": "Prethodni identifikatori igrača",
                 "all_hwids": "Svi HWID-ovi"
             }
         }

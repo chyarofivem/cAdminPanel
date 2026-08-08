@@ -9,30 +9,31 @@ import { cn } from '@/lib/utils';
 import { msToDuration } from '@/lib/dateTime';
 import { PenLineIcon, PlayCircleIcon, PlusCircleIcon, XCircleIcon } from 'lucide-react';
 import { useAdminPerms } from '@/hooks/auth';
+import { t } from '@/lib/i18n';
 
 //Prompt props
 const browserTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 const timezoneDiffMessage = (
     <p className='text-destructive'>
-        Server's timezone: <b>{window.txConsts.serverTimezone}</b> <br />
-        Your timezone: <b>{browserTimezone}</b> <br />
-        Either use relative times, or make sure the scheduled is based on the server timezone.
+        {t("Server's timezone")}: <b>{window.txConsts.serverTimezone}</b> <br />
+        {t('Your timezone')}: <b>{browserTimezone}</b> <br />
+        {t('Use relative time or schedule against the server timezone.')}
     </p>
 )
 const promptCommonProps = {
     suggestions: ['+5', '+10', '+15', '+30'],
-    title: 'When should the server restart?',
+    title: t('When should the server restart?'),
     message: (<>
         <p>
-            Possible formats: <br />
+            {t('Possible formats')}: <br />
             <ul className='list-disc ml-4'>
                 <li>
-                    <InlineCode>+MM</InlineCode> relative time in minutes
-                    (example: <InlineCode>+15</InlineCode> for 15 minutes from now.)
+                    <InlineCode>+MM</InlineCode> {t('relative time in minutes')}
+                    {' '}({t('example')}: <InlineCode>+15</InlineCode> {t('for 15 minutes from now')}).
                 </li>
                 <li>
-                    <InlineCode>HH:MM</InlineCode> absolute 24-hour time
-                    (example: <InlineCode>23:30</InlineCode> for 11:30 PM.)
+                    <InlineCode>HH:MM</InlineCode> {t('absolute 24-hour time')}
+                    {' '}({t('example')}: <InlineCode>23:30</InlineCode> {t('for 11:30 PM')}).
                 </li>
             </ul>
         </p>
@@ -76,29 +77,29 @@ export default function ServerSchedule() {
     if (!globalStatus) {
         return <div>
             <h2 className="mb-1 text-lg font-semibold tracking-tight">
-                Next Restart:
+                {t('Next Restart')}:
             </h2>
-            <span className='font-light text-muted-foreground italic'>loading...</span>
+            <span className='font-light text-muted-foreground italic'>{t('loading...')}</span>
         </div>
     }
 
     //Processing status
     const { scheduler } = globalStatus;
-    let nextScheduledText = 'nothing scheduled';
+    let nextScheduledText = t('nothing scheduled');
     let nextScheduledClasses = 'text-muted-foreground italic';
     let disableAddEditBtn = false;
     let showCancelBtn = false;
     let showEnableBtn = false;
     const hasScheduledRestart = typeof scheduler.nextRelativeMs === 'number';
     if (hasScheduledRestart) {
-        const tempFlag = (scheduler.nextIsTemp) ? '(temp)' : '';
+        const tempFlag = (scheduler.nextIsTemp) ? t('(temporary)') : '';
         const relativeTime = msToDuration(scheduler.nextRelativeMs, { units: ['h', 'm'] });
         const isLessThanMinute = scheduler.nextRelativeMs < 60_000;
         if (isLessThanMinute) {
             disableAddEditBtn = true;
-            nextScheduledText = `right now ${tempFlag}`;
+            nextScheduledText = t('right now {suffix}', { suffix: tempFlag });
         } else {
-            nextScheduledText = `in ${relativeTime} ${tempFlag}`;
+            nextScheduledText = t('in {duration} {suffix}', { duration: relativeTime, suffix: tempFlag });
         }
 
         if (scheduler.nextSkip) {
@@ -120,46 +121,46 @@ export default function ServerSchedule() {
         closeAllSheets();
         if (input.includes(',')) {
             txToast.error({
-                title: 'Invalid scheduled restart time.',
-                msg: 'It looks like you are trying to schedule multiple restart times, which can only be done in the Settings page.\nThis input is for just the next (not persistent) restart.',
+                title: t('Invalid scheduled restart time.'),
+                msg: t('Multiple restart times can only be configured in Settings. This field schedules only the next temporary restart.'),
             }, { duration: 10000 });
             return;
         }
         if (!validateSchedule(input)) {
-            txToast.error(`Invalid schedule time: ${input}`)
+            txToast.error(t('Invalid schedule time: {input}', { input }));
             return;
         }
         schedulerApi({
             data: { action: 'setNextTempSchedule', parameter: input },
-            toastLoadingMessage: 'Scheduling server restart...',
+            toastLoadingMessage: t('Scheduling server restart...'),
         });
     }
     const handleEdit = () => {
         openPromptDialog({
             ...promptCommonProps,
             onSubmit: onScheduleSubmit,
-            submitLabel: 'Edit',
+            submitLabel: t('Edit'),
         });
     }
     const handleAddSchedule = () => {
         openPromptDialog({
             ...promptCommonProps,
             onSubmit: onScheduleSubmit,
-            submitLabel: 'Schedule',
+            submitLabel: t('Schedule'),
         });
     }
     const handleCancel = () => {
         closeAllSheets();
         schedulerApi({
             data: { action: 'setNextSkip', parameter: true },
-            toastLoadingMessage: 'Cancelling next server restart...',
+            toastLoadingMessage: t('Cancelling next server restart...'),
         });
     }
     const handleEnable = () => {
         closeAllSheets();
         schedulerApi({
             data: { action: 'setNextSkip', parameter: false },
-            toastLoadingMessage: 'Enabling next server restart...',
+            toastLoadingMessage: t('Enabling next server restart...'),
         });
     }
 
@@ -167,7 +168,7 @@ export default function ServerSchedule() {
 
     return <div>
         <h2 className="mb-1 text-lg font-semibold tracking-tight">
-            Next Restart:
+            {t('Next Restart')}:
         </h2>
         <span className={cn('font-light', nextScheduledClasses)}>{nextScheduledText}</span>
         <div className='flex flex-row justify-between gap-2 mt-2 flex-wrap'>
@@ -179,7 +180,7 @@ export default function ServerSchedule() {
                     disabled={!hasSchedulePerms || disableAddEditBtn}
                     onClick={handleEdit}
                 >
-                    <PenLineIcon className='h-4 w-4 mr-1' /> Edit
+                    <PenLineIcon className='h-4 w-4 mr-1' /> {t('Edit')}
                 </Button>
             ) : (
                 <Button
@@ -189,7 +190,7 @@ export default function ServerSchedule() {
                     disabled={!hasSchedulePerms || disableAddEditBtn}
                     onClick={handleAddSchedule}
                 >
-                    <PlusCircleIcon className='h-4 w-4 mr-1' /> Schedule Restart
+                    <PlusCircleIcon className='h-4 w-4 mr-1' /> {t('Schedule Restart')}
                 </Button>
             )}
             {showCancelBtn && (
@@ -200,7 +201,7 @@ export default function ServerSchedule() {
                     onClick={handleCancel}
                     disabled={!hasSchedulePerms}
                 >
-                    <XCircleIcon className='h-4 w-4 mr-1' /> Cancel
+                    <XCircleIcon className='h-4 w-4 mr-1' /> {t('Cancel')}
                 </Button>
             )}
             {showEnableBtn && (
@@ -211,7 +212,7 @@ export default function ServerSchedule() {
                     onClick={handleEnable}
                     disabled={!hasSchedulePerms}
                 >
-                    <PlayCircleIcon className='h-4 w-4 mr-1' /> Enable
+                    <PlayCircleIcon className='h-4 w-4 mr-1' /> {t('Enable')}
                 </Button>
             )}
         </div>

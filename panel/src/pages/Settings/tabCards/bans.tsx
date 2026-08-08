@@ -9,6 +9,7 @@ import { useState, useEffect, useRef, useMemo, useReducer } from "react"
 import { getConfigEmptyState, getConfigAccessors, SettingsCardProps, getPageConfig, configsReducer, getConfigDiff } from "../utils"
 import SettingsCardShell from "../SettingsCardShell"
 import { txToast } from "@/components/TxToaster"
+import { t } from "@/lib/i18n"
 
 
 export const pageConfigs = {
@@ -68,9 +69,9 @@ export default function ConfigCardBans({ cardCtx, pageCtx }: SettingsCardProps) 
             && localConfigs.banlist.rejectionMessage.length > 512
         ) {
             return txToast.error({
-                title: 'The Ban Rejection Message is too big.',
+                title: t('The Ban Rejection Message is too big.'),
                 md: true,
-                msg: 'The message must be 512 characters or less.',
+                msg: t('The message must be 512 characters or less.'),
             });
         }
         pageCtx.saveChanges(cardCtx, localConfigs);

@@ -10,6 +10,7 @@ import { AutosizeTextarea, AutosizeTextAreaRef } from "@/components/ui/autosize-
 import SettingsCardShell from "../SettingsCardShell"
 import { txToast } from "@/components/TxToaster"
 import consts from "@shared/consts"
+import { t } from "@/lib/i18n"
 
 
 export const pageConfigs = {
@@ -76,16 +77,16 @@ export default function ConfigCardWhitelist({ cardCtx, pageCtx }: SettingsCardPr
             && localConfigs.whitelist?.mode !== 'adminOnly'
         );
         if (isAllowlistInstructionsRequired && !localConfigs.whitelist?.rejectionMessage) {
-            return txToast.error('Please fill in the Allowlist Instructions field to be able to enable this allowlist mode.');
+            return txToast.error(t('Please fill in the Allowlist Instructions field to be able to enable this allowlist mode.'));
         }
         if (
             localConfigs.whitelist?.rejectionMessage
             && localConfigs.whitelist.rejectionMessage.length > 512
         ) {
             return txToast.error({
-                title: 'The Allowlist Instructions is too big.',
+                title: t('The Allowlist Instructions is too big.'),
                 md: true,
-                msg: 'The message must be 512 characters or less.',
+                msg: t('The message must be 512 characters or less.'),
             });
         }
         if (
@@ -94,8 +95,8 @@ export default function ConfigCardWhitelist({ cardCtx, pageCtx }: SettingsCardPr
         ) {
             if (!isDiscordBotEnabled) {
                 return txToast.warning({
-                    title: 'Discord Bot is required.',
-                    msg: 'You need to enable the Discord Bot in the Discord tab to use Discord-based allowlist modes.',
+                    title: t('Discord Bot is required.'),
+                    msg: t('You need to enable the Discord Bot in the Discord tab to use Discord-based allowlist modes.'),
                 });
             }
             if (
@@ -106,8 +107,8 @@ export default function ConfigCardWhitelist({ cardCtx, pageCtx }: SettingsCardPr
                 )
             ) {
                 return txToast.warning({
-                    title: 'Discord Roles are required.',
-                    msg: 'You need to specify at least one Discord Role ID to use the "Discord Server Roles" allowlist mode.',
+                    title: t('Discord Roles are required.'),
+                    msg: t('You need to specify at least one Discord Role ID to use the "Discord Server Roles" allowlist mode.'),
                 });
             }
         }
@@ -117,7 +118,7 @@ export default function ConfigCardWhitelist({ cardCtx, pageCtx }: SettingsCardPr
                 .map(x => `- \`${x.slice(0, 20)}\``);
             if (invalidRoles.length) {
                 return txToast.error({
-                    title: 'Invalid Discord Role ID(s).',
+                    title: t('Invalid Discord Role ID(s).'),
                     md: true,
                     msg: 'The following Discord Role ID(s) are invalid: \n' + invalidRoles.join('\n'),
                 });

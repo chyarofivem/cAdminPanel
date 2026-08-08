@@ -70,18 +70,19 @@ export default function DrilldownCrashesSubcard({
     }
 
     const crashesData = useMemo(() => {
-        //Sort the data - the default api sort is by count (NOTE: we are mutating the array)
+        const sortedCrashTypes = [...crashTypes];
+        // Sort a display copy so API state stays immutable.
         if (crashesGroupReasons) {
-            crashTypes.sort((a, b) => a[0].localeCompare(b[0]));
+            sortedCrashTypes.sort((a, b) => a[0].localeCompare(b[0]));
         } else {
-            crashTypes.sort((a, b) => b[1] - a[1]);
+            sortedCrashTypes.sort((a, b) => b[1] - a[1]);
         }
 
         //Calculate the total crashes and compress the data
-        const totalCrashes = crashTypes.reduce((acc, [, cnt]) => acc + cnt, 0);
+        const totalCrashes = sortedCrashTypes.reduce((acc, [, cnt]) => acc + cnt, 0);
         const { filteredIn, filteredOut } = crashesTargetLimit
-            ? compressMultipleCounter(crashTypes, crashesTargetLimit, crashesGroupReasons)
-            : { filteredIn: crashTypes, filteredOut: false as const };
+            ? compressMultipleCounter(sortedCrashTypes, crashesTargetLimit, crashesGroupReasons)
+            : { filteredIn: sortedCrashTypes, filteredOut: false as const };
         const processedStrings = splitPrefixedStrings(filteredIn.map(([str, cnt]) => str));
 
         //Prepare the display data
@@ -110,12 +111,13 @@ export default function DrilldownCrashesSubcard({
     }, [crashTypes, crashesGroupReasons, crashesTargetLimit, setCrashesTargetLimit]);
 
     return (
-        <table className="w-full px-4 pt-2">
+        <div className="overflow-x-auto p-4 pt-3">
+        <table className="w-full overflow-hidden rounded-xl border border-white/[0.06]">
             <thead>
-                <tr className="border-b text-muted-foreground/75">
-                    <th className="min-w-[4ch] px-2 py-1 border-r text-right">%</th>
-                    <th className="min-w-[4ch] px-2 py-1 border-r text-right">Count</th>
-                    <th className="px-2 py-1">Crash Reason</th>
+                <tr className="border-b border-white/[0.06] bg-black/[0.12] text-xs uppercase tracking-wider text-muted-foreground/75">
+                    <th className="min-w-[4ch] border-r border-white/[0.06] px-3 py-2 text-right">%</th>
+                    <th className="min-w-[4ch] border-r border-white/[0.06] px-3 py-2 text-right">Count</th>
+                    <th className="px-3 py-2 text-left">Crash Reason</th>
                 </tr>
             </thead>
             <tbody>
@@ -150,5 +152,6 @@ export default function DrilldownCrashesSubcard({
                 ) : null}
             </tbody>
         </table>
+        </div>
     );
 }

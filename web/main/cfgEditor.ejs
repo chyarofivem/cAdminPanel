@@ -51,19 +51,16 @@
 <% } %>
 
 <!-- CFG Editor -->
-<div class="row justify-content-md-center">
-    <div class="col-lg-12 col-xl-11 mw-col8">
-        <textarea id="codeMirrorTarget" style="height: calc(100vh - 250px); width: 100%;"
-            class="cms-s-lucario" name="code"><%= rawFile %></textarea>
+<section class="ca-editor-page">
+    <header class="ca-editor-page-header">
+        <div><p class="ca-workflow-kicker">Server configuration</p><h2>server.cfg</h2><p>Edit the active FXServer configuration. Use Ctrl+S to save and Ctrl+; to toggle comments.</p></div>
+        <button type="button" id="cfgEditor-save" class="btn btn-primary">Save changes</button>
+    </header>
+    <div class="ca-editor-shell">
+        <div class="ca-editor-toolbar"><span>server.cfg</span><span>FiveM CFG</span></div>
+        <textarea id="codeMirrorTarget" style="height: calc(100vh - 250px); width: 100%;" class="cms-s-lucario" name="code"><%= rawFile %></textarea>
     </div>
-</div>
-<div class="row justify-content-md-center" style="margin-top: 1em;">
-    <div class="mx-auto">
-        <button type="button" id="cfgEditor-save" class="btn btn-outline-dark btn-sm mb-2">
-            Save File (CTRL+S)
-        </button>
-    </div>
-</div>
+</section>
 
 
 <%- await include('parts/footer.ejs', locals) %>

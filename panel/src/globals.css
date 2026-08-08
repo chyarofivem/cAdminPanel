@@ -1,4 +1,4 @@
-@import "@fontsource-variable/inter";
+@import "@fontsource-variable/space-grotesk";
 @import "@fontsource-variable/jetbrains-mono";
 
 @tailwind base;
@@ -28,47 +28,50 @@
         --ring: 240 10% 3.9%;
         --radius: 0.5rem;
 
-        --font-sans: "Inter Variable";
+        --font-sans: "Space Grotesk Variable";
         --font-mono: "JetBrains Mono Variable";
     }
 
     :root {
+        --brand-300: 0.809 0.105 251.813;
+        --brand-500: 0.623 0.214 259.815;
+        --brand-600: 0.546 0.245 262.881;
+        --brand-700: 0.488 0.243 264.376;
         /* Default background color of <body />...etc */
-        --background: 224 33.3% 97.1%;
-        --foreground: 224 10.2% 9.6%;
+        --background: 220 17% 7%;
+        --foreground: 0 0% 100%;
 
         /* Background color for <Card /> */
-        --card: 224 16.1% 95%;
-        --card-foreground: 224 10.2% 9.6%;
+        --card: 225 7% 13%;
+        --card-foreground: 0 0% 100%;
 
         /* Background color for popovers such as <DropdownMenu />, <HoverCard />, <Popover /> */
-        --popover: 224 33.3% 97.1%;
-        --popover-foreground: 224 10.2% 9.6%;
+        --popover: 225 7% 10%;
+        --popover-foreground: 0 0% 100%;
 
         /* Primary colors for <Button /> */
-        --primary: 224 10.2% 9.6%;
-        --primary-foreground: 224 10% 96.1%;
+        --primary: 221 83% 53%;
+        --primary-foreground: 0 0% 100%;
 
         /* Secondary colors for <Button /> */
-        --secondary: 224 7% 86.1%;
-        --secondary-foreground: 224 10.2% 9.6%;
+        --secondary: 225 6% 18%;
+        --secondary-foreground: 0 0% 100%;
 
         /* Muted backgrounds such as <TabsList />, <Skeleton /> and <Switch /> */
-        --muted: 224 5.4% 85.5%;
-        --muted-foreground: 224 4.7% 25.1%;
+        --muted: 225 6% 17%;
+        --muted-foreground: 240 5% 64.9%;
 
         /* Used for accents such as hover effects on <DropdownMenuItem>, <SelectItem>...etc */
-        --accent: 341 92.3% 49%;
         --accent-foreground: 0 0% 100%;
 
         /* Default border color */
-        --border: 224 3.2% 81.4%;
+        --border: 225 6% 22%;
 
         /* Border color for inputs such as <Input />, <Select />, <Textarea /> */
-        --input: 224 7% 86.1%;
+        --input: 225 6% 25%;
 
         /* Used for focus ring */
-        --ring: 224 10.2% 9.6%;
+        --ring: 221 83% 53%;
 
         /* Semantic colors used for button variants and maybe more */
         /* hint and inline generated with the 50 and 600 (respectivelly) variants via https://uicolors.app/create*/
@@ -90,7 +93,7 @@
         --info-inline: 194.8 83% 37%;
 
         /* Other stuff - common for dark an light themes */
-        --font-sans: "Inter Variable";
+        --font-sans: "Space Grotesk Variable";
         --font-mono: "JetBrains Mono Variable";
         --radius: 0.5rem;
     }
@@ -117,7 +120,7 @@
         --ring: 240 4.9% 83.9%;
 
         /* Other stuff */
-        --font-sans: "Inter Variable";
+        --font-sans: "Space Grotesk Variable";
         --font-mono: "JetBrains Mono Variable";
     }
 
@@ -147,7 +150,6 @@
         --muted-foreground: 224 4.9% 72%;
 
         /* Used for accents such as hover effects on <DropdownMenuItem>, <SelectItem>...etc */
-        --accent: 341 92.3% 49%;
         --accent-foreground: 0 0% 100%;
 
         /* Default border color */
@@ -206,6 +208,8 @@
     }
     body {
         @apply bg-background text-foreground antialiased;
+        background-image: linear-gradient(to bottom, #101319, #0b0d10);
+        min-height: 100vh;
     }
 
     /* TODO: remove once this issue is fixed: https://github.com/radix-ui/primitives/issues/3251 */

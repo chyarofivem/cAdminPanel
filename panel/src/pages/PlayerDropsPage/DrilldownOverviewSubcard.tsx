@@ -40,16 +40,16 @@ export default function DrilldownOverviewSubcard({ dropTypes }: DrilldownOvervie
     }
 
     return (
-        <div className="px-4 py-4 flex flex-wrap justify-evenly gap-4 text-muted-foreground">
+        <div className="grid grid-cols-[repeat(auto-fit,minmax(9rem,1fr))] gap-3 p-4 text-muted-foreground">
             {categories.map(([reasonId, reasonData]) => (
                 <Tooltip key={reasonId}>
                     <TooltipTrigger asChild>
-                        <div className="px-4 flex flex-col gap-1 items-center justify-center">
+                        <div className="flex min-h-24 flex-col items-center justify-center gap-2 rounded-xl border border-white/[0.06] bg-black/[0.1] px-4 py-3 transition-colors hover:bg-white/[0.035]">
                             <span
-                                className="text-xl tracking-wider border-b-2 font-semibold"
+                                className="border-b-2 pb-1 text-base font-semibold tracking-wide text-foreground"
                                 style={{ borderColor: reasonData.color }}
                             >{reasonData.label}</span>
-                            <span>
+                            <span className="text-sm">
                                 {numberToLocaleString(reasonData.count)} <small className="opacity-75">({numberToLocaleString((reasonData.count / totalDrops) * 100, 1)}%)</small>
                             </span>
                         </div>

@@ -16,33 +16,33 @@ import { DynamicNewItem } from "@/components/DynamicNewBadge";
 
 export function DrilldownCardLoading({ isError }: { isError?: boolean }) {
     return (
-        <div className="space-y-1">
-            <div className="text-center space-x-2 text-sm text-muted-foreground">
+        <div className="space-y-3">
+            <div className="space-x-2 text-center text-xs font-medium uppercase tracking-wider text-muted-foreground">
                 <span>Loading...</span>
             </div>
-            <div className="pb-2 md:rounded-xl border bg-cardx shadow-sm flex flex-col">
-                <div className="flex flex-col flex-shrink px-1 sm:px-4 py-2 space-y-4 border-b md:rounded-t-[inherit] bg-secondary/35">
+            <div className="flex flex-col overflow-hidden rounded-2xl border border-white/[0.07] bg-white/[0.03] pb-2">
+                <div className="flex flex-col flex-shrink px-4 sm:px-5 py-3 space-y-4 border-b border-dashed border-white/[0.07]">
                     <div className="flex items-center space-x-2">
                         <div className='hidden xs:block'><FolderOpenIcon className="size-4" /></div>
-                        <h2 className="font-mono text-sm">Overview</h2>
+                        <h2 className="text-sm font-medium">Overview</h2>
                     </div>
                 </div>
                 <div className="px-4 py-2 flex flex-wrap justify-evenly gap-4 text-muted-foreground">
                     <PlayerDropsLoadingSpinner isError={isError} />
                 </div>
-                <div className="flex flex-col flex-shrink px-1 sm:px-4 py-2 space-y-4 border-t border-b bg-secondary/35">
+                <div className="flex flex-col flex-shrink px-4 sm:px-5 py-3 space-y-4 border-t border-b border-dashed border-white/[0.07]">
                     <div className="flex items-center space-x-2">
                         <div className='hidden xs:block'><ShapesIcon className="size-4" /></div>
-                        <h2 className="font-mono text-sm">Environment Changes</h2>
+                        <h2 className="text-sm font-medium">Environment Changes</h2>
                     </div>
                 </div>
                 <div className="px-4 pt-2 pb-4">
                     <PlayerDropsLoadingSpinner isError={isError} />
                 </div>
-                <div className="flex flex-col flex-shrink px-1 sm:px-4 py-2 space-y-4 border-t border-b bg-secondary/35">
+                <div className="flex flex-col flex-shrink px-4 sm:px-5 py-3 space-y-4 border-t border-b border-dashed border-white/[0.07]">
                     <div className="flex items-center space-x-2">
                         <div className='hidden xs:block'><SkullIcon className="size-4" /></div>
-                        <h2 className="font-mono text-sm">Crash Reasons</h2>
+                        <h2 className="text-sm font-medium">Crash Reasons</h2>
                     </div>
                 </div>
                 <div className="px-4 pt-2 pb-4 space-y-4">
@@ -71,7 +71,7 @@ const DrilldownCardInner = function DrilldownCard({
     //Window indicator
     const windowStartDate = new Date(windowStart);
     const windowEndDate = new Date(windowEnd);
-    const showDate = !isDateToday(windowStartDate) || !isDateToday(windowStartDate);
+    const showDate = !isDateToday(windowStartDate) || !isDateToday(windowEndDate);
 
     const windowStartTimeStr = dateToLocaleTimeString(windowStartDate, '2-digit', '2-digit');
     const windowStartDateStr = dateToLocaleDateString(windowStartDate, 'short');
@@ -81,39 +81,39 @@ const DrilldownCardInner = function DrilldownCard({
     const windowEndStr = showDate ? `${windowEndTimeStr} - ${windowEndDateStr}` : windowEndTimeStr;
 
     return (
-        <div className="space-y-1">
+        <div className="space-y-3">
             <div className={cn(
-                "text-center space-x-2 text-sm text-muted-foreground",
+                "flex justify-center text-xs font-medium uppercase tracking-wider text-muted-foreground",
                 rangeSelected && 'font-semibold text-primary'
             )}>
                 <span>Period from <InlineCode title={windowStartDate.toISOString()}>{windowStartStr}</InlineCode> to <InlineCode title={windowEndDate.toISOString()}>{windowEndStr}</InlineCode>.</span>
             </div>
-            <div className="md:rounded-xl border shadow-sm flex flex-col">
+            <div className="flex flex-col overflow-hidden rounded-2xl border border-white/[0.07] bg-white/[0.03] shadow-[0_18px_60px_rgba(0,0,0,0.12)]">
                 <div className="rounded-t-[inherit]">
-                    <div className="flex flex-col flex-shrink px-1 sm:px-4 py-2 space-y-4 border-b rounded-t-[inherit] bg-secondary/35">
+                    <div className="flex flex-col flex-shrink px-4 sm:px-5 py-3 space-y-4 border-b border-dashed border-white/[0.07]">
                         <div className="flex items-center space-x-2">
                             <div className='hidden xs:block'><FolderOpenIcon className="size-4" /></div>
-                            <h2 className="font-mono text-sm">Period Overview</h2>
+                            <h2 className="text-sm font-medium">Period overview</h2>
                         </div>
                     </div>
                     <DrilldownOverviewSubcard dropTypes={windowData.dropTypes} />
                 </div>
 
                 <div className="pb-4">
-                    <div className="flex flex-col flex-shrink px-1 sm:px-4 py-2 space-y-4 border-t border-b bg-secondary/35">
+                    <div className="flex flex-col flex-shrink px-4 sm:px-5 py-3 space-y-4 border-t border-b border-dashed border-white/[0.07]">
                         <div className="flex items-center space-x-2">
                             <div className='hidden xs:block'><BoxIcon className="size-4" /></div>
-                            <h2 className="font-mono text-sm">Resource Kicks</h2>
+                            <h2 className="text-sm font-medium">Resource kicks</h2>
                         </div>
                     </div>
                     <DrilldownResourcesSubcard resKicks={windowData.resKicks} />
                 </div>
 
                 <div className="pb-4">
-                    <div className="flex flex-col flex-shrink px-1 sm:px-4 py-2 space-y-4 border-t border-b bg-secondary/35">
+                    <div className="flex flex-col flex-shrink px-4 sm:px-5 py-3 space-y-4 border-t border-b border-dashed border-white/[0.07]">
                         <div className="flex items-center space-x-2">
                             <div className='hidden xs:block'><ShapesIcon className="size-4" /></div>
-                            <h2 className="font-mono text-sm">Environment Changes</h2>
+                            <h2 className="text-sm font-medium">Environment changes</h2>
                             <DynamicNewItem featName="playerDropsEnvChangesReversed" durationDays={14}>
                                 <span className="text-2xs text-warning-inline/80">Note: This list now shows the most recent changes first.</span>
                             </DynamicNewItem>
@@ -123,12 +123,12 @@ const DrilldownCardInner = function DrilldownCard({
                 </div>
 
                 <div className="">
-                    <div className="flex flex-row items-center justify-between flex-shrink px-1 sm:px-4 border-t border-b bg-secondary/35">
-                        <div className="flex items-center py-2 space-x-2">
+                    <div className="flex flex-col gap-3 border-t border-b border-dashed border-white/[0.07] px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-5">
+                        <div className="flex items-center space-x-2">
                             <div className='hidden xs:block'><SkullIcon className="size-4" /></div>
-                            <h2 className="font-mono text-sm">Crash Reasons</h2>
+                            <h2 className="text-sm font-medium">Crash reasons</h2>
                         </div>
-                        <div className="flex gap-2">
+                        <div className="flex flex-wrap gap-2">
                             <Select
                                 value={crashesTargetLimit.toString()}
                                 onValueChange={(value) => setCrashesTargetLimit(parseInt(value))}

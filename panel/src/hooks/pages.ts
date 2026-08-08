@@ -1,12 +1,7 @@
 import { atom, useSetAtom } from 'jotai';
 import { atomEffect } from 'jotai-effect'
-import faviconDefault from '/favicon_default.svg?url';
-import faviconOnline from '/favicon_online.svg?url';
-import faviconPartial from '/favicon_partial.svg?url';
-import faviconOffline from '/favicon_offline.svg?url';
 import { globalStatusAtom } from './status';
 import { playerCountAtom } from './playerlist';
-import { FxMonitorHealth } from '@shared/enums';
 
 
 /**
@@ -34,9 +29,9 @@ export const pageErrorStatusAtom = atom(false);
 /**
  * Page title management
  */
-const DEFAULT_TITLE = 'txAdmin';
+const DEFAULT_TITLE = window.txConsts.panelName;
 const faviconEl = document.getElementById('favicon') as HTMLLinkElement;
-const pageTitleAtom = atom(DEFAULT_TITLE);
+export const pageTitleAtom = atom(DEFAULT_TITLE);
 
 export const useSetPageTitle = () => {
     const setPageTitle = useSetAtom(pageTitleAtom);
@@ -47,7 +42,7 @@ export const useSetPageTitle = () => {
             // probably logout, pageTitleWatcher is not watching!
             setPageTitle(DEFAULT_TITLE);
             document.title = DEFAULT_TITLE;
-            faviconEl.href = faviconDefault;
+            faviconEl.href = window.txConsts.faviconUrl;
         }
     };
 }
@@ -59,16 +54,10 @@ export const pageTitleWatcher: ReturnType<typeof atomEffect> = atomEffect((get, 
     const playerCount = get(playerCountAtom);
 
     if (!globalStatus) {
-        faviconEl.href = faviconDefault;
+        faviconEl.href = window.txConsts.faviconUrl;
         document.title = DEFAULT_TITLE;
     } else {
-        if (globalStatus.server.health === FxMonitorHealth.ONLINE) {
-            faviconEl.href = faviconOnline;
-        } else if (globalStatus.server.health === FxMonitorHealth.PARTIAL) {
-            faviconEl.href = faviconPartial;
-        } else {
-            faviconEl.href = faviconOffline;
-        }
-        document.title = `(${playerCount}) ${globalStatus.server.name} · ${pageTitle}`;
+        faviconEl.href = window.txConsts.faviconUrl;
+        document.title = `(${playerCount}) ${DEFAULT_TITLE} · ${pageTitle}`;
     }
 });

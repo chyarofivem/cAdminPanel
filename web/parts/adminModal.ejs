@@ -14,6 +14,23 @@
     </div>
 </div>
 
+<!-- Field: chyarologin -->
+<div class="form-group row">
+    <label for="modAdmin-chyaroEmail" class="col-sm-3 col-form-label">
+        chyarologin Email
+        <small class="text-danger">(required)</small>
+    </label>
+    <div class="col-sm-9">
+        <div class="input-group">
+            <input type="email" class="form-control" id="modAdmin-chyaroEmail" maxlength="254"
+                autocomplete="off" value="<%= chyaro_email %>" required>
+        </div>
+        <span class="form-text text-muted">
+            The verified email this administrator uses in chyarologin. Remote roles do not grant panel permissions.
+        </span>
+    </div>
+</div>
+
 <!-- Field: CitizenFX -->
 <div class="form-group row">
     <label for="modAdmin-citizenfxID" class="col-sm-3 col-form-label">
@@ -26,7 +43,7 @@
                 autocomplete="off" value="<%= citizenfx_id %>">
         </div>
         <span class="form-text text-muted">
-            The admin's <a href="https://forum.cfx.re/" target="_blank" rel="noopener noreferrer">https://forum.cfx.re/</a>  username. This is required if you want to login using the Cfx.re button.
+            The admin's <a href="https://forum.cfx.re/" target="_blank" rel="noopener noreferrer">https://forum.cfx.re/</a> username, used for the in-game menu.
         </span>
     </div>
 </div>

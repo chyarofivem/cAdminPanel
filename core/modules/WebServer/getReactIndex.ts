@@ -10,11 +10,14 @@ import { AuthedAdminType, checkRequestAuth } from "./authLogic";
 import { isString } from "@modules/CacheStore";
 import {
     escapeHtmlAttribute,
+    escapeHtmlContent,
     escapeHtmlRawText,
     sanitizeClassToken,
     sanitizeCssVarName,
     sanitizeCssVarValue,
 } from "@lib/htmlRenderSafety";
+import { accentOptions, accentVars, resolveAccent } from "@lib/theme";
+import { brandingViewLocals } from "@lib/branding";
 const console = consoleFactory(modulename);
 
 // NOTE: it's not possible to remove the hardcoded import of the entry point in the index.html file
@@ -43,33 +46,11 @@ const devModulesScript = `<script type="module">
 //Custom themes placeholder
 export const tmpDefaultTheme = 'dark';
 export const tmpDefaultThemes = ['dark', 'light'];
-export const tmpCustomThemes: ThemeType[] = [
-    // {
-    //     name: 'deep-purple',
-    //     isDark: true,
-    //     style: {
-    //         "background": "274 93% 39%",
-    //         "foreground": "269 9% 100%",
-    //         "card": "274 79% 53%",
-    //         "card-foreground": "270 48% 99%",
-    //         "popover": "240 10% 3.9%",
-    //         "popover-foreground": "270 48% 99%",
-    //         "primary": "270 48% 99%",
-    //         "primary-foreground": "240 5.9% 10%",
-    //         "secondary": "240 3.7% 15.9%",
-    //         "secondary-foreground": "270 48% 99%",
-    //         "muted": "240 3.7% 15.9%",
-    //         "muted-foreground": "240 5% 64.9%",
-    //         "accent": "240 3.7% 15.9%",
-    //         "accent-foreground": "270 48% 99%",
-    //         "destructive": "0 62.8% 30.6%",
-    //         "destructive-foreground": "270 48% 99%",
-    //         "border": "273 79%, 53%",
-    //         "input": "240 3.7% 15.9%",
-    //         "ring": "240 4.9% 83.9%",
-    //     }
-    // }
-];
+export const tmpCustomThemes: ThemeType[] = accentOptions().map(option => ({
+    name: option.id,
+    isDark: true,
+    style: option.vars,
+}));
 
 
 
@@ -115,6 +96,7 @@ export default async function getReactIndex(ctx: CtxWithVars | AuthedCtx) {
 
     //Preparing vars
     const basePath = (ctx.txVars.isWebInterface) ? '/' : consts.nuiWebpipePath;
+    const branding = brandingViewLocals();
     const injectedConsts: InjectedTxConsts = {
         //env
         fxsVersion: txEnv.fxsVersionTag,
@@ -126,8 +108,18 @@ export default async function getReactIndex(ctx: CtxWithVars | AuthedCtx) {
         isWebInterface: ctx.txVars.isWebInterface,
         showAdvanced: (txDevEnv.ENABLED || console.isVerbose),
         hasMasterAccount: txCore.adminStore.hasAdmins(true),
+        chyaroConfigured: txConfig.chyaro.apiKey.length > 0,
+        chyaroUrl: txConfig.chyaro.apiUrl,
+        cadminEnabled: txConfig.cadmin.enabled,
+        uiLocale: txConfig.general.language === 'hr' ? 'hr' : 'en',
         defaultTheme: tmpDefaultTheme,
         customThemes: tmpCustomThemes.map(({ name, isDark }) => ({ name, isDark })),
+        accent: branding.accent,
+        accents: accentOptions(),
+        panelName: branding.panelName,
+        logoUrl: branding.logoUrl,
+        faviconUrl: branding.faviconUrl,
+        bannerUrl: branding.bannerUrl,
         providerLogo: txHostConfig.providerLogo,
         providerName: txHostConfig.providerName,
         hostConfigSource: txHostConfig.sourceName,
@@ -146,13 +138,19 @@ export default async function getReactIndex(ctx: CtxWithVars | AuthedCtx) {
     //Prepare placeholders
     const replacers: { [key: string]: string } = {};
     replacers.basePath = `<base href="${escapeHtmlAttribute(basePath)}">`;
-    replacers.ogTitle = escapeHtmlAttribute(`txAdmin - ${txConfig.general.serverName}`);
-    replacers.ogDescripttion = escapeHtmlAttribute(`Manage & Monitor your FiveM/RedM Server with txAdmin v${txEnv.txaVersion} atop FXServer ${txEnv.fxsVersion}`);
+    replacers.panelName = escapeHtmlContent(branding.panelName);
+    replacers.faviconUrl = escapeHtmlAttribute(branding.faviconUrl);
+    replacers.ogTitle = escapeHtmlAttribute(branding.panelName);
+    replacers.ogDescripttion = escapeHtmlAttribute(`Manage and monitor ${branding.panelName} atop FXServer ${txEnv.fxsVersion}.`);
     replacers.txConstsInjection = `<script>window.txConsts = ${escapeHtmlRawText(JSON.stringify(injectedConsts))};</script>`;
     replacers.devModules = txDevEnv.ENABLED ? devModulesScript : '';
 
     //Prepare custom themes style tag
-    replacers.customThemesStyle = '';
+    const selectedAccentVars = accentVars(resolveAccent(txConfig.general.accent));
+    const configuredAccentCss = Object.entries(selectedAccentVars)
+        .map(([name, value]) => `--${name}: ${value};`)
+        .join(' ');
+    replacers.customThemesStyle = `<style>:root { ${escapeHtmlRawText(configuredAccentCss)} }</style>`;
     if (tmpCustomThemes.length) {
         const cssThemes = [];
         for (const theme of tmpCustomThemes) {
@@ -167,7 +165,7 @@ export default async function getReactIndex(ctx: CtxWithVars | AuthedCtx) {
             }
             cssThemes.push(`.theme-${safeThemeName} { ${cssVars.join(' ')} }`);
         }
-        replacers.customThemesStyle = `<style>${escapeHtmlRawText(cssThemes.join('\n'))}</style>`;
+        replacers.customThemesStyle = `<style>:root { ${escapeHtmlRawText(configuredAccentCss)} } ${escapeHtmlRawText(cssThemes.join('\n'))}</style>`;
     }
 
     //Setting the theme class from the cookie

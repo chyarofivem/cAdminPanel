@@ -18,6 +18,7 @@ import { generateStatusMessage } from '@modules/DiscordBot/commands/status';
 import { getSchemaChainError } from '@modules/ConfigStore/schema/utils';
 import { confx } from '@modules/ConfigStore/utils';
 import { SYM_RESET_CONFIG } from '@lib/symbols';
+import { isStoredBrandingFilename, pruneUnusedBrandingFiles, storeBrandingDataUrl } from '@lib/branding';
 const console = consoleFactory(modulename);
 
 
@@ -44,6 +45,9 @@ type CardHandler = (
 //Known cards
 const cardNamesMap = {
     general: 'General',
+    appearance: 'Appearance',
+    cadmin: 'Character Management',
+    'character-management': 'Character Management',
     fxserver: 'FXServer',
     bans: 'Bans',
     // FIXME:NEXT:UPDATE rename
@@ -53,6 +57,7 @@ const cardNamesMap = {
     'game-notifications': 'Game Notifications',
 } as const;
 const validCardIds = Object.keys(cardNamesMap) as [keyof typeof cardNamesMap];
+const appearanceConfigKeys = new Set(['accent', 'logoUrl', 'faviconUrl', 'bannerUrl']);
 
 //Req validation
 const paramsSchema = z.object({ card: z.enum(validCardIds) });
@@ -73,11 +78,15 @@ export default async function SaveSettingsConfigs(ctx: AuthedCtx) {
     const sendTypedResp = (data: SaveConfigsResp) => ctx.send(data);
 
     //Check permissions
-    if (!ctx.admin.testPermission('settings.write', modulename)) {
+    const requiredPermission = ctx.params.card === 'appearance' ? 'settings.appearance' : 'settings.write';
+    if (!ctx.admin.testPermission(requiredPermission, modulename)) {
         return sendTypedResp({
             type: 'error',
             msg: 'You don\'t have permission to execute this action.',
         });
+    }
+    if (['cadmin', 'character-management'].includes(ctx.params.card) && !ctx.admin.isMaster) {
+        return sendTypedResp({ type: 'error', msg: 'Only the master can configure Character Management.' });
     }
 
     //Validating input
@@ -94,8 +103,16 @@ export default async function SaveSettingsConfigs(ctx: AuthedCtx) {
             ).message,
         });
     }
-    const cardId = paramsSchemaRes.data.card;
+    const cardId = paramsSchemaRes.data.card === 'character-management'
+        ? 'cadmin'
+        : paramsSchemaRes.data.card;
     const { resetKeys, changes: inputConfig } = bodySchemaRes.data;
+    if (cardId === 'appearance' && resetKeys.some(key => {
+        const [scope, configKey] = key.split('.');
+        return scope !== 'general' || !configKey || !appearanceConfigKeys.has(configKey);
+    })) {
+        return sendTypedResp({ type: 'error', msg: 'Appearance access can only reset appearance settings.' });
+    }
     const cardName = cardNamesMap[ctx.params.card as keyof typeof cardNamesMap] ?? 'UNKNOWN';
 
     // FIXME:NEXT:UPDATE remove
@@ -106,6 +123,13 @@ export default async function SaveSettingsConfigs(ctx: AuthedCtx) {
     try {
         if (cardId === 'general') {
             handlerResp = await handleGeneralCard(inputConfig, sendTypedResp);
+        } else if (cardId === 'appearance') {
+            handlerResp = await handleAppearanceCard(inputConfig, sendTypedResp);
+        } else if (cardId === 'cadmin') {
+            if (!inputConfig.cadmin || Object.keys(inputConfig).some(scope => scope !== 'cadmin')) {
+                throw new Error(`Unexpected data for the 'cadmin' card.`);
+            }
+            handlerResp = { processedConfig: inputConfig };
         } else if (cardId === 'fxserver') {
             handlerResp = await handleFxserverCard(inputConfig, sendTypedResp);
         } else if (cardId === 'discord') {
@@ -141,6 +165,11 @@ export default async function SaveSettingsConfigs(ctx: AuthedCtx) {
     //Save the changes
     try {
         const changes = txCore.configStore.saveConfigs(configChanges, ctx.admin.name);
+        if (cardId === 'appearance') {
+            setImmediate(() => pruneUnusedBrandingFiles().catch(error => {
+                console.warn(`Failed to prune unused branding files: ${(error as Error).message}`);
+            }));
+        }
         if (changes.hasMatch(['server.dataPath', 'server.cfgPath'])) {
             txCore.webServer.webSocket.pushRefresh('status');
         }
@@ -161,6 +190,33 @@ export default async function SaveSettingsConfigs(ctx: AuthedCtx) {
         });
     }
 };
+
+
+/**
+ * Appearance card handler
+ */
+const handleAppearanceCard: CardHandler = async (inputConfig) => {
+    if (!inputConfig.general || Object.keys(inputConfig).some(scope => scope !== 'general')) {
+        throw new Error(`Unexpected data for the 'appearance' card.`);
+    }
+    if (Object.keys(inputConfig.general).some(key => !appearanceConfigKeys.has(key))) {
+        throw new Error('Appearance access can only change appearance settings.');
+    }
+    const brandingKeys = ['logoUrl', 'faviconUrl', 'bannerUrl'] as const;
+    const brandingKinds = ['logo', 'favicon', 'banner'] as const;
+    for (let index = 0; index < brandingKeys.length; index++) {
+        const key = brandingKeys[index];
+        const value = inputConfig.general[key];
+        if (value === undefined) continue;
+        if (typeof value !== 'string') throw new Error(`Invalid ${key} value.`);
+        if (value.startsWith('data:')) {
+            inputConfig.general[key] = await storeBrandingDataUrl(brandingKinds[index], value);
+        } else if (value !== '' && !isStoredBrandingFilename(value)) {
+            throw new Error(`Invalid ${key} filename.`);
+        }
+    }
+    return { processedConfig: inputConfig };
+}
 
 
 /**
@@ -400,7 +456,7 @@ const handleDiscordCard: CardHandler = async (inputConfig, sendTypedResp) => {
             type: 'success',
             md: true,
             title: 'Discord Bot Settings Saved!',
-            msg: `${successMsg}\nIf _(and only if)_ the status embed is not being updated, check the [System > Console Log](/system/console-log) page to look for embed errors.`,
+            msg: `${successMsg}\nIf _(and only if)_ the status embed is not being updated, check the [System > txAdmin Log](/system/txadmin-log) page to look for embed errors.`,
         }
     };
 }

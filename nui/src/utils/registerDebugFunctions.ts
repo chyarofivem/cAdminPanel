@@ -101,7 +101,7 @@ const MenuObject = {
             type: "Infinity",
           },
           switchPageKey: "Tab",
-          txAdminVersion: "9.9.9",
+          txAdminVersion: "1.0.0",
         },
       },
     ]);

@@ -1,60 +1,12 @@
-import { useEffect, useRef, useState } from 'react';
-import { Button } from "@/components/ui/button";
-import { CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Loader2, LogInIcon } from "lucide-react";
-import { ApiOauthRedirectResp, ApiVerifyPasswordReq, ApiVerifyPasswordResp } from '@shared/authApiTypes';
-import { useAuth } from '@/hooks/auth';
-import './cfxreLoginButton.css';
-import { useLocation } from "wouter";
+import { useEffect, useState } from 'react';
+import { AlertCircle, ArrowRight, CheckCircle2, Fingerprint, Loader2, PlugZap } from 'lucide-react';
+import PanelBrand from '@/components/PanelBrand';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { fetchWithTimeout } from '@/hooks/fetch';
-import { processFetchError } from './errors';
-import { ServerGlowIcon } from '@/components/serverIcon';
-import { LocalStorageKey } from '@/lib/localStorage';
-
-
-function HeaderNoServer() {
-    return (
-        <div className="text-center">
-            <div className="text-xl xs:text-2xl text-primary/85 font-semibold line-clamp-1">
-                {/* Server Unconfigured */}
-                {/* Unconfigured Server */}
-                {/* Server Not Configured */}
-                {/* Server Not Yet Configured */}
-                Welcome to txAdmin!
-            </div>
-            <div className="text-sm xs:text-base font-normal tracking-wide text-muted-foreground">
-                {/* please login to set it up */}
-                {/* login to configure it */}
-                please login to continue
-            </div>
-        </div>
-    )
-}
-
-function HeaderServerInfo() {
-    const server = window.txConsts.server;
-    if (!server || !server.name || (!server.game && !server.icon)) {
-        return <HeaderNoServer />;
-    }
-    return (<>
-        <ServerGlowIcon
-            iconFilename={server.icon}
-            serverName={server.name}
-            gameName={server.game}
-        />
-        <div className="grow xs:h-full flex flex-col xs:justify-between">
-            <div className="text-xl xs:text-2xl font-semibold line-clamp-1">
-                {server.name}
-            </div>
-            <div className="text-sm xs:text-base text-muted-foreground">
-                Login to continue
-            </div>
-        </div>
-    </>)
-}
-
+import { t } from '@/lib/i18n';
+import { isValidRedirectPath } from '@/lib/navigation';
 
 export enum LogoutReasonHash {
     NONE = '',
@@ -65,178 +17,172 @@ export enum LogoutReasonHash {
     SHUTDOWN = '#shutdown',
 }
 
+type SetupResponse = {
+    success: boolean;
+    message?: string;
+    identities?: string[];
+    saved?: boolean;
+    authorized?: boolean;
+};
+
+type SetupRequest = {
+    action: 'test' | 'save';
+    apiUrl: string;
+    apiKey: string;
+    bootstrapPin: string;
+} | {
+    action: 'authorize';
+    bootstrapPin: string;
+};
+
+type Feedback = {
+    text: string;
+    tone: 'info' | 'success' | 'error';
+};
+
+const feedbackStyles: Record<Feedback['tone'], string> = {
+    info: 'border-white/10 bg-white/[0.035] text-zinc-300',
+    success: 'border-emerald-500/20 bg-emerald-500/10 text-emerald-300',
+    error: 'border-red-500/20 bg-red-500/10 text-red-300',
+};
+
 export default function Login() {
-    const { setAuthData } = useAuth();
-    const usernameRef = useRef<HTMLInputElement>(null);
-    const passwordRef = useRef<HTMLInputElement>(null);
-    const [errorMessage, setErrorMessage] = useState<string | undefined>();
+    const [apiUrl, setApiUrl] = useState(window.txConsts.chyaroUrl);
+    const [apiKey, setApiKey] = useState('');
+    const [bootstrapPin, setBootstrapPin] = useState('');
+    const [connectionOk, setConnectionOk] = useState(false);
     const [isFetching, setIsFetching] = useState(false);
-    const setLocation = useLocation()[1];
+    const [feedback, setFeedback] = useState<Feedback>();
+    const [redirectPath] = useState(() => {
+        const candidate = new URLSearchParams(window.location.search).get('r');
+        return isValidRedirectPath(candidate) ? candidate : undefined;
+    });
+    const needsBootstrap = !window.txConsts.hasMasterAccount;
+    const needsProviderSetup = needsBootstrap && !window.txConsts.chyaroConfigured;
+    const serverName = window.txConsts.server?.name;
 
-    const onError = (error: any) => {
-        const { errorTitle, errorMessage } = processFetchError(error);
-        setErrorMessage(`${errorTitle}:\n${errorMessage}`);
-    }
+    useEffect(() => {
+        const params = new URLSearchParams(window.location.search);
+        const authError = params.get('authError');
+        if (authError) setFeedback({ text: t(authError), tone: 'error' });
 
-    const onErrorResponse = (error: string) => {
-        if (error === 'no_admins_setup') {
-            setErrorMessage('No admins set up.\nRedirecting...');
-            setLocation('/addMaster/pin');
-        } else {
-            setErrorMessage(error);
+        const hashMessages: Record<string, string> = {
+            [LogoutReasonHash.LOGOUT]: t('Logged out.'),
+            [LogoutReasonHash.EXPIRED]: t('Your session expired. Please sign in again.'),
+            [LogoutReasonHash.UPDATED]: t('The panel was updated. Please sign in again.'),
+            [LogoutReasonHash.MASTER_ALREADY_SET]: t('The master account is already configured.'),
+            [LogoutReasonHash.SHUTDOWN]: t('The panel shut down. Start it again before signing in.'),
+        };
+        if (hashMessages[window.location.hash]) {
+            setFeedback({ text: hashMessages[window.location.hash], tone: 'info' });
         }
-    }
+        window.history.replaceState(null, '', '/login');
+    }, []);
 
-    const handleLogin = async () => {
+    const updateConnectionField = (setter: (value: string) => void, value: string) => {
+        setter(value);
+        setConnectionOk(false);
+        setFeedback(current => current?.tone === 'success' ? undefined : current);
+    };
+
+    const startLogin = () => {
+        const suffix = redirectPath ? `?r=${encodeURIComponent(redirectPath)}` : '';
+        window.location.href = `/auth/chyaro/login${suffix}`;
+    };
+
+    const runSetup = async (action: 'test' | 'save' | 'authorize') => {
+        setIsFetching(true);
+        setFeedback(undefined);
         try {
-            setIsFetching(true);
-            const data = await fetchWithTimeout<ApiVerifyPasswordResp, ApiVerifyPasswordReq>(
-                `/auth/password?uiVersion=${encodeURIComponent(window.txConsts.txaVersion)}`,
-                {
-                    method: 'POST',
-                    body: {
-                        username: usernameRef.current?.value ?? '',
-                        password: passwordRef.current?.value ?? '',
-                    },
-                }
+            const body: SetupRequest = action === 'authorize'
+                ? { action, bootstrapPin }
+                : { action, apiUrl, apiKey, bootstrapPin };
+            const data = await fetchWithTimeout<SetupResponse, SetupRequest>(
+                '/auth/chyaro/setup',
+                { method: 'POST', body },
             );
-            if ('error' in data) {
-                if (data.error === 'refreshToUpdate') {
-                    window.location.href = `/login${LogoutReasonHash.UPDATED}`;
-                    window.location.reload();
-                } else {
-                    onErrorResponse(data.error);
-                }
-            } else {
-                setAuthData(data);
+            if (!data.success) throw new Error(data.message || t('Connection failed.'));
+            setConnectionOk(true);
+            if (data.saved || data.authorized) {
+                startLogin();
+                return;
             }
+            setFeedback({
+                tone: 'success',
+                text: `${t('Connection successful.')} ${data.identities?.length
+                    ? t('Verified identities found: {identities}.', { identities: data.identities.join(', ') })
+                    : t('No identities were returned yet.')}`,
+            });
         } catch (error) {
-            onError(error);
+            setConnectionOk(false);
+            setFeedback({
+                tone: 'error',
+                text: t(error instanceof Error ? error.message : 'Connection failed.'),
+            });
         } finally {
             setIsFetching(false);
         }
-    }
+    };
 
-    const handleRedirect = async () => {
-        try {
-            setIsFetching(true);
-            const data = await fetchWithTimeout<ApiOauthRedirectResp>(
-                `/auth/cfxre/redirect?origin=${encodeURIComponent(window.location.origin)}`
-            );
-            if ('error' in data) {
-                onErrorResponse(data.error);
-                setIsFetching(false);
-            } else {
-                console.log('Redirecting to', data.authUrl);
-                window.location.href = data.authUrl;
-            }
-        } catch (error) {
-            onError(error);
-            setIsFetching(false);
-        }
-    }
+    return <main className="p-6 sm:p-8">
+        <header className="flex items-center gap-4 border-b border-white/5 pb-5">
+            <div className="flex size-14 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-black/20 p-2">
+                <PanelBrand useLogo className="max-h-10 max-w-10" />
+            </div>
+            <div className="min-w-0">
+                <p className="truncate text-lg font-semibold text-white">{window.txConsts.panelName}</p>
+                {serverName && serverName !== window.txConsts.panelName && <p className="mt-0.5 truncate text-xs text-zinc-500">{serverName}</p>}
+            </div>
+        </header>
 
-    //Prefill username/password if dev pass enabled
-    useEffect(() => {
-        try {
-            const rawLocalStorageStr = localStorage.getItem(LocalStorageKey.AuthCredsAutofill);
-            if (rawLocalStorageStr) {
-                const [user, pass] = JSON.parse(rawLocalStorageStr);
-                usernameRef.current!.value = user ?? '';
-                passwordRef.current!.value = pass ?? '';
-            }
-        } catch (error) {
-            console.error('Username/Pass autofill failed', error);
-        }
-    }, []);
+        <section className="pt-6">
+            <h1 className="text-2xl font-semibold tracking-tight text-white">{needsProviderSetup ? t('Connect chyarologin') : needsBootstrap ? t('Authorize first sign-in') : t('Sign in')}</h1>
+            <p className="mt-2 text-sm leading-6 text-zinc-400">{needsBootstrap
+                ? t('Enter the one-time PIN shown in the txAdmin console to create the first master account.')
+                : t('Use chyarologin to continue to this panel.')}</p>
 
-    //Gets the message from the hash and clears it
-    useEffect(() => {
-        const hash = window.location.hash;
-        if (!hash) return;
-        if (hash === LogoutReasonHash.LOGOUT) {
-            setErrorMessage('Logged Out.');
-        } else if (hash === LogoutReasonHash.EXPIRED) {
-            setErrorMessage('Session Expired.');
-        } else if (hash === LogoutReasonHash.UPDATED) {
-            setErrorMessage('txAdmin updated!\nPlease login again.');
-        } else if (hash === LogoutReasonHash.MASTER_ALREADY_SET) {
-            setErrorMessage('Master account already configured.');
-        } else if (hash === LogoutReasonHash.SHUTDOWN) {
-            setErrorMessage('The txAdmin server shut down.\nPlease start it again to be able to login.');
-        }
-        window.location.hash = '';
-    }, []);
+            {feedback && <div aria-live="polite" className={`mt-5 flex items-start gap-3 rounded-xl border p-3 text-sm ${feedbackStyles[feedback.tone]}`}>
+                {feedback.tone === 'success'
+                    ? <CheckCircle2 className="mt-0.5 size-4 shrink-0" />
+                    : <AlertCircle className="mt-0.5 size-4 shrink-0" />}
+                <span className="whitespace-pre-wrap">{feedback.text}</span>
+            </div>}
 
-    return (
-        <form
-            onSubmit={(e) => { e.preventDefault(); handleLogin();}}
-            className='w-full rounded-[inherit]'
-        >
-            <CardHeader className="rounded-t-[inherit]">
-                <CardTitle className="h-14 xs:h-16 flex flex-row justify-center items-center gap-4">
-                    <HeaderServerInfo />
-                </CardTitle>
-            </CardHeader>
-            <CardContent className="flex flex-col pt-4 gap-4 border-t rounded-b-[inherit] bg-card">
-                {/* Error message */}
-                {errorMessage && <div className="text-center text-sm whitespace-pre-wrap text-destructive-inline">
-                    {errorMessage}
+            {needsBootstrap ? <form className="mt-6 space-y-4" onSubmit={(event) => { event.preventDefault(); void runSetup(needsProviderSetup ? 'test' : 'authorize'); }}>
+                <div className="space-y-2 text-left">
+                    <Label htmlFor="bootstrap-pin">{t('One-time bootstrap PIN')}</Label>
+                    <Input id="bootstrap-pin" value={bootstrapPin} required autoComplete="one-time-code" onChange={event => updateConnectionField(setBootstrapPin, event.target.value)} />
+                    <p className="text-xs text-zinc-500">{t('The PIN is printed in the txAdmin server console and expires when txAdmin restarts.')}</p>
+                </div>
+                {needsProviderSetup && <div className="space-y-2 text-left">
+                    <Label htmlFor="chyaro-url">{t('chyarologin URL')}</Label>
+                    <Input id="chyaro-url" type="url" value={apiUrl} required autoComplete="url" onChange={event => updateConnectionField(setApiUrl, event.target.value)} />
                 </div>}
+                {needsProviderSetup && <div className="space-y-2 text-left">
+                    <Label htmlFor="chyaro-key">{t('API key')}</Label>
+                    <Input id="chyaro-key" type="password" value={apiKey} required autoComplete="off" onChange={event => updateConnectionField(setApiKey, event.target.value)} />
+                </div>}
+                {needsProviderSetup ? <div className="grid grid-cols-1 gap-2 pt-1 sm:grid-cols-2">
+                    <Button type="submit" variant="outline" disabled={isFetching}>
+                        {isFetching ? <Loader2 className="mr-2 size-4 animate-spin" /> : <PlugZap className="mr-2 size-4" />}{t('Test connection')}
+                    </Button>
+                    <Button type="button" disabled={!connectionOk || isFetching} onClick={() => void runSetup('save')}>
+                        <CheckCircle2 className="mr-2 size-4" />{t('Save & Sign In')}
+                    </Button>
+                </div> : <Button type="submit" className="h-11 w-full justify-between" disabled={isFetching}>
+                    <span className="flex items-center gap-2">{isFetching ? <Loader2 className="size-4 animate-spin" /> : <Fingerprint className="size-4" />}{t('Authorize & Sign In')}</span>
+                    <ArrowRight className="size-4" />
+                </Button>}
+            </form> : window.txConsts.chyaroConfigured ? <Button className="mt-6 h-11 w-full justify-between" onClick={startLogin}>
+                <span className="flex items-center gap-2"><Fingerprint className="size-4" />{t('Continue with chyarologin')}</span>
+                <ArrowRight className="size-4" />
+            </Button> : <div className="mt-6 rounded-xl border border-red-500/20 bg-red-500/10 p-4 text-sm leading-6 text-red-300">
+                {t("chyarologin is not configured. Add the API URL and key to this profile's configuration before signing in.")}
+            </div>}
 
-                {/* Form */}
-                <div className="flex flex-col xs:grid grid-cols-8 gap-2 xs:gap-4 items-baseline">
-                    <Label className="col-span-2" htmlFor="frm-login">
-                        Username
-                    </Label>
-                    <Input
-                        id="frm-login"
-                        ref={usernameRef}
-                        type="text"
-                        placeholder="username"
-                        autoCapitalize='off'
-                        autoComplete='off'
-                        className="col-span-6"
-                        required
-                    />
-                </div>
-                <div className="flex flex-col xs:grid grid-cols-8 gap-2 xs:gap-4 items-baseline">
-                    <Label className="col-span-2" htmlFor="frm-password">
-                        Password
-                    </Label>
-                    <Input
-                        id="frm-password"
-                        ref={passwordRef}
-                        type="password"
-                        placeholder='password'
-                        autoCapitalize='off'
-                        autoComplete='off'
-                        className="col-span-6"
-                        required
-                    />
-                </div>
-
-                {/* Buttons */}
-                <Button variant='outline' disabled={isFetching}>
-                    {isFetching ? (
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    ) : (
-                        <LogInIcon className="inline mr-2 h-4 w-4" />
-                    )} Login
-                </Button>
-                <Button
-                    className="cfxrebtn"
-                    variant='outline'
-                    disabled={isFetching}
-                    onClick={handleRedirect}
-                >
-                    {isFetching ? (
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    ) : (
-                        <LogInIcon className="inline mr-2 h-4 w-4" />
-                    )} Login with Cfx.re
-                </Button>
-            </CardContent>
-        </form>
-    );
+            <p className="mt-6 border-t border-white/5 pt-4 text-xs leading-5 text-zinc-500">
+                {t("chyarologin verifies identity; this server's local administrator list controls access.")}
+            </p>
+        </section>
+    </main>;
 }

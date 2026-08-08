@@ -3,6 +3,8 @@ import { cloneDeep }  from 'lodash-es';
 import { txEnv } from '@core/globalData';
 import consoleFactory from '@lib/console';
 import { InitializedCtx } from '@modules/WebServer/ctxTypes';
+import { panelDisplayName, readBrandingDataUrl } from '@lib/branding';
+import { ACCENTS, resolveAccent } from '@lib/theme';
 const console = consoleFactory(modulename);
 
 
@@ -30,6 +32,15 @@ export default async function Intercom(ctx: InitializedCtx) {
                 success: false,
             });
         }
+    } else if (scope == 'branding') {
+        const accent = resolveAccent(txConfig.general.accent);
+        return ctx.send({
+            success: true,
+            panelName: panelDisplayName(),
+            accent,
+            accentColor: ACCENTS[accent].hex,
+            bannerUrl: await readBrandingDataUrl('banner'),
+        });
     } else if (scope == 'resources') {
         if (!Array.isArray(postData.resources)) {
             return ctx.utils.error(400, 'Invalid Request');

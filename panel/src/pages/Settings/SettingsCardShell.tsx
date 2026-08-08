@@ -5,6 +5,7 @@ import { ChevronDownIcon, ChevronRightIcon, ChevronUpIcon, Loader2Icon } from "l
 import { useAutoAnimate } from '@formkit/auto-animate/react'
 import CardContentOverlay from '@/components/CardContentOverlay'
 import { SettingsCardContext, SettingsPageContext } from './utils'
+import { t } from '@/lib/i18n'
 
 
 type SettingsCardShellProps = {
@@ -39,10 +40,10 @@ export default function SettingsCardShell({
                         <>
                             <li>{cardCtx.tabName}</li>
                             <ChevronRightIcon className='size-3.5 mt-0.5 inline align-text-top opacity-75' />
-                            <li>{cardCtx.cardName} Settings</li>
+                            <li>{t('{name} Settings', { name: cardCtx.cardName })}</li>
                         </>
                     ) : (
-                        <li>{visibleTabName} Settings</li>
+                        <li>{t('{name} Settings', { name: visibleTabName })}</li>
                     )}
                     {isCardPendingSave && (
                         // <div className="grow text-right xflex xitems-center xgap-1.5 xbg-lime-300">
@@ -51,7 +52,7 @@ export default function SettingsCardShell({
                         //     </li>
                         //     <li className="text-warning-inline italic tracking-wide">you have unsaved changes</li>
                         // </div>
-                        <li className="text-warning-inline italic tracking-wide">(unsaved changes)</li>
+                        <li className="text-warning-inline italic tracking-wide">{t('(unsaved changes)')}</li>
                     )}
                 </ol>
 
@@ -67,7 +68,7 @@ export default function SettingsCardShell({
                                 disabled={!isCardPendingSave || pageCtx.isReadOnly}
                                 onClick={onClickSave}
                             >
-                                Save {visibleCardName} Settings
+                                {t('Save {name} Settings', { name: visibleCardName })}
                                 {pageCtx.isSaving && (
                                     <Loader2Icon className="h-3.5 mt-0.5 inline animate-spin" />
                                 )}
@@ -78,7 +79,7 @@ export default function SettingsCardShell({
                                     variant={'muted'}
                                     onClick={() => advancedSetter(!advancedVisible)}
                                 >
-                                    {advancedVisible ? 'Discard' : 'Show'} Advanced
+                                    {advancedVisible ? t('Discard') : t('Show')} {t('Advanced')}
                                     {advancedVisible
                                         ? <ChevronUpIcon className="size-4 ml-1.5" />
                                         : <ChevronDownIcon className="size-4 ml-1.5" />}

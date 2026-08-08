@@ -10,7 +10,11 @@
     "projectName": "Context Loading...",
     "maxClients": 48,
     "switchPageKey": "Tab",
-    "txAdminVersion": "9.9.9",
+    "txAdminVersion": "1.0.0",
+    "panelName": "FiveM Panel",
+    "accent": "blue",
+    "accentColor": "#2563eb",
+    "bannerUrl": "",
     "alignRight": false
   }
 }

@@ -4,6 +4,7 @@ import type { ISearchDecorationOptions, ISearchOptions, SearchAddon } from "@xte
 import { ArrowDownIcon, ArrowUpIcon, CaseSensitiveIcon, RegexIcon, WholeWordIcon, XIcon } from "lucide-react";
 import { ReactNode, useEffect, useRef, useState } from "react";
 import { useEventListener } from "usehooks-ts";
+import { t } from '@/lib/i18n';
 
 
 type ButtonProps = {
@@ -16,7 +17,9 @@ type ButtonProps = {
 function SearchBarButton({ title, onClick, isActive, children }: ButtonProps) {
     return (
         <button
+            type="button"
             title={title}
+            aria-label={title}
             className={cn(
                 "rounded p-0.5",
                 "hover:bg-secondary-foreground hover:text-secondary",
@@ -31,7 +34,7 @@ function SearchBarButton({ title, onClick, isActive, children }: ButtonProps) {
 }
 
 
-const labelNoResults = 'No results';
+const labelNoResults = t('No results');
 const xtermDecorations = {
     activeMatchBackground: '#FF00DC',
     activeMatchColorOverviewRuler: '#FF00DC',
@@ -152,33 +155,33 @@ export default function LiveConsoleSearchBar({ show, setShow, searchAddon }: Liv
 
     if (!show) return null;
     return (
-        <div className="absolute top-0 xs:right-4 bg-secondary border z-10 flex items-center justify-center gap-1 xs:gap-4 shadow-xl p-1 rounded-b-lg border-t-0 w-full xs:w-auto flex-wrap">
+        <div className="absolute right-2 top-2 z-10 flex w-[calc(100%-1rem)] flex-wrap items-center justify-center gap-2 rounded-xl border border-white/10 bg-zinc-950/95 p-2 shadow-2xl backdrop-blur xs:w-auto">
             <div className="relative">
                 <Input
                     ref={inputRef}
                     className="h-8"
-                    placeholder="Search string"
+                    placeholder={t('Search console output')}
                     onKeyDown={handleInputKeyDown}
                     onChange={handleInputChange}
                     onBlur={() => { searchAddon.clearActiveDecoration() }}
                 />
                 <div className="absolute top-1/2 right-1 transform -translate-y-1/2 flex text-muted-foreground gap-2">
                     <SearchBarButton
-                        title="Case Sensitive"
+                        title={t('Case sensitive')}
                         isActive={caseSensitive}
                         onClick={handleCaseSensitiveMode}
                     >
                         <CaseSensitiveIcon className="h-5 w-5" />
                     </SearchBarButton>
                     <SearchBarButton
-                        title="Whole Word"
+                        title={t('Whole word')}
                         isActive={wholeWord}
                         onClick={handleWholeWordMode}
                     >
                         <WholeWordIcon className="h-5 w-5" />
                     </SearchBarButton>
                     <SearchBarButton
-                        title="Regex"
+                        title={t('Regular expression')}
                         isActive={regex}
                         onClick={handleRegexMode}
                     >
@@ -191,19 +194,19 @@ export default function LiveConsoleSearchBar({ show, setShow, searchAddon }: Liv
             </div>
             <div className="flex gap-2 text-muted-foreground">
                 <SearchBarButton
-                    title="Previous"
+                    title={t('Previous result')}
                     onClick={handlePrevious}
                 >
                     <ArrowUpIcon className="h-5 w-5" />
                 </SearchBarButton>
                 <SearchBarButton
-                    title="Next"
+                    title={t('Next result')}
                     onClick={handleNext}
                 >
                     <ArrowDownIcon className="h-5 w-5" />
                 </SearchBarButton>
                 <SearchBarButton
-                    title="Close"
+                    title={t('Close')}
                     onClick={() => { setShow(false) }}
                 >
                     <XIcon className="h-5 w-5" />

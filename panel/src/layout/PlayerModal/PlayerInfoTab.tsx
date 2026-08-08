@@ -12,23 +12,24 @@ import { PlayerModalPlayerData } from "@shared/playerApiTypes";
 import { ShieldAlertIcon } from "lucide-react";
 import { useMemo, useRef, useState } from "react";
 import { ModalTabInner } from "@/components/modal-tabs";
+import { t } from '@/lib/i18n';
 
 
 function LogActionCounter({ type, count }: { type: 'Ban' | 'Warn', count: number }) {
-    const pluralLabel = (count > 1) ? `${type}s` : type;
+    const label = count === 1 ? t(type) : t(type === 'Ban' ? 'Bans' : 'Warnings');
     if (count === 0) {
         return <span className={cn(
             'h-max rounded-sm text-xs font-semibold px-1 py-[0.125rem] tracking-widest text-center inline-block',
             'bg-secondary text-secondary-foreground'
         )}>
-            0 {type}s
+            0 {label}
         </span>
     } else {
         return <span className={cn(
             'h-max rounded-sm text-xs font-semibold px-1 py-[0.125rem] tracking-widest text-center inline-block',
             type === 'Ban' ? 'bg-destructive text-destructive-foreground' : 'bg-warning text-warning-foreground'
         )}>
-            {count} {pluralLabel}
+            {count} {label}
         </span>
     }
 }
@@ -55,7 +56,7 @@ function PlayerNotesBox({ playerRef, player, refreshModalData }: PlayerNotesBoxP
     });
 
     const doSaveNotes = () => {
-        setNotesLogText('Saving...');
+        setNotesLogText(t('Saving...'));
         playerNotesApi({
             queryParams: playerRef,
             data: {
@@ -82,7 +83,7 @@ function PlayerNotesBox({ playerRef, player, refreshModalData }: PlayerNotesBoxP
 
     return <>
         <Label htmlFor="playerNotes">
-            Notes: <span className="text-muted-foreground">{notesLogText}</span>
+            {t('Notes')}: <span className="text-muted-foreground">{t(notesLogText)}</span>
         </Label>
         <Textarea
             ref={textAreaRef}
@@ -90,13 +91,13 @@ function PlayerNotesBox({ playerRef, player, refreshModalData }: PlayerNotesBoxP
             className="w-full mt-1"
             disabled={!player.isRegistered}
             defaultValue={player.notes}
-            onChange={() => setNotesLogText('Press enter to save.')}
+            onChange={() => setNotesLogText(t('Press enter to save.'))}
             onKeyDown={handleKeyDown}
             //1rem of padding + 1.25rem per line
             style={{ height: `${1 + 1.25 * textAreaLines}rem` }}
             placeholder={player.isRegistered
-                ? 'Type your notes about the player.'
-                : 'Cannot set notes for players that are not registered.'}
+                ? t('Type your notes about the player.')
+                : t('Cannot set notes for players that are not registered.')}
         />
         {window.txIsMobile && <div className="mt-2 w-full">
             <Button
@@ -105,7 +106,7 @@ function PlayerNotesBox({ playerRef, player, refreshModalData }: PlayerNotesBoxP
                 onClick={doSaveNotes}
                 disabled={!player.isRegistered}
                 className="w-full"
-            >Save Note</Button>
+            >{t('Save Note')}</Button>
         </div>}
     </>
 }
@@ -149,7 +150,7 @@ export default function PlayerInfoTab({ playerRef, player, serverTime, tsFetch, 
         tsFetch={tsFetch}
         isDateOnly
     />;
-    const whitelistedText = !player.tsWhitelisted ? 'not yet' : <DateTimeCorrected
+    const whitelistedText = !player.tsWhitelisted ? t('not yet') : <DateTimeCorrected
         className="opacity-75 cursor-help"
         serverTime={serverTime}
         tsObject={player.tsWhitelisted}
@@ -165,9 +166,9 @@ export default function PlayerInfoTab({ playerRef, player, serverTime, tsFetch, 
             data: {
                 status: !player.tsWhitelisted
             },
-            toastLoadingMessage: 'Updating whitelist...',
+            toastLoadingMessage: t('Updating allowlist...'),
             genericHandler: {
-                successMsg: 'Whitelist changed.',
+                successMsg: t('Allowlist changed.'),
             },
             success: (data, toastId) => {
                 if ('success' in data) {
@@ -187,13 +188,13 @@ export default function PlayerInfoTab({ playerRef, player, serverTime, tsFetch, 
                     banExpiration = Math.max(banExpiration ?? 0, action.exp);
                 }
             } else {
-                return 'This player is permanently banned.';
+                return t('This player is permanently banned.');
             }
         }
 
         if (banExpiration !== undefined) {
             const str = tsToLocaleDateTimeString(banExpiration, 'short', 'short');
-            return `This player is banned until ${str}`;
+            return t('This player is banned until {date}.', { date: str });
         }
     }, [player, serverTime]);
 
@@ -211,24 +212,24 @@ export default function PlayerInfoTab({ playerRef, player, serverTime, tsFetch, 
             ) : null}
             <dl className="pb-2">
                 {player.isConnected && <div className="py-0.5 grid grid-cols-3 gap-4 px-0">
-                    <dt className="text-sm font-medium leading-6 text-muted-foreground">Session Time</dt>
+                    <dt className="text-sm font-medium leading-6 text-muted-foreground">{t('Session Time')}</dt>
                     <dd className="text-sm leading-6 col-span-2 mt-0">{sessionTimeText}</dd>
                 </div>}
                 <div className="py-0.5 grid grid-cols-3 gap-4 px-0">
-                    <dt className="text-sm font-medium leading-6 text-muted-foreground">Play Time</dt>
+                    <dt className="text-sm font-medium leading-6 text-muted-foreground">{t('Play Time')}</dt>
                     <dd className="text-sm leading-6 col-span-2 mt-0">{playTimeText}</dd>
                 </div>
                 <div className="py-0.5 grid grid-cols-3 gap-4 px-0">
-                    <dt className="text-sm font-medium leading-6 text-muted-foreground">Join Date</dt>
+                    <dt className="text-sm font-medium leading-6 text-muted-foreground">{t('Join Date')}</dt>
                     <dd className="text-sm leading-6 col-span-2 mt-0">{joinDateText}</dd>
                 </div>
                 {!player.isConnected && <div className="py-0.5 grid grid-cols-3 gap-4 px-0">
-                    <dt className="text-sm font-medium leading-6 text-muted-foreground">Last Connection</dt>
+                    <dt className="text-sm font-medium leading-6 text-muted-foreground">{t('Last Connection')}</dt>
                     <dd className="text-sm leading-6 col-span-2 mt-0">{lastConnectionText}</dd>
                 </div>}
 
                 <div className="py-0.5 grid grid-cols-3 gap-4 px-0">
-                    <dt className="text-sm font-medium leading-6 text-muted-foreground">ID Allowlisted</dt>
+                    <dt className="text-sm font-medium leading-6 text-muted-foreground">{t('ID Allowlisted')}</dt>
                     <dd className="text-sm leading-6 mt-0">{whitelistedText}</dd>
                     <dd className="text-right">
                         <Button
@@ -238,12 +239,12 @@ export default function PlayerInfoTab({ playerRef, player, serverTime, tsFetch, 
                             onClick={handleWhitelistClick}
                             disabled={!hasPerm('players.whitelist')}
                         >
-                            {player.tsWhitelisted ? 'Remove' : 'Allow'}
+                            {player.tsWhitelisted ? t('Remove') : t('Allow')}
                         </Button>
                     </dd>
                 </div>
                 <div className="py-0.5 grid grid-cols-3 gap-4 px-0">
-                    <dt className="text-sm font-medium leading-6 text-muted-foreground">Sanctions</dt>
+                    <dt className="text-sm font-medium leading-6 text-muted-foreground">{t('Sanctions')}</dt>
                     <dd className="text-sm leading-6 mt-0 flex flex-wrap gap-2">
                         <LogActionCounter type="Ban" count={banCount} />
                         <LogActionCounter type="Warn" count={warnCount} />
@@ -254,7 +255,7 @@ export default function PlayerInfoTab({ playerRef, player, serverTime, tsFetch, 
                             size='inline'
                             style={{ minWidth: '8.25ch' }}
                             onClick={() => { setSelectedTab('History') }}
-                        >View</Button>
+                        >{t('View')}</Button>
                     </dd>
                 </div>
             </dl>

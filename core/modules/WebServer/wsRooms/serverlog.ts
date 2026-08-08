@@ -1,13 +1,13 @@
 import type { RoomType } from "../webSocket";
 
 /**
- * The console room is responsible for the server log page
+ * Streams normalized entries for the combined txAdmin log page.
  */
 export default {
-    permission: 'server.log.view',
+    permission: 'txadmin.log.combined',
     eventName: 'logData',
     cumulativeBuffer: true,
     outBuffer: [],
-    initialData: () => txCore.logger.server.getRecentBuffer(500),
+    initialData: () => txCore.logger.txadmin.getRecentBuffer(250),
     commands: {},
 } satisfies RoomType;

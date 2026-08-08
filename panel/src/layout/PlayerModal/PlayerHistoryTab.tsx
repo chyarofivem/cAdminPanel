@@ -4,6 +4,7 @@ import { PlayerHistoryItem } from "@shared/playerApiTypes";
 import InlineCode from "@/components/InlineCode";
 import { useOpenActionModal } from "@/hooks/actionModal";
 import { ModalTabInner, ModalTabMessage } from "@/components/modal-tabs";
+import { t } from '@/lib/i18n';
 
 
 type HistoryItemProps = {
@@ -16,18 +17,20 @@ function HistoryItem({ action, serverTime, modalOpener }: HistoryItemProps) {
     let footerNote, borderColorClass, actionMessage;
     if (action.type === 'ban') {
         borderColorClass = 'border-destructive';
-        actionMessage = `BANNED by ${action.author}`;
+        actionMessage = t('BANNED by {name}', { name: action.author });
     } else if (action.type === 'warn') {
         borderColorClass = 'border-warning';
-        actionMessage = `WARNED by ${action.author}`;
+        actionMessage = t('WARNED by {name}', { name: action.author });
     }
     if (action.revokedBy) {
         borderColorClass = '';
         const revocationDate = tsToLocaleDateTimeString(action.revokedAt ?? 0, 'medium', 'short');
-        footerNote = `Revoked by ${action.revokedBy} on ${revocationDate}.`;
+        footerNote = t('Revoked by {name} on {date}.', { name: action.revokedBy, date: revocationDate });
     } else if (typeof action.exp === 'number') {
         const expirationDate = tsToLocaleDateTimeString(action.exp, 'medium', 'short');
-        footerNote = (action.exp < serverTime) ? `Expired on ${expirationDate}.` : `Expires in ${expirationDate}.`;
+        footerNote = action.exp < serverTime
+            ? t('Expired on {date}.', { date: expirationDate })
+            : t('Expires on {date}.', { date: expirationDate });
     }
 
     return (
@@ -68,7 +71,7 @@ export default function PlayerHistoryTab({ actionHistory, serverTime, refreshMod
 
     if (!actionHistory.length) {
         return <ModalTabMessage>
-            No bans/warns found.
+            {t('No bans or warnings found.')}
         </ModalTabMessage>;
     }
 

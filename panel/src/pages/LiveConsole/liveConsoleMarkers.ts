@@ -2,6 +2,7 @@ import { cn } from "@/lib/utils";
 import type { Terminal } from "@xterm/xterm";
 import { sanitizeTermLine } from "./liveConsoleUtils";
 import { txToast } from "@/components/TxToaster";
+import { t } from "@/lib/i18n";
 
 
 //Yoinked from the internet, no good source
@@ -36,7 +37,7 @@ export const getTermLineRtlData = (line: string): TerminalMarkerGetterResult => 
             labelLong: 'VIEW RIGHT-TO-LEFT TEXT',
             onClick: () => {
                 txToast.warning({
-                    title: 'Bidirectional Text Detected:',
+                    title: t('Bidirectional Text Detected:'),
                     md: true,
                     msg: `Due to limitations, the terminal cannot display RTL text.\nThis is what the text is supposed to look like:\n\n${sanitizeTermLine(line)}`,
                 }, { duration: 7500 });
@@ -108,7 +109,7 @@ export const getTermLineInitialData = (line: string): TerminalMarkerGetterResult
             labelLong: 'VIEW COMMAND',
             onClick: () => {
                 txToast.info({
-                    title: `Initial Player Data:`,
+                    title: t('Initial Player Data:'),
                     md: true,
                     msg: '```json\n' + JSON.stringify(data, null, 2) + '\n```',
                 }, { duration: 7500 });

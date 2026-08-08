@@ -66,6 +66,8 @@ export default async function SendDiagnosticsReport(ctx: AuthedCtx) {
     if (storedConfigs?.discordBot?.token) {
         storedConfigs.discordBot.token = '[REDACTED]';
     }
+    if (storedConfigs?.chyaro?.apiKey) storedConfigs.chyaro.apiKey = '[REDACTED]';
+    if (storedConfigs?.cadmin?.apiSecret) storedConfigs.cadmin.apiSecret = '[REDACTED]';
     if (storedConfigs?.server?.startupArgs) {
         storedConfigs.server.startupArgs = redactStartupSecrets(storedConfigs.server.startupArgs);
     }

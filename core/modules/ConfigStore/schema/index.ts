@@ -9,6 +9,8 @@ import discordBot from "./discordBot";
 import gameFeatures from "./gameFeatures";
 import webServer from "./webServer";
 import logger from "./logger";
+import chyaro from "./chyaro";
+import cadmin from "./cadmin";
 import { SYM_RESET_CONFIG } from "@lib/symbols";
 
 
@@ -36,6 +38,8 @@ export const ConfigSchemas_v2 = {
     gameFeatures,
     webServer,
     logger,
+    chyaro,
+    cadmin,
 } satisfies ListOf<ConfigScope>;
 
 //Exporting the types

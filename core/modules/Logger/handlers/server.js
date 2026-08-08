@@ -1,8 +1,6 @@
 /* eslint-disable padded-blocks */
 const modulename = 'Logger:Server';
 import { QuantileArray, estimateArrayJsonSize } from '@modules/Metrics/statsUtils';
-import { LoggerBase } from '../LoggerBase';
-import { getBootDivider } from '../loggerUtils';
 import consoleFactory from '@lib/console';
 import bytes from 'bytes';
 import { summarizeIdsArray } from '@lib/player/idUtils';
@@ -49,24 +47,13 @@ before sending it to fd3
 // }, 750);
 
 
-export default class ServerLogger extends LoggerBase {
-    constructor(basePath, lrProfileConfig) {
-        const lrDefaultOptions = {
-            path: basePath,
-            intervalBoundary: true,
-            initialRotation: true,
-            history: 'server.history',
-            // compress: 'gzip',
-            interval: '1d',
-            maxFiles: 7,
-            maxSize: '10G',
-
-        };
-        super(basePath, 'server', lrDefaultOptions, lrProfileConfig);
-        this.lrStream.write(getBootDivider());
-
+export default class ServerLogger {
+    constructor(combinedLogger) {
+        this.combinedLogger = combinedLogger;
         this.recentBuffer = [];
         this.recentBufferMaxSize = 32e3;
+        this.lrErrors = 0;
+        this.lrLastError = undefined;
 
         //stats stuff
         this.eventsPerMinute = new QuantileArray(24 * 60, 6 * 60); //max 1d, min 6h
@@ -141,11 +128,8 @@ export default class ServerLogger extends LoggerBase {
                 this.recentBuffer.push(eventObject);
                 if (this.recentBuffer.length > this.recentBufferMaxSize) this.recentBuffer.shift();
 
-                //Send to websocket
-                txCore.webServer.webSocket.buffer('serverlog', eventObject);
-
-                //Write to file
-                this.lrStream.write(`${eventString}\n`);
+                //Persist and publish through the combined txAdmin log.
+                this.combinedLogger.writeServer(eventObject);
             } catch (error) {
                 console.verbose.error('Error processing FD3 txAdminLogData:');
                 console.verbose.dir(error);
@@ -231,7 +215,7 @@ export default class ServerLogger extends LoggerBase {
             eventMessage = 'Logger started';
             txCore.metrics.playerDrop.handleServerBootData(eventData.data);
             if (typeof eventData.data?.gameName === 'string' && eventData.data.gameName.length) {
-                if(eventData.data.gameName === 'gta5'){
+                if (eventData.data.gameName === 'gta5') {
                     txCore.cacheStore.set('fxsRuntime:gameName', 'fivem');
                 } else if (eventData.data.gameName === 'rdr3') {
                     txCore.cacheStore.set('fxsRuntime:gameName', 'redm');

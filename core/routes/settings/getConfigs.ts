@@ -62,6 +62,11 @@ export default async function GetSettingsConfigs(ctx: AuthedCtx) {
             toRedact.discordBot.token = '[redacted by txAdmin]';
         }
     }
+    if (!ctx.admin.isMaster) {
+        const toRedact = outData.storedConfigs as any;
+        if (toRedact.chyaro?.apiKey) toRedact.chyaro.apiKey = '[redacted]';
+        if (toRedact.cadmin?.apiSecret) toRedact.cadmin.apiSecret = '[redacted]';
+    }
 
     return sendTypedResp(outData);
 };

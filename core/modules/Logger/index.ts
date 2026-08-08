@@ -1,8 +1,8 @@
 const modulename = 'Logger';
-import type { Options as RfsOptions } from 'rotating-file-stream';
 import AdminLogger from './handlers/admin';
 import FXServerLogger from './FXServerLogger';
 import ServerLogger from './handlers/server';
+import TxAdminLogger from './TxAdminLogger';
 import { getLogSizes } from './loggerUtils.js';
 import consoleFactory from '@lib/console';
 import { txEnv } from '@core/globalData';
@@ -17,11 +17,13 @@ export default class Logger {
     public readonly admin: AdminLogger;
     public readonly fxserver: FXServerLogger;
     public readonly server: ServerLogger;
+    public readonly txadmin: TxAdminLogger;
 
     constructor() {
-        this.admin = new AdminLogger(this.basePath, txConfig.logger.admin);
+        this.txadmin = new TxAdminLogger(this.basePath, txConfig.logger.txadmin);
+        this.admin = new AdminLogger(this.txadmin);
         this.fxserver = new FXServerLogger(this.basePath, txConfig.logger.fxserver);
-        this.server = new ServerLogger(this.basePath, txConfig.logger.server);
+        this.server = new ServerLogger(this.txadmin);
     }
 
 
@@ -41,7 +43,7 @@ export default class Logger {
     async getStorageSize() {
         return await getLogSizes(
             this.basePath,
-            /^(admin|fxserver|server)(_\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2}(_\d+)?)?.log$/,
+            /^(admin|fxserver|server|txadmin)(_\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2}(_\d+)?)?.log$/,
         );
     }
 };
