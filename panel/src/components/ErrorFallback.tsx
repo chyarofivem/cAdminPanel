@@ -18,7 +18,7 @@ export function AppErrorFallback({ error }: FallbackProps) {
         window.location.reload();
     }
     return (
-        <div className="w-screen h-screen flex flex-col items-center justify-center">
+        <div className="w-screen h-screen flex flex-col items-center justify-center bg-gradient-to-b from-background to-destructive/5 p-4">
             <GenericErrorBoundaryCard
                 title={t('App Error:')}
                 description={t('Due to an unexpected error, the panel has crashed.')}
@@ -70,10 +70,10 @@ export function GenericErrorBoundaryCard(props: GenericErrorBoundaryCardProps) {
     }
 
     return (
-        <Card className="max-w-xl">
+        <Card className="w-full max-w-xl overflow-hidden border-destructive/20 bg-background/95 shadow-2xl">
             <CardHeader>
-                <h1 className="text-3xl text-red-500 pb-0 flex flex-row justify-start items-center">
-                    <FiAlertOctagon className="inline-block mr-2" />
+                <h1 className="text-2xl font-semibold text-destructive pb-0 flex flex-row justify-start items-center">
+                    <span className="mr-3 rounded-xl bg-destructive/10 p-2"><FiAlertOctagon /></span>
                     {props.title}
                 </h1>
                 <span className="text-sm text-muted-foreground pt-0">{props.description}</span>
@@ -99,23 +99,14 @@ export function GenericErrorBoundaryCard(props: GenericErrorBoundaryCardProps) {
                 <p>{t('Stack')}:</p>
                 <pre className="mt-1">
                     <ScrollArea
-                        className="p-2 border border-red-800 rounded-sm 
-                                font-mono text-muted-foreground text-xs text-red-800
+                        className="p-3 border border-white/10 rounded-lg bg-black/20
+                                font-mono text-muted-foreground text-xs
                                 h-32 w-full"
                     >{props.error.stack}</ScrollArea>
                 </pre>
             </CardContent>
-            <CardFooter className="flex flex-row justify-between">
+            <CardFooter>
                 {props.resetButton}
-                <Button
-                    asChild
-                    variant="outline"
-                    className="bg-discord hover:bg-discord-active animate-pulse hover:animate-none"
-                >
-                    <a href="http://discord.gg/txAdmin" target="_blank" rel="noopener noreferrer">
-                        {t('Support Discord')}
-                    </a>
-                </Button>
             </CardFooter>
         </Card>
     );

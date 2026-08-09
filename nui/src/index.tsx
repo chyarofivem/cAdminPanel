@@ -34,6 +34,74 @@ const menuRedmTheme = createTheme(rawMenuRedmTheme);
 //Overwriting the notistack colors
 //Actually using the colors from the RedM theme, but could start using `theme` if needed
 const StyledMaterialDesignContent = styled(MaterialDesignContent)(({ theme }) => ({
+  '&.tx-communication-notification': {
+    width: 'min(440px, calc(100vw - 32px))',
+    minWidth: 0,
+    padding: 0,
+    overflow: 'hidden',
+    color: '#f8fafc',
+    background: 'rgba(10, 15, 21, 0.96)',
+    border: '1px solid rgba(255, 255, 255, 0.12)',
+    borderRadius: 16,
+    boxShadow: '0 20px 55px rgba(0, 0, 0, 0.46), 0 4px 14px rgba(0, 0, 0, 0.26)',
+    backdropFilter: 'blur(18px)',
+  },
+  '&.tx-communication-notification--announcement': {
+    '--tx-comms-accent': '#fbbf24',
+    '--tx-comms-accent-soft': 'rgba(251, 191, 36, 0.14)',
+  },
+  '&.tx-communication-notification--direct-message': {
+    '--tx-comms-accent': theme.palette.primary.main,
+    '--tx-comms-accent-soft': 'rgba(0, 197, 140, 0.14)',
+  },
+  '& .tx-communication-card': {
+    position: 'relative',
+    display: 'grid',
+    gridTemplateColumns: '48px minmax(0, 1fr)',
+    gap: 14,
+    width: '100%',
+    padding: '18px 20px 18px 18px',
+  },
+  '& .tx-communication-card__accent': {
+    position: 'absolute',
+    inset: '0 auto 0 0',
+    width: 4,
+    background: 'var(--tx-comms-accent)',
+    boxShadow: '0 0 24px var(--tx-comms-accent)',
+  },
+  '& .tx-communication-card__icon': {
+    display: 'grid',
+    placeItems: 'center',
+    alignSelf: 'start',
+    width: 46,
+    height: 46,
+    border: '1px solid color-mix(in srgb, var(--tx-comms-accent) 42%, transparent)',
+    borderRadius: 13,
+    color: 'var(--tx-comms-accent)',
+    background: 'var(--tx-comms-accent-soft)',
+  },
+  '& .tx-communication-card__icon svg': {
+    fontSize: 24,
+  },
+  '& .tx-communication-card__content': {
+    minWidth: 0,
+  },
+  '& .tx-communication-card__title': {
+    margin: 0,
+    color: '#ffffff',
+    fontSize: 15,
+    fontWeight: 750,
+    lineHeight: 1.35,
+  },
+  '& .tx-communication-card__message': {
+    margin: '8px 0 0',
+    color: 'rgba(241, 245, 249, 0.84)',
+    fontSize: 14,
+    fontWeight: 450,
+    lineHeight: 1.55,
+    overflowWrap: 'anywhere',
+    whiteSpace: 'pre-wrap',
+  },
   '&.notistack-MuiContent-default': {
     color: menuRedmTheme.palette.text.primary,
     backgroundColor: menuRedmTheme.palette.background.default,

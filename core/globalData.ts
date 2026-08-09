@@ -262,9 +262,6 @@ if (!ignoreDeprecatedConfigs) {
     }
 }
 
-//No default, no convar/zap cfg
-const txaUrl = hostVars.TXA_URL;
-
 //txAdmin port
 const txaPort = handleMultiVar(
     'TXA_PORT',
@@ -550,7 +547,6 @@ export const txHostConfig = Object.freeze({
     hostApiToken,
 
     //Networking
-    txaUrl,
     txaPort,
     fxsPort,
     netInterface,

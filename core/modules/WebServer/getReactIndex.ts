@@ -108,7 +108,7 @@ export default async function getReactIndex(ctx: CtxWithVars | AuthedCtx) {
         isWebInterface: ctx.txVars.isWebInterface,
         showAdvanced: (txDevEnv.ENABLED || console.isVerbose),
         hasMasterAccount: txCore.adminStore.hasAdmins(true),
-        chyaroConfigured: txConfig.chyaro.apiKey.length > 0,
+        chyaroConfigured: txConfig.chyaro.apiKey.length > 0 && txConfig.chyaro.panelUrl.length > 0,
         chyaroUrl: txConfig.chyaro.apiUrl,
         cadminEnabled: txConfig.cadmin.enabled,
         uiLocale: txConfig.general.language === 'hr' ? 'hr' : 'en',

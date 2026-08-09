@@ -34,15 +34,29 @@ const classes = {
 const Root = styled('div')(({ theme }) => ({
   [`& .${classes.root}`]: {
     borderRadius: 10,
+    marginBottom: 3,
+    minHeight: 44,
+    border: '1px solid transparent',
+    transition: 'background-color 120ms ease, border-color 120ms ease, transform 120ms ease',
+    '&:hover': {
+      backgroundColor: 'rgba(255,255,255,.06)',
+      transform: 'translateX(2px)',
+    },
+    '&.Mui-selected': {
+      backgroundColor: 'rgba(0,197,140,.12)',
+      borderColor: 'rgba(0,197,140,.34)',
+    },
   },
 
   [`& .${classes.rootDisabled}`]: {
     borderRadius: 10,
-    opacity: 0.35,
+    opacity: 0.32,
+    marginBottom: 3,
   },
 
   [`& .${classes.icon}`]: {
-    color: theme.palette.text.secondary,
+    color: theme.palette.primary.main,
+    minWidth: 42,
   },
 
   [`& .${classes.overrideText}`]: {
@@ -115,7 +129,7 @@ export const MenuListItem: React.FC<MenuListItemProps> = memo(
     return (
       <Root ref={divRef}>
         <ListItemButton
-          onClick={() => onSelect()}
+          onClick={handleEnter}
           className={isUserAllowed ? classes.root : classes.rootDisabled}
           dense
           selected={selected}

@@ -29,7 +29,6 @@ export const hostEnvVarSchemas = {
     QUIET_MODE: z.preprocess((val) => val === 'true', z.boolean()),
 
     //Networking
-    TXA_URL: z.string().url(),
     TXA_PORT: z.coerce.number().int().positive().refine(
         (val) => val !== 30120,
         'TXA_PORT cannot be 30120'

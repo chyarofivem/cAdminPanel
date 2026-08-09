@@ -29,6 +29,7 @@ import PlayerManagementPage from '@/pages/PlayerManagement/PlayerManagementPage'
 import ResourcesPage from '@/pages/Resources/ResourcesPage';
 import TxAdminLogPage from '@/pages/TxAdminLogPage';
 import { t } from '@/lib/i18n';
+import UserSettingsPage from '@/pages/UserSettingsPage';
 
 
 type RouteType = {
@@ -55,6 +56,11 @@ const allRoutes: RouteType[] = [
         path: '/history',
         title: 'History',
         Page: <HistoryPage />
+    },
+    {
+        path: '/allowlist',
+        title: 'Allowlist',
+        Page: <LegacyRedirect to="/system/allowlist" />,
     },
     {
         path: '/players',
@@ -89,7 +95,7 @@ const allRoutes: RouteType[] = [
         Page: <PlayerDropsPage />
     },
     {
-        path: '/allowlist',
+        path: '/system/allowlist',
         title: 'Allowlist',
         Page: <AllowlistPage />,
     },
@@ -98,6 +104,11 @@ const allRoutes: RouteType[] = [
         title: 'Staff & Permissions',
         permission: 'manage.admins',
         Page: <AdminsPage />
+    },
+    {
+        path: '/user-settings',
+        title: 'User settings',
+        Page: <UserSettingsPage />,
     },
     {
         path: '/settings',
@@ -148,13 +159,13 @@ const allRoutes: RouteType[] = [
     },
     {
         path: '/server/setup',
-        title: 'Server Setup',
+        title: 'Setup Wizard',
         permission: 'master', //FIXME: eithger change to all_permissions or create a new Setup/Deploy permission
         Page: <Iframe legacyUrl="setup" />
     },
     {
         path: '/server/deployer',
-        title: 'Server Deployer',
+        title: 'Setup Wizard',
         permission: 'master', //FIXME: eithger change to all_permissions or create a new Setup/Deploy permission
         Page: <Iframe legacyUrl="deployer" />
     },

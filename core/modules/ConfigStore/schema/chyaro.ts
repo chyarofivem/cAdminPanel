@@ -16,4 +16,14 @@ const apiKey = typeDefinedConfig({
     fixer: SYM_FIXER_DEFAULT,
 });
 
-export default { apiUrl, apiKey } as const;
+const panelUrl = typeDefinedConfig({
+    name: 'Public panel URL',
+    default: '',
+    validator: z.string().url().max(300).refine(
+        value => new URL(value).protocol === 'https:',
+        'Public panel URL must use HTTPS.',
+    ).transform(value => value.replace(/\/+$/, '')),
+    fixer: SYM_FIXER_DEFAULT,
+});
+
+export default { apiUrl, apiKey, panelUrl } as const;

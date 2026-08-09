@@ -18,6 +18,8 @@ export class AuthedAdmin {
     public readonly profilePicture: string | undefined;
     public readonly email: string | undefined;
     public readonly discordAvatar: string | undefined;
+    public readonly discordIdentifier: string | undefined;
+    public readonly cfxIdentifier: string | undefined;
     public readonly csrfToken?: string;
 
     constructor(vaultAdmin: any, csrfToken?: string) {
@@ -31,6 +33,9 @@ export class AuthedAdmin {
         this.profilePicture = typeof cachedPfp === 'string' ? cachedPfp : undefined;
         const chyaroData = vaultAdmin.providers?.chyarologin?.data || {};
         this.email = chyaroData.email || vaultAdmin.providers?.chyarologin?.identifier;
+        const discordId = chyaroData.discordId || vaultAdmin.providers?.discord?.id;
+        this.discordIdentifier = discordId ? `discord:${discordId}` : undefined;
+        this.cfxIdentifier = chyaroData.fivemLicense || vaultAdmin.providers?.citizenfx?.identifier;
         this.discordAvatar = chyaroData.discordId && chyaroData.discordAvatar
             ? `https://cdn.discordapp.com/avatars/${chyaroData.discordId}/${chyaroData.discordAvatar}.jpg?size=128`
             : undefined;
@@ -92,6 +97,8 @@ export class AuthedAdmin {
             isTempPassword: this.isTempPassword,
             profilePicture: this.profilePicture,
             discordAvatar: this.discordAvatar,
+            discordIdentifier: this.discordIdentifier,
+            cfxIdentifier: this.cfxIdentifier,
             csrfToken: this.csrfToken ?? 'not_set',
         }
     }

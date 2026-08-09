@@ -36,7 +36,7 @@ export async function installCadminResource(options: InstallOptions) {
 
     await fse.copy(sourcePath, targetPath, { overwrite: true, errorOnExist: false });
     const secret = options.apiSecret || randomBytes(32).toString('base64url');
-    const panelUrl = txHostConfig.txaUrl || `http://127.0.0.1:${txHostConfig.txaPort}`;
+    const panelUrl = txConfig.chyaro.panelUrl || `http://127.0.0.1:${txHostConfig.txaPort}`;
     let cfg = await fsp.readFile(cfgPath, 'utf8');
     // Resource startup must come after its convars: config.lua reads the
     // framework, dirty-money item, and panel URL when the resource loads.

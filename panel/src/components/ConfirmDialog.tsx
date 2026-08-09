@@ -13,6 +13,7 @@ import { cn } from "@/lib/utils";
 import { useRef } from "react";
 import { buttonVariants } from "./ui/button";
 import { useOnClickOutside } from "usehooks-ts";
+import { t } from '@/lib/i18n';
 
 
 export default function ConfirmDialog() {
@@ -70,7 +71,7 @@ export default function ConfirmDialog() {
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                     <AlertDialogCancel>
-                        {dialogState.cancelLabel ?? 'Cancel'}
+                        {dialogState.cancelLabel ?? t('Cancel')}
                     </AlertDialogCancel>
                     <AlertDialogAction
                         data-autofocus
@@ -78,7 +79,7 @@ export default function ConfirmDialog() {
                         onClick={handleConfirm}
                         className={cn(buttonVariants({ variant: dialogState.confirmBtnVariant ?? 'destructive' }))}
                     >
-                        {dialogState.actionLabel ?? 'Continue'}
+                        {dialogState.actionLabel ?? t('Continue')}
                     </AlertDialogAction>
                 </AlertDialogFooter>
             </AlertDialogContent>

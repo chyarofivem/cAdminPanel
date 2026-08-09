@@ -24,8 +24,8 @@ export default function TmpPageHeader() {
                     <PageHeaderLinks
                         topLabel="Documentation"
                         topLink="https://github.com/tabarra/txAdmin"
-                        bottomLabel="Support"
-                        bottomLink="https://discord.gg/txAdmin"
+                        bottomLabel="Repository"
+                        bottomLink="https://github.com/tabarra/txAdmin"
                     />
                 </PageHeader>
             </Wrapper>

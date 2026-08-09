@@ -1,7 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import type { InitializedCtx } from '@modules/WebServer/ctxTypes';
 import { buildChyaroLoginUrl } from '@lib/chyaroApi';
-import { txHostConfig } from '@core/globalData';
 import { hasValidChyaroBootstrap } from './chyaroSetup';
 
 export const safeLocalRedirect = (value: unknown) => {
@@ -23,7 +22,8 @@ export default async function ChyaroLogin(ctx: InitializedCtx) {
         return ctx.redirect('/login?authError=Enter+the+one-time+bootstrap+PIN+shown+in+the+txAdmin+console.');
     }
     const state = randomUUID();
-    const callbackUri = new URL('/auth/chyaro/callback', txHostConfig.txaUrl || ctx.origin).toString();
+    if (!txConfig.chyaro.panelUrl) return ctx.redirect('/login?authError=Configure+the+HTTPS+panel+URL+first.');
+    const callbackUri = new URL('/auth/chyaro/callback', txConfig.chyaro.panelUrl).toString();
     const redirectPath = safeLocalRedirect(ctx.query.r);
     ctx.sessTools.set({
         tmpChyaroLoginState: state,

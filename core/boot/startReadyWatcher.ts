@@ -123,9 +123,7 @@ export const startReadyWatcher = async (cb: () => void) => {
             addLocalIpAddress(publicIpResp.value);
         }
     }
-    const bannerUrls = txHostConfig.txaUrl
-        ? [txHostConfig.txaUrl]
-        : detectedUrls.map((addr) => `http://${addr}:${txHostConfig.txaPort}/`);
+    const bannerUrls = detectedUrls.map((addr) => `http://${addr}:${txHostConfig.txaPort}/`);
 
     //Printing stuff
     const boxOptions = {

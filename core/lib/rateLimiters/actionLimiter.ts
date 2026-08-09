@@ -19,15 +19,15 @@ export const ACTION_LIMIT_MAX_ATTEMPTS = 5;
 const actionWindows = new Map<string, ActionWindow>();
 
 /**
- * Applies a per-admin, per-action sliding-window limit.
+ * Applies a per-client-IP, per-action sliding-window limit.
  * Successful checks consume one attempt; rejected checks do not extend the window.
  */
 export function checkRateLimit(
     actionType: LimitedAction,
-    adminName: string,
+    clientIp: string,
     now = Date.now(),
 ): ActionLimitResult {
-    const key = `${actionType}:${adminName.trim().toLocaleLowerCase()}`;
+    const key = `${actionType}:${clientIp.trim().toLocaleLowerCase()}`;
     const cutoff = now - ACTION_LIMIT_WINDOW_MS;
     const currentWindow = actionWindows.get(key) ?? { counts: [] };
     currentWindow.counts = currentWindow.counts.filter(timestamp => timestamp > cutoff);

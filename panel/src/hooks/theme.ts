@@ -13,9 +13,10 @@ const initialAtomValue = availableCustomThemes.find((name) => root.classList.con
     ?? defaultThemes.find((name) => root.classList.contains(name))
     ?? window.txConsts.defaultTheme;
 const accentIds = window.txConsts.accents.map(accent => accent.id);
-const initialAccent = accentIds.includes(window.txConsts.accent)
-    ? window.txConsts.accent
-    : 'blue';
+const storedAccent = localStorage.getItem('panel:user-accent');
+const initialAccent = storedAccent && accentIds.includes(storedAccent)
+    ? storedAccent
+    : accentIds.includes(window.txConsts.accent) ? window.txConsts.accent : 'blue';
 
 
 /**
@@ -63,6 +64,9 @@ const parseTheme = (themeName: string) => {
  * Atom
  */
 const themeAtom = atom(initialAtomValue);
+for (const [name, value] of Object.entries(window.txConsts.accents.find(option => option.id === initialAccent)?.vars ?? {})) {
+    root.style.setProperty(`--${name}`, value);
+}
 const accentAtom = atom(initialAccent);
 const isDarkModeAtom = atom((get) => {
     const currTheme = get(themeAtom);

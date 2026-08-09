@@ -15,7 +15,7 @@ interface TxAdminLogoProps {
 const TxAdminLogo: React.FC<TxAdminLogoProps> = ({ themeName, bannerUrl, panelName }) => {
   const imgName = themeName === 'fivem' ? 'txadmin.png' : 'txadmin-redm.png';
   return (
-    <Box my={1} display="flex" justifyContent="center">
+    <Box display="flex" justifyContent="center" sx={{ minHeight: 58, alignItems: 'center' }}>
       <img
         src={bannerUrl || `images/${imgName}`}
         alt={panelName}
@@ -28,9 +28,12 @@ const TxAdminLogo: React.FC<TxAdminLogoProps> = ({ themeName, bannerUrl, panelNa
 
 const StyledRoot = styled(Box)(({ theme }) => ({
   height: "fit-content",
-  background: theme.palette.background.default,
-  width: 325,
-  borderRadius: 15,
+  background: `linear-gradient(145deg, ${theme.palette.background.paper} 0%, ${theme.palette.background.default} 72%)`,
+  width: 348,
+  borderRadius: 18,
+  border: "1px solid rgba(255, 255, 255, 0.09)",
+  boxShadow: "0 24px 70px rgba(0, 0, 0, 0.48), inset 0 1px rgba(255,255,255,.04)",
+  overflow: "hidden",
   display: "flex",
   flexDirection: "column",
   userSelect: "none",
@@ -50,13 +53,14 @@ export const MenuRootContent: React.FC = React.memo(() => {
   const debouncedCurPage = useDebounce(curPage, 50)
 
   return (
-    <StyledRoot p={2} pb={1}>
+    <StyledRoot p={2} pb={1.5}>
       <TxAdminLogo themeName={theme.name} bannerUrl={serverCtx.bannerUrl} panelName={serverCtx.panelName}/>
       <Typography
         color="textSecondary"
         style={{
           fontWeight: 500,
-          marginTop: -20,
+          marginTop: -18,
+          marginBottom: 8,
           textAlign: "right",
           fontSize: 12,
         }}

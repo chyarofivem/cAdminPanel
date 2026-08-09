@@ -18,7 +18,6 @@ const printExpirationBanner = (timeUntilExpiration: number) => {
     console.error('This build is meant to be used by txAdmin beta testers.');
     console.error('txAdmin will automatically shut down when this pre-release expires.');
     console.error(`Time until expiration: ${chalkInversePad(timeLeft)}.`);
-    console.error('For more information: https://discord.gg/txAdmin.');
 }
 
 const cronCheckExpiration = () => {

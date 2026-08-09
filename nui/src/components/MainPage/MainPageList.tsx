@@ -257,6 +257,8 @@ export const MainPageList: React.FC = () => {
       title: t("nui_menu.page_main.announcement.title"),
       description: t("nui_menu.page_main.announcement.dialog_desc"),
       placeholder: t("nui_menu.page_main.announcement.dialog_placeholder"),
+      isMultiline: true,
+      composerTone: "announcement",
       onSubmit: (message: string) => {
         enqueueSnackbar(t("nui_menu.page_main.announcement.dialog_success"), {
           variant: "success",

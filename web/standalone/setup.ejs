@@ -8,7 +8,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no">
     <meta name="description" content="Manage and monitor <%= panelName %>">
     <meta name="author" content="André Tabarra">
-    <title><%= panelName %></title>
+    <title>Setup Wizard · <%= panelName %></title>
     <link href="css/simple-line-icons.css?txVer=<%= txAdminVersion %>" rel="stylesheet">
     <link href="css/coreui.min.css?txVer=<%= txAdminVersion %>" rel="stylesheet">
     <link href="css/dark.css?txVer=<%= txAdminVersion %>" rel="stylesheet">
@@ -133,13 +133,20 @@
 
 <body class="c-app flex-row theme--dark <%= uiTheme %>">
     <div class="container">
+        <header class="ca-wizard-header">
+            <div class="ca-wizard-brand" aria-label="Setup Wizard">
+                <span class="ca-wizard-mark"><i class="icon-wrench" aria-hidden="true"></i></span>
+                <span><strong>Setup Wizard</strong><small><%= panelName %></small></span>
+            </div>
+            <span class="ca-workflow-count">New server</span>
+        </header>
         <section class="ca-workflow-intro ca-setup-intro">
             <div>
-                <p class="ca-workflow-kicker">Initial configuration</p>
-                <h1>Set up your server</h1>
-                <p class="ca-workflow-description">Choose how the server should be created, confirm its location, and start it when ready.</p>
+                <p class="ca-workflow-kicker">Welcome</p>
+                <h1>Build your server, your way.</h1>
+                <p class="ca-workflow-description">Choose a starting point, confirm where your files belong, then let the wizard handle the rest.</p>
             </div>
-            <span class="ca-workflow-count">Guided setup</span>
+            <div class="ca-wizard-assurance"><i class="icon-check" aria-hidden="true"></i><span><strong>Guided configuration</strong><small>Your choices are validated at every step</small></span></div>
         </section>
 
         <!-- Stepper Row -->
@@ -151,10 +158,10 @@
 
                             <!-- Server Name -->
                             <li class="step <%= skipServerName ? 'done' : 'active' %>">
-                                <div class="step-title waves-effect">Server Name</div>
+                                <div class="step-title waves-effect">Name your server <small>Choose a recognizable panel name</small></div>
                                 <div class="step-content">
-                                    A <strong>short</strong> server name to be used in <%= panelName %> and
-                                    Chat/Discord messages.
+                                    <p class="ca-step-lead">Give this server a short, recognizable name.</p>
+                                    <label class="ca-field-label" for="frmName">Server name</label>
                                     <input type="text" class="form-control mt-2" id="frmName" maxlength="18"
                                         minlength="1" placeholder="Happy Server" value="<%= serverName %>" required>
                                     <span id="frmNameError" class="text-danger fade-in d-none"></span>
@@ -168,14 +175,14 @@
                             </li>
 
 
-                            <!-- Deployment Type -->
+                            <!-- Starting point -->
                             <li class="step <%= skipServerName ? 'active' : '' %>">
-                                <div class="step-title waves-effect">Deployment Type</div>
+                                <div class="step-title waves-effect">Choose a starting point <small>Recipe, existing data, or a custom build</small></div>
                                 <div class="step-content">
                                     <p class="ca-choice-prompt">Choose how you want to create the server.</p>
                                     <div class="deployment-choice-grid">
                                     <div class="bigbutton deployment-type-card border-dark next-step" onclick="selectDeploymentType('popular')">
-                                        <span class="title"><strong>Popular Recipes</strong> <span class="badge badge-danger">RECOMMENDED</span></span>
+                                        <span class="title"><span class="ca-choice-icon"><i class="icon-layers"></i></span><strong>Popular Recipes</strong> <span class="badge badge-danger">Recommended</span></span>
                                         <br>
                                         <span class="description">
                                             Select a template from a curated list of community favorites. <br>
@@ -183,7 +190,7 @@
                                         </span>
                                     </div>
                                     <div class="bigbutton deployment-type-card border-dark next-step" onclick="selectDeploymentType('local')">
-                                        <span class="title"><strong>Existing Server Data</strong></span>
+                                        <span class="title"><span class="ca-choice-icon"><i class="icon-folder"></i></span><strong>Existing Server Data</strong></span>
                                         <br>
                                         <span class="description">
                                             Select an existing server data folder in the host. <br>
@@ -192,7 +199,7 @@
                                         </span>
                                     </div>
                                     <div class="bigbutton deployment-type-card border-dark next-step" onclick="selectDeploymentType('remote')">
-                                        <span class="title"><strong>Remote URL Template</strong></span>
+                                        <span class="title"><span class="ca-choice-icon"><i class="icon-cloud-download"></i></span><strong>Remote URL Template</strong></span>
                                         <br>
                                         <span class="description">
                                             Based on a Recipe URL in the YAML format. <br>
@@ -200,7 +207,7 @@
                                         </span>
                                     </div>
                                     <div class="bigbutton deployment-type-card border-dark next-step" onclick="selectDeploymentType('custom')">
-                                        <span class="title"><strong>Custom Template</strong></span>
+                                        <span class="title"><span class="ca-choice-icon"><i class="icon-pencil"></i></span><strong>Custom Template</strong></span>
                                         <br>
                                         <span class="description">
                                             This is recommended if you have a custom recipe-based server or if you are writing your own recipe. 
@@ -218,7 +225,7 @@
 
                             <!-- Step 4 -->
                             <li class="step">
-                                <div class="step-title waves-effect" id="s4Title"><i>please select deployment type</i></div>
+                                <div class="step-title waves-effect" id="s4Title"><i>choose a starting point</i></div>
                                 <div class="step-content">
                                     <!-- select template buttons -->
                                     <template id="s4PopularTemplateCardTemplate">
@@ -264,8 +271,7 @@
                                             <ul class="font-weight-bold">
                                                 <li><a href="https://github.com/tabarra/txAdmin/blob/master/docs/recipe.md" target="_blank" rel="noopener">Recipe Documentation</a></li>
                                                 <li><a href="https://github.com/tabarra/txAdmin-recipes" target="_blank" rel="noopener">Example Recipes</a></li>
-                                                <li><a href="https://discord.gg/NsXGTszYjK" target="_blank" rel="noopener">Discord Support</a></li>
-                                            </ul>
+                                                                                            </ul>
                                         </p>
                                         
                                         <div class="step-actions">
@@ -304,7 +310,7 @@
 
                             <!-- Step 5 -->
                             <li class="step">
-                                <div class="step-title waves-effect" id="s5Title"><i>please select deployment type</i></div>
+                                <div class="step-title waves-effect" id="s5Title"><i>choose a starting point</i></div>
                                 <div class="step-content" id="s5Content">
 
                                     <!-- input local data folder --> 
@@ -358,9 +364,9 @@
 
                             <!-- Finish -->
                             <li class="step">
-                                <div class="step-title waves-effect">Finish</div>
+                                <div class="step-title waves-effect">Ready to launch <small>Review and start your server</small></div>
                                 <div class="step-content">
-                                    <h4 id="finishMessage">We are all set!</h4>
+                                    <div class="ca-finish-mark"><i class="icon-check"></i></div><h4 id="finishMessage">Your server is ready.</h4><p class="ca-step-lead">Save this configuration and start the server when you are ready.</p>
                                     <span id="saveError" class="text-danger fade-in d-none"></span>
                                     <div class="step-actions">
                                         <button class="btn btn-pill btn-success next-step" type="button" 
@@ -509,7 +515,7 @@
             }
         }
 
-        // Deployment type selection
+        // Starting point selection
         function selectDeploymentType(depType){
             console.log(`Selected ${depType}`);
             selectedDeploymentType = depType;
@@ -517,7 +523,7 @@
             if(depType == 'popular' || depType == 'remote'){
                 s4Title.textContent = "Select Template";
                 s5Title.textContent = "Data Location";
-                finishButton.textContent = "Go to Recipe Deployer";
+                finishButton.textContent = "Continue Setup";
                 finishMessage.textContent = "We are almost there!";
                 s4PopularTemplateRow.innerHTML = SPINNER_HTMLSized;
                 s4CustomTemplateDiv.classList.add('d-none');
@@ -541,7 +547,7 @@
 
                 s4Title.textContent = "Information";
                 s5Title.textContent = "Data Location";
-                finishButton.textContent = "Go to Recipe Deployer";
+                finishButton.textContent = "Continue Setup";
                 finishMessage.textContent = "We are almost there!";
                 s4CustomTemplateDiv.classList.remove('d-none');
                 s4RemoteTemplateDiv.classList.add('d-none');
@@ -599,7 +605,7 @@
             });
         }
 
-        // Deployment type selection
+        // Starting point selection
         function selectTemplate(key){
             selectedTemplateIndex = key;
             if(!loadedTemplates[key]){

@@ -101,9 +101,6 @@ export default function DesktopNavbar() {
                     <HeaderMenuItem href="/insights/player-drops">
                         {t('Player Drops')}
                     </HeaderMenuItem>
-                    <HeaderMenuItem href="/allowlist">
-                        {t('Allowlist')}
-                    </HeaderMenuItem>
                     <HeaderMenuItem href="/admins" disabled={!hasPerm('manage.admins')}>
                         {t('Staff & Permissions')}
                     </HeaderMenuItem>
@@ -128,6 +125,12 @@ export default function DesktopNavbar() {
                             {t('System')}
                         </NavigationMenuTrigger>
                         <NavigationMenuContent className="flex flex-col gap-2 p-4 list-none">
+                            <HeaderMenuLink
+                                className="w-36 justify-start"
+                                href="/system/allowlist"
+                            >
+                                {t('Allowlist')}
+                            </HeaderMenuLink>
                             <HeaderMenuLink
                                 className="w-36 justify-start"
                                 href="/system/master-actions"

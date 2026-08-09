@@ -56,6 +56,7 @@ describe('chyarologin bootstrap authorization', () => {
             action: 'save',
             apiUrl: 'https://attacker.example',
             apiKey: 'attacker-key',
+            panelUrl: 'https://panel.example',
             bootstrapPin: 'wrong',
         });
 
@@ -76,13 +77,18 @@ describe('chyarologin bootstrap authorization', () => {
             action: 'save',
             apiUrl: 'https://identity.example/',
             apiKey: 'valid-key',
+            panelUrl: 'https://panel.example/',
             bootstrapPin: 'valid-pin',
         });
 
         await ChyaroSetup(ctx);
 
         expect(saveConfigs).toHaveBeenCalledWith({
-            chyaro: { apiUrl: 'https://identity.example', apiKey: 'valid-key' },
+            chyaro: {
+                apiUrl: 'https://identity.example',
+                apiKey: 'valid-key',
+                panelUrl: 'https://panel.example',
+            },
         }, 'chyarologin bootstrap');
         expect(ctx.sessTools.set).toHaveBeenCalledWith({
             tmpChyaroBootstrapExpiresAt: 1_000 + CHYARO_BOOTSTRAP_TTL_MS,

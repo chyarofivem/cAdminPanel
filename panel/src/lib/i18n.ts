@@ -296,6 +296,8 @@ const hr: Record<string, string> = {
     'No identities were returned yet.': 'Još nije vraćen nijedan identitet.',
     'Connect chyarologin before creating the first administrator. The first verified login becomes the panel master.': 'Povežite chyarologin prije izrade prvog administratora. Prva potvrđena prijava postaje glavni račun panela.',
     'chyarologin URL': 'URL chyarologina',
+    'Public panel URL': 'Javni URL panela',
+    'This HTTPS address is used for secure chyarologin callbacks.': 'Ova HTTPS adresa upotrebljava se za sigurne povratne pozive chyarologina.',
     'chyarologin is not configured. Add the API URL and key to this profile\'s configuration before signing in.': 'chyarologin nije postavljen. Prije prijave dodajte API URL i ključ u konfiguraciju ovog profila.',
     'Your Account — {name}': 'Vaš račun — {name}',
     'Authentication and linked identities are managed by chyarologin. Panel roles and permissions remain local to this server.': 'Prijavom i povezanim identitetima upravlja chyarologin. Uloge i dopuštenja panela ostaju lokalni na ovom serveru.',
@@ -897,7 +899,6 @@ const hr: Record<string, string> = {
     'Return to Dashboard': 'Povratak na nadzornu ploču',
     'Return to Dashboard?': 'Vratiti se na nadzornu ploču?',
     'Stack': 'Stog',
-    'Support Discord': 'Discord podrška',
     'System Menu': 'Izbornik sustava',
     'The page': 'Stranica',
     'There was an error rendering this page.': 'Došlo je do pogreške pri prikazu ove stranice.',
@@ -962,7 +963,8 @@ const hr: Record<string, string> = {
     'Only the requests shown on this page will be removed. Players can request access again.': 'Uklonit će se samo zahtjevi prikazani na ovoj stranici. Igrači mogu ponovno zatražiti pristup.',
 };
 
-export const uiLocale: UiLocale = window.txConsts.uiLocale === 'hr' ? 'hr' : 'en';
+const preferredLocale = localStorage.getItem('panel:user-language') || window.txConsts.uiLocale;
+export const uiLocale: UiLocale = preferredLocale === 'hr' ? 'hr' : 'en';
 export const isCroatian = uiLocale === 'hr';
 
 export function t(key: string, values: Record<string, string | number> = {}) {

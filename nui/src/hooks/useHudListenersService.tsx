@@ -1,7 +1,6 @@
 import React from "react";
 import { SnackbarKey, useSnackbar } from "notistack";
 import { useNuiEvent } from "./useNuiEvent";
-import { Box, Typography } from "@mui/material";
 import { useTranslate } from "react-polyglot";
 import { shouldHelpAlertShow } from "../utils/shouldHelpAlertShow";
 import { debugData } from "../utils/debugData";
@@ -18,6 +17,7 @@ import { useSetPlayerModalVisibility } from "@nui/src/state/playerModal.state";
 import cleanPlayerName from "@shared/cleanPlayerName";
 import { usePlayerModalContext } from "../provider/PlayerModalProvider";
 import { fetchNui } from "../utils/fetchNui";
+import { CommunicationNotification } from "../components/Hud/CommunicationNotification";
 
 type SnackbarAlertSeverities = "success" | "error" | "warning" | "info";
 
@@ -32,26 +32,11 @@ interface SnackbarPersistentAlert extends SnackbarAlert {
   key: string;
 }
 
-interface AnnounceMessageProps {
-  title: string;
-  message: string;
-}
-
 export interface AddAnnounceData {
   message: string;
   author: string;
   isDirectMessage: boolean;
 }
-
-const AnnounceMessage: React.FC<AnnounceMessageProps> = ({
-  title,
-  message,
-}) => (
-  <Box maxWidth={400} style={{ fontSize: "large" }}>
-    <Typography style={{ fontWeight: "bold" }}>{title}</Typography>
-    {message}
-  </Box>
-);
 
 const alertMap = new Map<string, SnackbarKey>();
 
@@ -183,12 +168,14 @@ export const useHudListenersService = () => {
   useNuiEvent<AddAnnounceData>("addAnnounceMessage", ({ message, author }) => {
     announcementSound.play();
     enqueueSnackbar(
-      <AnnounceMessage
+      <CommunicationNotification
+        kind="announcement"
         message={message}
         title={t("nui_menu.misc.announcement_title", { author })}
       />,
       {
         variant: "warning",
+        className: "tx-communication-notification tx-communication-notification--announcement",
         autoHideDuration: getNotiDuration(message) * 1000,
         anchorOrigin: {
           horizontal: notiPos.horizontal,
@@ -201,12 +188,14 @@ export const useHudListenersService = () => {
   useNuiEvent<AddAnnounceData>("addDirectMessage", ({ message, author }) => {
     messageSound.play();
     enqueueSnackbar(
-      <AnnounceMessage
+      <CommunicationNotification
+        kind="direct-message"
         message={message}
         title={t("nui_menu.misc.directmessage_title", { author })}
       />,
       {
         variant: "info",
+        className: "tx-communication-notification tx-communication-notification--direct-message",
         autoHideDuration: getNotiDuration(message) * 1000 * 2, //*2 to slow things down
         anchorOrigin: {
           horizontal: notiPos.horizontal,

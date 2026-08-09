@@ -98,14 +98,7 @@ const checkApiLogoutRefresh = (data) => {
  */
 const updateMarkdownNotification = (data, notify) => {
     if (data.markdown === true) {
-        let msgHtml = convertMarkdown(data.message, true);
-        if (data.type === 'danger') {
-            msgHtml += `<div class="text-right">
-                <small>
-                    For support, visit <strong><a href="http://discord.gg/txAdmin" target="_blank" class="text-dark">discord.gg/txAdmin</a></strong>.
-                </small>
-            </div>`;
-        }
+        const msgHtml = convertMarkdown(data.message, true);
 
         notify.update('progress', 0);
         notify.update('type', data.type);
