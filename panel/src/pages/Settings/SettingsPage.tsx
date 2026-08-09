@@ -97,7 +97,10 @@ export const settingsTabs: SettingTabsDatum[] = settingsTabsBase.map((tab) => {
 });
 
 
-export default function SettingsPage() {
+export default function SettingsPage({ embeddedAllowlist = false }: { embeddedAllowlist?: boolean }) {
+    const displayedTabs = embeddedAllowlist
+        ? settingsTabs.filter(tab => tab.ctx.tabId === 'whitelist')
+        : settingsTabs.filter(tab => tab.ctx.tabId !== 'whitelist');
     const [cardPendingSave, setCardPendingSave] = useState<SettingsCardContext | null>(null);
     const [isSaving, setIsSaving] = useState(false);
     const openConfirmDialog = useOpenConfirmDialog();
@@ -123,7 +126,7 @@ export default function SettingsPage() {
                 : pageHash;
         if (pageHash === 'whitelist') setUrlHash('allowlist');
 
-        return settingsTabs.find(tab => tab.ctx.tabId === requestedTab)?.ctx.tabId ?? settingsTabs[0].ctx.tabId;
+        return displayedTabs.find(tab => tab.ctx.tabId === requestedTab)?.ctx.tabId ?? displayedTabs[0].ctx.tabId;
     });
 
 
@@ -228,21 +231,19 @@ export default function SettingsPage() {
 
     return (
         <div className="w-full mb-10">
-            <PageHeader title={t('Settings')} icon={<Settings2Icon />}>
-                <PageHeaderChangelog
-                    changelogData={swr?.data?.changelog}
-                />
-            </PageHeader>
+            {!embeddedAllowlist && <PageHeader title={t('Settings')} icon={<Settings2Icon />}>
+                <PageHeaderChangelog changelogData={swr?.data?.changelog} />
+            </PageHeader>}
             <div className="px-0 xs:px-3 md:px-0 flex flex-row gap-2 w-full">
                 <Tabs
                     value={tab}
                     onValueChange={handleTabChange}
                     className="w-full"
                 >
-                    <TabsList
+                    {!embeddedAllowlist && <TabsList
                         className="max-xs:sticky max-xs:top-navbarvh z-10 flex-wrap h-[unset] max-xs:w-full max-xs:rounded-none"
                     >
-                        {settingsTabs.map((tab) => (
+                        {displayedTabs.map((tab) => (
                             <TabsTrigger
                                 key={tab.ctx.tabId}
                                 value={tab.ctx.tabId}
@@ -254,8 +255,8 @@ export default function SettingsPage() {
                                 {/* <DynamicNewBadge size='xs' featName="ignore" /> */}
                             </TabsTrigger>
                         ))}
-                    </TabsList>
-                    {settingsTabs.map((tab) => (
+                    </TabsList>}
+                    {displayedTabs.map((tab) => (
                         <TabsContent value={tab.ctx.tabId} key={tab.ctx.tabId} className="mt-6">
                             <SettingsTab
                                 tab={tab}

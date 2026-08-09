@@ -9,21 +9,15 @@ import React, {
   useState,
 } from "react";
 
-import { styled } from '@mui/material/styles';
-
 import {
   Button,
   Dialog,
   DialogActions,
   DialogContent,
   DialogContentText,
-  DialogTitle,
-  InputAdornment,
   TextField,
-  Theme,
-  useTheme,
 } from "@mui/material";
-import { Create } from "@mui/icons-material";
+import { CampaignRounded, MarkChatUnreadRounded } from "@mui/icons-material";
 import { useKeyboardNavContext } from "./KeyboardNavProvider";
 import { useSnackbar } from "notistack";
 import { useTranslate } from "react-polyglot";
@@ -31,20 +25,14 @@ import { useSetDisableTab, useSetListenForExit } from "../state/keys.state";
 import { txAdminMenuPage, usePageValue } from "../state/page.state";
 import { Box } from "@mui/system";
 
-const StyledDialogTitle = styled(DialogTitle)(({theme}) => ({
-  color: theme.palette.primary.main,
-}))
-const StyledCreate = styled(Create)(({theme}) => ({
-  color: theme.palette.text.secondary,
-}))
-
 interface InputDialogProps {
   title: string;
   description: string;
   placeholder: string;
   onSubmit: (inputValue: string) => void;
   isMultiline?: boolean;
-  suggestions?: string[]
+  suggestions?: string[];
+  composerTone?: "announcement" | "direct-message";
 }
 
 interface DialogProviderContext {
@@ -67,7 +55,6 @@ interface DialogProviderProps {
 }
 
 export const DialogProvider: React.FC<DialogProviderProps> = ({ children }) => {
-  const theme = useTheme();
   const [canSubmit, setCanSubmit] = useState(true);
 
   const setDisableTabs = useSetDisableTab();
@@ -81,6 +68,9 @@ export const DialogProvider: React.FC<DialogProviderProps> = ({ children }) => {
   const { enqueueSnackbar } = useSnackbar();
   const curPage = usePageValue();
   const t = useTranslate();
+  const ComposerIcon = dialogProps.composerTone === "announcement"
+    ? CampaignRounded
+    : MarkChatUnreadRounded;
 
   useEffect(() => {
     if (curPage === txAdminMenuPage.Main) {
@@ -145,8 +135,14 @@ export const DialogProvider: React.FC<DialogProviderProps> = ({ children }) => {
           onExited: handleOnExited,
         }}
         PaperProps={{
-          style: {
-            backgroundColor: theme.palette.background.default,
+          sx: {
+            overflow: "hidden",
+            borderRadius: 3,
+            border: "1px solid",
+            borderColor: "rgba(255,255,255,0.12)",
+            backgroundColor: "rgba(16, 21, 26, 0.98)",
+            backgroundImage: "none",
+            boxShadow: "0 28px 80px rgba(0,0,0,0.55)",
           },
         }}
       >
@@ -156,60 +152,98 @@ export const DialogProvider: React.FC<DialogProviderProps> = ({ children }) => {
             handleDialogSubmit();
           }}
         >
-          <StyledDialogTitle>
-            {dialogProps.title}
-          </StyledDialogTitle>
-          <DialogContent>
-            <DialogContentText>{dialogProps.description}</DialogContentText>
+          <Box
+            sx={{
+              display: "flex",
+              gap: 2,
+              alignItems: "center",
+              px: 3,
+              pt: 3,
+              pb: 2,
+              borderBottom: "1px solid rgba(255,255,255,0.08)",
+            }}
+          >
+            {dialogProps.composerTone && (
+              <Box
+                aria-hidden="true"
+                sx={{
+                  display: "grid",
+                  placeItems: "center",
+                  width: 48,
+                  height: 48,
+                  flexShrink: 0,
+                  borderRadius: 2,
+                  color: dialogProps.composerTone === "announcement"
+                    ? "#fbbf24"
+                    : "primary.main",
+                  bgcolor: dialogProps.composerTone === "announcement"
+                    ? "rgba(251,191,36,0.12)"
+                    : "rgba(0,197,140,0.12)",
+                  border: "1px solid currentColor",
+                }}
+              >
+                <ComposerIcon />
+              </Box>
+            )}
+            <Box sx={{ minWidth: 0 }}>
+              <Box
+                component="h2"
+                sx={{ m: 0, color: "text.primary", fontSize: 21, fontWeight: 750, lineHeight: 1.3 }}
+              >
+                {dialogProps.title}
+              </Box>
+              <DialogContentText sx={{ mt: 0.5, color: "text.secondary", lineHeight: 1.5 }}>
+                {dialogProps.description}
+              </DialogContentText>
+            </Box>
+          </Box>
+          <DialogContent sx={{ px: 3, py: 2.5 }}>
             <TextField
-              sx={{ pt: 1 }}
-              variant="standard"
+              variant="outlined"
               autoFocus
               fullWidth
               multiline={dialogProps?.isMultiline}
+              minRows={dialogProps?.isMultiline ? 4 : undefined}
               id="dialog-input"
               placeholder={dialogProps.placeholder}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <StyledCreate color="inherit" />
-                  </InputAdornment>
-                ),
+              sx={{
+                "& .MuiOutlinedInput-root": {
+                  alignItems: "flex-start",
+                  borderRadius: 2,
+                  bgcolor: "rgba(0,0,0,0.2)",
+                },
               }}
               onChange={handleChange}
+              value={dialogInputVal}
             />
           </DialogContent>
-          <DialogActions>
-            <Box display="flex" justifyContent="space-between" width="100%">
-              <Box>
+          <DialogActions sx={{ px: 3, pb: 3, pt: 0, gap: 1, justifyContent: "space-between" }}>
+              <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
                 {Array.isArray(dialogProps.suggestions) && dialogProps.suggestions.map(suggestion => (
                   <Button
+                    key={suggestion}
+                    variant="outlined"
+                    size="small"
                     onClick={()=>{
                       handleDialogSubmit(suggestion);
-                    }}
-                    style={{
-                      color: theme.palette.text.secondary,
                     }}
                   >
                     {suggestion}
                   </Button>
                 ))}
               </Box>
-              <Box>
+              <Box sx={{ display: "flex", gap: 1 }}>
                 <Button
                   onClick={handleDialogClose}
-                  style={{
-                    color: theme.palette.text.secondary,
-                  }}
+                  variant="text"
+                  color="secondary"
                 >
                   {t("nui_menu.common.cancel")}
                 </Button>
-                <Button type="submit" color="primary">
+                <Button type="submit" color="primary" variant="contained">
                   {t("nui_menu.common.submit")}
                 </Button>
               </Box>
-            </Box>
-
           </DialogActions>
         </form>
       </Dialog>

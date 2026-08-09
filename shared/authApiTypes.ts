@@ -8,6 +8,8 @@ export type ReactAuthDataType = {
     isTempPassword: boolean;
     profilePicture?: string;
     discordAvatar?: string;
+    discordIdentifier?: string;
+    cfxIdentifier?: string;
     csrfToken?: string;
 };
 

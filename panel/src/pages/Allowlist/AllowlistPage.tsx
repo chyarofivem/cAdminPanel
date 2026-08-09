@@ -7,7 +7,6 @@ import {
 import consts from '@shared/consts';
 import { PageHeader } from '@/components/page-header';
 import { txToast } from '@/components/TxToaster';
-import TxAnchor from '@/components/TxAnchor';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -19,6 +18,7 @@ import { useOpenConfirmDialog, useOpenPromptDialog } from '@/hooks/dialogs';
 import { useAuthedFetcher } from '@/hooks/fetch';
 import { tsToLocaleDateTimeString } from '@/lib/dateTime';
 import { t } from '@/lib/i18n';
+import SettingsPage from '@/pages/Settings/SettingsPage';
 
 type AllowlistRequest = {
     id: string;
@@ -187,7 +187,7 @@ export default function AllowlistPage() {
         {mode && !modeIsActive && <div className="mb-5 flex items-start gap-3 rounded-xl border border-amber-500/20 bg-amber-500/10 px-4 py-3 text-sm text-amber-200">
             <ShieldAlert className="mt-0.5 size-4 shrink-0" />
             <p>{t('Changes made here only control joins while the Approved License mode is active.')} {' '}
-                <TxAnchor href="/settings#allowlist" className="font-medium text-amber-100">{t('Open allowlist settings')}</TxAnchor>
+                <button type="button" onClick={() => setActiveTab('settings')} className="font-medium text-amber-100 underline">{t('Open allowlist settings')}</button>
             </p>
         </div>}
 
@@ -196,13 +196,14 @@ export default function AllowlistPage() {
         </div>}
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="grid h-auto w-full grid-cols-2 rounded-xl bg-white/[0.035] p-1 sm:w-[26rem]">
+            <TabsList className="grid h-auto w-full grid-cols-3 rounded-xl bg-white/[0.035] p-1 sm:w-[26rem]">
                 <TabsTrigger value="requests" className="rounded-lg">
                     {t('Requests')}<Badge variant="secondary" className="ml-2 border-0 bg-white/5">{requestCount}</Badge>
                 </TabsTrigger>
                 <TabsTrigger value="approved" className="rounded-lg">
                     {t('Approved')}<Badge variant="secondary" className="ml-2 border-0 bg-white/5">{approvalCount}</Badge>
                 </TabsTrigger>
+                <TabsTrigger value="settings" className="rounded-lg">{t('Settings')}</TabsTrigger>
             </TabsList>
 
             <TabsContent value="requests" className="mt-4">
@@ -356,6 +357,9 @@ export default function AllowlistPage() {
                         </>}
                     </CardContent>
                 </Card>
+            </TabsContent>
+            <TabsContent value="settings" className="mt-4">
+                <SettingsPage embeddedAllowlist />
             </TabsContent>
         </Tabs>
     </div>;

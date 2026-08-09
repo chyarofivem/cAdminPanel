@@ -10,9 +10,6 @@ import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
 import { ApiTimeout, useBackendApi } from '@/hooks/fetch';
 import InlineCode from '@/components/InlineCode';
-import { cn } from '@/lib/utils';
-import { handleExternalLinkClick } from '@/lib/navigation';
-import TxAnchor from '@/components/TxAnchor';
 
 type SendReportResponse =
     | { reportId: string }
@@ -27,7 +24,7 @@ const InfoContent = () => (
     <div className="space-y-4 text-sm">
         <p className="text-sm">
             This <u>optional</u> feature sends a diagnostics report to the Cfx.re team, and may be required to diagnose a wide range of server issues.
-            After sending the data, you will receive a Report ID you can send in the support channels.
+            After sending the data, you will receive a Report ID for later reference.
         </p>
 
         <div className="space-y-4">
@@ -102,14 +99,6 @@ const SuccessContent = ({ reportId }: { reportId: string }) => (
                 </span>
             </div>
         </div>
-        <p className="text-muted-foreground pt-2">
-            Please send this ID to the support team in <TxAnchor
-                href="https://discord.gg/uAmsGa2"
-                className="font-semibold tracking-wide text-primary"
-            >
-                discord.gg/txAdmin
-            </TxAnchor>.
-        </p>
     </div>
 );
 
@@ -120,22 +109,6 @@ const ErrorContent = ({ error }: { error: string }) => (
             <p className="text-destructive">{error}</p>
         </div>
     </div>
-);
-
-export const DiscordBadge = ({ className }: { className?: string }) => (
-    <a
-        href="https://discord.gg/uAmsGa2"
-        target="_blank"
-        rel="noopener noreferrer"
-        className={cn("inline-block ml-1", className)}
-        onClick={handleExternalLinkClick}
-    >
-        <img
-            src="https://discordapp.com/api/guilds/577993482761928734/widget.png?style=shield"
-            alt="Discord"
-            className="h-5 self-end"
-        />
-    </a>
 );
 
 export function ReportDialog({ open, onOpenChange }: ReportDialogProps) {

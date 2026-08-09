@@ -19,13 +19,13 @@ describe('actionLimiter', () => {
         });
     });
 
-    it('keeps action and admin pools independent', () => {
+    it('keeps action and client IP pools independent', () => {
         for (let attempt = 0; attempt < 5; attempt++) {
             checkRateLimit('ban', 'Alice', 1_000);
         }
 
-        expect(checkRateLimit('kick', 'Alice', 1_000).allowed).toBe(true);
-        expect(checkRateLimit('ban', 'Bob', 1_000).allowed).toBe(true);
+        expect(checkRateLimit('kick', '192.0.2.10', 1_000).allowed).toBe(true);
+        expect(checkRateLimit('ban', '192.0.2.11', 1_000).allowed).toBe(true);
     });
 
     it('allows actions after timestamps expire', () => {

@@ -67,10 +67,6 @@ The specific way to set up those variables vary from system to system, and there
     - If token is present: endpoint requires the token to be present.
 
 ### Networking
-- **TXHOST_TXA_URL:**
-    - **Default value:** _undefined_.
-    - If present, that is the URL that will show on txAdmin as its public URL on the boot message.
-    - This is useful for when running inside a container using `0.0.0.0:40120` as interface/port.
 - **TXHOST_TXA_PORT**
     - **Default value:** `40120`.
     - Which TCP port txAdmin should bind & listen to.

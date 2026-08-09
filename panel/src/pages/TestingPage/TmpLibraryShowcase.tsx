@@ -328,7 +328,7 @@ export default function TmpLibraryShowcase() {
                             Lorem ipsum dolor <TxAnchor href="/dashboard">Example</TxAnchor>: internal link.
                         </p>
                         <p className="text-sm">
-                            Lorem ipsum dolor <TxAnchor href="https://discord.gg/txAdmin">Example</TxAnchor>: external link.
+                            Lorem ipsum dolor <TxAnchor href="https://example.com">Example</TxAnchor>: external link.
                         </p>
                     </div>
                 </div>

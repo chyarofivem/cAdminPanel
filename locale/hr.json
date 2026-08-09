@@ -73,6 +73,11 @@
         "instruction": "Držite %{key} %{smart_count} sekundu za zatvaranje poruke. |||| Držite %{key} %{smart_count} sekunde za zatvaranje poruke. |||| Držite %{key} %{smart_count} sekundi za zatvaranje poruke."
     },
     "nui_menu": {
+        "tabs": {
+            "main": "Glavno",
+            "players": "Igrači",
+            "panel": "Panel"
+        },
         "misc": {
             "help_message": "txAdmin izbornik je uključen. Upišite /tx kako biste ga otvorili.\nMožete postaviti i vlastitu tipku u [Postavke igre > Dodjela tipki > FiveM > Izbornik: otvori glavnu stranicu].",
             "menu_not_admin": "Vaši identifikatori ne odgovaraju nijednom registriranom txAdmin administratoru.\nOtvorite Upravljanje administratorima i provjerite jesu li identifikatori spremljeni.",

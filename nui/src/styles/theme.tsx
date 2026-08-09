@@ -19,8 +19,8 @@ export default {
       main: "rgb(9,96,186)",
     },
     background: {
-      default: "#151a1f",
-      paper: "#24282B",
+      default: "#10151a",
+      paper: "#1b2229",
     },
     action: {
       selected: "rgba(255, 255, 255, 0.1)",
@@ -60,6 +60,16 @@ export default {
       styleOverrides: {
         root: {
           backgroundImage: "unset"
+        }
+      }
+    },
+    MuiButton: {
+      styleOverrides: {
+        root: {
+          borderRadius: 9,
+          textTransform: "none",
+          fontWeight: 700,
+          boxShadow: "none",
         }
       }
     },

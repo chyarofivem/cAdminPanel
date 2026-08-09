@@ -8,7 +8,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no">
     <meta name="description" content="Manage and monitor <%= panelName %>">
     <meta name="author" content="André Tabarra">
-    <title><%= panelName %></title>
+    <title>Setup Wizard · <%= panelName %></title>
     <link href="css/simple-line-icons.css?txVer=<%= txAdminVersion %>" rel="stylesheet">
     <link href="css/coreui.min.css?txVer=<%= txAdminVersion %>" rel="stylesheet">
     <link href="css/dark.css?txVer=<%= txAdminVersion %>" rel="stylesheet">
@@ -51,23 +51,30 @@
 <body class="c-app flex-row theme--dark <%= uiTheme %>">
     <div class="container">
         <% const deploymentSteps = [
-            { id: 'review', label: 'Review recipe', detail: 'Inspect the deployment plan' },
+            { id: 'review', label: 'Review recipe', detail: 'Inspect the setup plan' },
             { id: 'input', label: 'Configuration', detail: 'Add server credentials' },
             { id: 'run', label: 'Install', detail: 'Deploy files and database' },
             { id: 'configure', label: 'Server config', detail: 'Review and launch' },
         ]; %>
         <% const deploymentStepIndex = Math.max(0, deploymentSteps.findIndex(item => item.id === step)); %>
 
-        <section class="ca-workflow-intro">
-            <div>
-                <p class="ca-workflow-kicker">Server deployment</p>
-                <h1>Build your game server</h1>
-                <p class="ca-workflow-description">Follow the guided process below. Your current work is saved between each stage.</p>
+        <header class="ca-wizard-header">
+            <div class="ca-wizard-brand" aria-label="Setup Wizard">
+                <span class="ca-wizard-mark"><i class="icon-wrench" aria-hidden="true"></i></span>
+                <span><strong>Setup Wizard</strong><small><%= panelName %></small></span>
             </div>
             <span class="ca-workflow-count">Step <%= deploymentStepIndex + 1 %> of <%= deploymentSteps.length %></span>
+        </header>
+        <section class="ca-workflow-intro">
+            <div>
+                <p class="ca-workflow-kicker">Server build</p>
+                <h1>Bring your server to life.</h1>
+                <p class="ca-workflow-description">Review the plan, supply the essentials, and follow the live installation through to launch.</p>
+            </div>
+            <div class="ca-wizard-assurance"><i class="icon-refresh" aria-hidden="true"></i><span><strong>Progress is preserved</strong><small>Each completed stage is saved automatically</small></span></div>
         </section>
 
-        <ol class="ca-workflow-progress" aria-label="Deployment progress">
+        <ol class="ca-workflow-progress" aria-label="Setup Wizard progress">
             <% deploymentSteps.forEach(function (item, index) { %>
                 <li class="<%= index < deploymentStepIndex ? 'is-complete' : index === deploymentStepIndex ? 'is-active' : '' %>">
                     <span class="ca-workflow-number"><%= index < deploymentStepIndex ? '✓' : index + 1 %></span>
@@ -108,7 +115,7 @@
                                 <% } %>
                             </p>
                             <div class="ca-editor-shell">
-                                <div class="ca-editor-toolbar"><span>recipe.yaml</span><span>Deployment recipe</span></div>
+                                <div class="ca-editor-toolbar"><span>recipe.yaml</span><span>Setup recipe</span></div>
                             <textarea 
                                 id="codeMirrorTarget"
                                 style="width: 100%;"
@@ -119,7 +126,7 @@
                             </textarea></div>
                             <div class="ca-editor-actions">
                                 <button class="btn btn-outline-danger" type="button" 
-                                    onclick="cancelAction()">Cancel and Return to Setup</button>
+                                    onclick="cancelAction()">Exit Setup Wizard</button>
                                 &nbsp; &nbsp;
                                 <button class="btn btn-info" type="button" 
                                     onclick="step1Action();" autofocus>Next</button>
@@ -267,7 +274,7 @@
                             </form>
                             <div class="row justify-content-center m-2 mt-3">
                                 <button class="btn btn-outline-danger" type="button" 
-                                    onclick="cancelAction()">Cancel and Return to Setup</button>
+                                    onclick="cancelAction()">Exit Setup Wizard</button>
                                 &nbsp; &nbsp;
                                 <button class="btn btn-success" type="button" 
                                     onclick="step2Action();">Run Recipe</button>
@@ -283,7 +290,7 @@
                         <div class="card-body">
                             <div class="row mb-1 mt-0 text-center">
                                 <div class="col-8 mx-auto card d-block border-primary p-2 mb-1">
-                                    Your recipe is being executed, the server will be deployed to: <br>
+                                    Your recipe is running. The server will be installed in: <br>
                                     <code class="inline-code"><%= deployPath %></code>
                                 </div>
                             </div>
@@ -302,7 +309,7 @@
                             </div>
                             <div class="row justify-content-center m-2">
                                 <button class="btn btn-outline-danger d-none" type="button" 
-                                    onclick="cancelAction();" id="step3CancelButton">Cancel and Return to Setup</button>
+                                    onclick="cancelAction();" id="step3CancelButton">Exit Setup Wizard</button>
                                 <button type="button" class="btn btn-info d-none"
                                     onclick="window.location.reload();" id="step3NextButton">Next</button>
                             </div>
@@ -329,7 +336,7 @@
         
                             <div class="ca-editor-shell"><div class="ca-editor-toolbar"><span>server.cfg</span><span>FiveM CFG</span></div><textarea id="codeMirrorTarget" style="width: 100%;" class="cms-s-lucario" name="code"><%= serverCFG %></textarea></div>
                             <div class="ca-editor-actions">
-                                <button class="btn btn-outline-danger" type="button" onclick="cancelAction()">Cancel and Return to Setup</button>
+                                <button class="btn btn-outline-danger" type="button" onclick="cancelAction()">Exit Setup Wizard</button>
                                 &nbsp; &nbsp;
                                 <button class="btn btn-success" type="button" onclick="step4Action();">Save & Run Server</button>
                             </div>
@@ -615,7 +622,7 @@
         }
 
         function finishCadminInstall(install) {
-            const notify = $.notify({ message: `<p class="text-center">${install ? 'Installing Character Management...' : 'Finishing deployment...'}</p>` }, {});
+            const notify = $.notify({ message: `<p class="text-center">${install ? 'Installing Character Management...' : 'Finishing setup...'}</p>` }, {});
             txAdminAPI({
                 type: 'POST',
                 url: '/deployer/recipe/finishCadmin',

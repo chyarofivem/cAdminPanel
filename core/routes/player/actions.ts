@@ -172,7 +172,7 @@ async function handleBan(ctx: AuthedCtx, player: PlayerClass): Promise<GenericAp
         return { error: 'You don\'t have permission to execute this action.' }
     }
 
-    const rateLimit = checkRateLimit('ban', ctx.admin.name);
+    const rateLimit = checkRateLimit('ban', ctx.ip);
     if (!rateLimit.allowed) {
         const retryAfterSeconds = Math.ceil(rateLimit.retryAfterMs / 1000);
         ctx.admin.logAction(`Rate limit rejected ban attempt. Retry after ${retryAfterSeconds}s.`);
@@ -400,7 +400,7 @@ async function handleKick(ctx: AuthedCtx, player: PlayerClass): Promise<GenericA
         return { error: 'You don\'t have permission to execute this action.' };
     }
 
-    const rateLimit = checkRateLimit('kick', ctx.admin.name);
+    const rateLimit = checkRateLimit('kick', ctx.ip);
     if (!rateLimit.allowed) {
         const retryAfterSeconds = Math.ceil(rateLimit.retryAfterMs / 1000);
         ctx.admin.logAction(`Rate limit rejected kick attempt. Retry after ${retryAfterSeconds}s.`);

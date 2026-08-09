@@ -45,10 +45,6 @@ function fatalError(code: number, msg: ErrorMsgType, err?: any): never {
         console.dir(err, { multilineError: true });
     }
     console.error(console.DIVIDER);
-    console.error(chalk.inverse(
-        padStartEnd('For support: https://discord.gg/txAdmin')
-    ));
-    console.error(console.DIVIDER);
     quitProcess(code);
 }
 

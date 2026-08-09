@@ -90,11 +90,6 @@ To get the emoji ID, insert it into discord, and add `\` before it then send the
             "emoji": "1062338355909640233",
             "label": "Connect",
             "url": "{{serverJoinUrl}}"
-        },
-        {
-            "emoji": "1062339910654246964",
-            "label": "txAdmin Discord",
-            "url": "https://discord.gg/txAdmin"
         }
     ]
 }

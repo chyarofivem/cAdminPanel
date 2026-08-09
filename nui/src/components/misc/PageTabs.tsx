@@ -5,10 +5,14 @@ import { useKey } from "../../hooks/useKey";
 import { useTabDisabledValue } from "../../state/keys.state";
 import { useIsMenuVisibleValue } from "../../state/visibility.state";
 import { useServerCtxValue } from "../../state/server.state";
+import { useTranslate } from "react-polyglot";
 
 const StyledTab = styled(Tab)({
   letterSpacing: '0.1em',
   minWidth: 100,
+  minHeight: 42,
+  borderRadius: 9,
+  fontWeight: 700,
 });
 
 export const PageTabs: React.FC = () => {
@@ -16,6 +20,7 @@ export const PageTabs: React.FC = () => {
   const tabDisabled = useTabDisabledValue();
   const visible = useIsMenuVisibleValue();
   const serverCtx = useServerCtxValue();
+  const t = useTranslate();
 
   const handleTabPress = useCallback(() => {
     if (tabDisabled || !visible) return;
@@ -32,10 +37,11 @@ export const PageTabs: React.FC = () => {
         indicatorColor="primary"
         textColor="primary"
         onChange={(_, newVal) => setPage(newVal)}
+        sx={{ minHeight: 46, mb: 0.75, '& .MuiTabs-indicator': { height: 3, borderRadius: 3 } }}
       >
-        <StyledTab label="Main" wrapped disableFocusRipple />
-        <StyledTab label="Players" wrapped disableFocusRipple />
-        <StyledTab label="Panel" wrapped disableFocusRipple />
+        <StyledTab label={t('nui_menu.tabs.main')} wrapped disableFocusRipple />
+        <StyledTab label={t('nui_menu.tabs.players')} wrapped disableFocusRipple />
+        <StyledTab label={t('nui_menu.tabs.panel')} wrapped disableFocusRipple />
       </Tabs>
     </Box>
   );

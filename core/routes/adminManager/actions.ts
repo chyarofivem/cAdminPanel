@@ -332,7 +332,7 @@ async function handleDelete(ctx: AuthedCtx) {
         return ctx.send({ type: 'danger', message: 'You cannot delete an admin master.' });
     }
 
-    const rateLimit = checkRateLimit('deleteAdmin', ctx.admin.name);
+    const rateLimit = checkRateLimit('deleteAdmin', ctx.ip);
     if (!rateLimit.allowed) {
         const retryAfterSeconds = Math.ceil(rateLimit.retryAfterMs / 1000);
         ctx.admin.logAction(`Rate limit rejected admin deletion attempt for '${name}'. Retry after ${retryAfterSeconds}s.`);

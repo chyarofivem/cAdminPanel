@@ -29,6 +29,7 @@ type SetupRequest = {
     action: 'test' | 'save';
     apiUrl: string;
     apiKey: string;
+    panelUrl: string;
     bootstrapPin: string;
 } | {
     action: 'authorize';
@@ -49,6 +50,7 @@ const feedbackStyles: Record<Feedback['tone'], string> = {
 export default function Login() {
     const [apiUrl, setApiUrl] = useState(window.txConsts.chyaroUrl);
     const [apiKey, setApiKey] = useState('');
+    const [panelUrl, setPanelUrl] = useState(() => window.location.protocol === 'https:' ? window.location.origin : 'https://');
     const [bootstrapPin, setBootstrapPin] = useState('');
     const [connectionOk, setConnectionOk] = useState(false);
     const [isFetching, setIsFetching] = useState(false);
@@ -96,7 +98,7 @@ export default function Login() {
         try {
             const body: SetupRequest = action === 'authorize'
                 ? { action, bootstrapPin }
-                : { action, apiUrl, apiKey, bootstrapPin };
+                : { action, apiUrl, apiKey, panelUrl, bootstrapPin };
             const data = await fetchWithTimeout<SetupResponse, SetupRequest>(
                 '/auth/chyaro/setup',
                 { method: 'POST', body },
@@ -161,6 +163,11 @@ export default function Login() {
                 {needsProviderSetup && <div className="space-y-2 text-left">
                     <Label htmlFor="chyaro-key">{t('API key')}</Label>
                     <Input id="chyaro-key" type="password" value={apiKey} required autoComplete="off" onChange={event => updateConnectionField(setApiKey, event.target.value)} />
+                </div>}
+                {needsProviderSetup && <div className="space-y-2 text-left">
+                    <Label htmlFor="panel-url">{t('Public panel URL')}</Label>
+                    <Input id="panel-url" type="url" inputMode="url" placeholder="https://panel.example.com" value={panelUrl} required pattern="https://.*" autoComplete="url" onChange={event => updateConnectionField(setPanelUrl, event.target.value)} />
+                    <p className="text-xs text-zinc-500">{t('This HTTPS address is used for secure chyarologin callbacks.')}</p>
                 </div>}
                 {needsProviderSetup ? <div className="grid grid-cols-1 gap-2 pt-1 sm:grid-cols-2">
                     <Button type="submit" variant="outline" disabled={isFetching}>

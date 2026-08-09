@@ -101,6 +101,8 @@ const DialogActionView: React.FC = () => {
       placeholder: t(
         "nui_menu.player_modal.actions.moderation.dm_dialog.placeholder"
       ),
+      isMultiline: true,
+      composerTone: "direct-message",
       onSubmit: async (message: string) => {
         try {
           const result = await fetchWebPipe<GenericApiResp>(

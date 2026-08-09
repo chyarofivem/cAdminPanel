@@ -1,7 +1,6 @@
 import { KickAllIcon } from '@/components/KickIcons';
 import { fxRunnerStateAtom, txConfigStateAtom } from '@/hooks/status';
 import { cn } from '@/lib/utils';
-import { cva } from 'class-variance-authority';
 import { useAtomValue } from 'jotai';
 import { MegaphoneIcon, PowerIcon, PowerOffIcon, RotateCcwIcon } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -11,29 +10,10 @@ import { useCloseAllSheets } from '@/hooks/sheets';
 import { useAdminPerms } from '@/hooks/auth';
 import { TxConfigState } from '@shared/enums';
 import { t } from '@/lib/i18n';
+import { Button } from '@/components/ui/button';
 
 
-const controlButtonsVariants = cva(
-    `h-10 sm:h-8 rounded-md transition-colors
-    flex flex-grow items-center justify-center flex-shrink-0
-    border bg-muted shadow-sm
-
-    focus:outline-none disabled:opacity-50 ring-offset-background  focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2`,
-    {
-        variants: {
-            type: {
-                default: "hover:bg-primary hover:text-primary-foreground hover:border-primary",
-                destructive: "hover:bg-destructive hover:text-destructive-foreground hover:border-destructive",
-                warning: "hover:bg-warning hover:text-warning-foreground hover:border-warning",
-                success: "hover:bg-success hover:text-success-foreground hover:border-success",
-                info: "hover:bg-info hover:text-info-foreground hover:border-info",
-            },
-        },
-        defaultVariants: {
-            type: "default",
-        },
-    }
-);
+const controlButtonClass = 'h-9 w-full gap-2 px-2 text-xs shadow-none';
 
 export default function ServerControls() {
     const txConfigState = useAtomValue(txConfigStateAtom);
@@ -94,6 +74,7 @@ export default function ServerControls() {
             placeholder: t('announcement message'),
             submitLabel: t('Send'),
             required: true,
+            isMultiline: true,
             onSubmit: (input) => {
                 closeAllSheets();
                 fxsCommandsApi({
@@ -132,28 +113,30 @@ export default function ServerControls() {
         )
     }
     return (
-        <div className="flex flex-row justify-between gap-2">
+        <div className="grid grid-cols-2 gap-2" aria-label={t('Server controls')}>
             <Tooltip>
                 <TooltipTrigger asChild>
                     {fxRunnerState.isIdle ? (
-                        <div className="relative flex flex-grow inset-0">
-                            <div className='absolute inset-0 bg-success animate-pulse rounded blur-sm'></div>
-                            <button
+                        <div className="relative">
+                            <div className='absolute inset-0 bg-success/50 animate-pulse rounded-lg blur-md'></div>
+                            <Button
                                 onClick={handleStartStop}
-                                className={cn(controlButtonsVariants({ type: 'success' }), 'relative')}
+                                variant="success"
+                                className={cn(controlButtonClass, 'relative')}
                                 disabled={!hasControlPerms}
                             >
-                                <PowerIcon className='h-5' />
-                            </button>
+                                <PowerIcon className='size-4' /> {t('Start')}
+                            </Button>
                         </div>
                     ) : (
-                        <button
+                        <Button
                             onClick={handleStartStop}
-                            className={controlButtonsVariants({ type: 'destructive' })}
+                            variant="destructive"
+                            className={controlButtonClass}
                             disabled={!hasControlPerms}
                         >
-                            <PowerOffIcon className='h-5' />
-                        </button>
+                            <PowerOffIcon className='size-4' /> {t('Stop')}
+                        </Button>
                     )}
                 </TooltipTrigger>
                 <TooltipContent className={cn(!hasControlPerms && 'text-destructive-inline text-center')}>
@@ -166,13 +149,14 @@ export default function ServerControls() {
             </Tooltip>
             <Tooltip>
                 <TooltipTrigger asChild>
-                    <button
+                    <Button
                         onClick={handleRestart}
-                        className={cn(controlButtonsVariants({ type: 'warning' }))}
+                        variant="outline"
+                        className={controlButtonClass}
                         disabled={!hasControlPerms || !fxRunnerState.isChildAlive}
                     >
-                        <RotateCcwIcon className='h-5' />
-                    </button>
+                        <RotateCcwIcon className='size-4' /> {t('Restart')}
+                    </Button>
                 </TooltipTrigger>
                 <TooltipContent className={cn(!hasControlPerms && 'text-destructive-inline text-center')}>
                     {hasControlPerms ? (
@@ -184,13 +168,15 @@ export default function ServerControls() {
             </Tooltip>
             <Tooltip>
                 <TooltipTrigger asChild>
-                    <button
+                    <Button
                         onClick={handleKickAll}
-                        className={controlButtonsVariants()}
+                        variant="outline"
+                        className={controlButtonClass}
                         disabled={!hasControlPerms || !fxRunnerState.isChildAlive}
                     >
                         <KickAllIcon style={{ height: '1.25rem', width: '1.5rem', fill: 'currentcolor' }} />
-                    </button>
+                        {t('Kick All')}
+                    </Button>
                 </TooltipTrigger>
                 <TooltipContent className={cn(!hasControlPerms && 'text-destructive-inline text-center')}>
                     {hasControlPerms ? (
@@ -202,13 +188,14 @@ export default function ServerControls() {
             </Tooltip>
             <Tooltip>
                 <TooltipTrigger asChild>
-                    <button
+                    <Button
                         onClick={handleAnnounce}
-                        className={controlButtonsVariants()}
+                        variant="outline"
+                        className={controlButtonClass}
                         disabled={!hasAnnouncementPerm || !fxRunnerState.isChildAlive}
                     >
-                        <MegaphoneIcon className='h-5' />
-                    </button>
+                        <MegaphoneIcon className='size-4' /> {t('Announce')}
+                    </Button>
                 </TooltipTrigger>
                 <TooltipContent className={cn(!hasAnnouncementPerm && 'text-destructive-inline text-center')}>
                     {hasAnnouncementPerm ? (
