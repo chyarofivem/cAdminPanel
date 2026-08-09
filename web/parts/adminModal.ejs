@@ -31,19 +31,23 @@
     </div>
 </div>
 
+<% if (!isNewAdmin) { %>
 <!-- Field: Local Password -->
 <div class="form-group row">
     <label for="modAdmin-password" class="col-sm-3 col-form-label">
-        <%= isNewAdmin ? 'Initial Password' : 'New Password' %><br>
+        New Password<br>
         <small class="text-muted">(optional)</small>
     </label>
     <div class="col-sm-9">
         <input type="password" class="form-control" id="modAdmin-password" minlength="6" maxlength="128" autocomplete="new-password">
         <span class="form-text text-muted">
-            Enables username/password login. <%= isNewAdmin ? 'The administrator will be asked to replace it.' : 'Leave blank to keep the current password.' %>
+            Leave blank to keep the current password. A replacement password must be changed after login.
         </span>
     </div>
 </div>
+<% } else { %>
+<div class="alert alert-info">A temporary local password will be generated unless a registered chyarologin email is provided. It will be shown once after saving.</div>
+<% } %>
 
 <!-- Field: CitizenFX -->
 <div class="form-group row">

@@ -44,7 +44,7 @@ type Permission = {
 
 type StaffData = { admins: StaffMember[]; permissions: Permission[] };
 type StaffDataResponse = { success: true; data: StaffData } | { success: false; error: string };
-type ActionResponse = { type: 'success' | 'danger'; message?: string; refresh?: boolean };
+type ActionResponse = { type: 'success' | 'danger'; message?: string; refresh?: boolean; temporaryPassword?: string };
 type StaffDraft = {
     name: string;
     email: string;
@@ -74,6 +74,7 @@ export default function AdminsPage() {
     const [editing, setEditing] = useState<StaffMember | 'new' | null>(null);
     const [draft, setDraft] = useState<StaffDraft>(emptyDraft);
     const [saving, setSaving] = useState(false);
+    const [temporaryCredentials, setTemporaryCredentials] = useState<{ username: string; password: string } | null>(null);
 
     const groupedPermissions = useMemo(() => sectionOrder.map(section => ({
         section,
@@ -146,9 +147,6 @@ export default function AdminsPage() {
                 max: consts.adminPasswordMaxLength,
             }));
         }
-        if (editing === 'new' && !draft.email.trim() && !draft.password && !draft.citizenfxID.trim() && !draft.discordID.trim()) {
-            return txToast.error(t('Set a local password, chyarologin email, or game identifier.'));
-        }
         setSaving(true);
         try {
             const action = editing === 'new' ? 'add' : 'edit';
@@ -164,6 +162,9 @@ export default function AdminsPage() {
                 },
             });
             if (response.type !== 'success') throw new Error(response.message || t('Unable to save this staff member.'));
+            if (editing === 'new' && response.temporaryPassword) {
+                setTemporaryCredentials({ username: draft.name.trim(), password: response.temporaryPassword });
+            }
             txToast.success(t(editing === 'new' ? 'Staff member added.' : 'Staff permissions updated.'));
             setEditing(null);
             await swr.mutate();
@@ -224,10 +225,13 @@ export default function AdminsPage() {
                 <div className="grid gap-6 py-2">
                     <section className="rounded-2xl border border-white/5 bg-white/[0.025] p-5">
                         <h3 className="mb-4 flex items-center text-sm font-semibold text-white"><UserRound className="mr-2 size-4 text-brand-400" />{t('Identity')}</h3>
+                        {editing === 'new' && <p className="mb-4 rounded-xl border border-brand-500/20 bg-brand-500/5 p-3 text-xs text-zinc-300">{draft.email.trim()
+                            ? t('The email must belong to a registered chyarologin account. No local password will be created.')
+                            : t('A temporary local password will be generated and shown once after saving. The staff member must change it on first login.')}</p>}
                         <div className="grid gap-4 md:grid-cols-2">
                             <div className="space-y-2"><Label htmlFor="staff-name">{t('Username')}</Label><Input id="staff-name" value={draft.name} readOnly={editing !== 'new'} onChange={event => setDraft({ ...draft, name: event.target.value })} placeholder={t('panel username')} /></div>
                             <div className="space-y-2"><Label htmlFor="staff-email">{t('chyarologin email (optional)')}</Label><Input id="staff-email" type="email" value={draft.email} onChange={event => setDraft({ ...draft, email: event.target.value })} placeholder="verified@example.com" /><p className="text-xs text-zinc-600">{t('Used only to match an optional verified login to this local account.')}</p></div>
-                            <div className="space-y-2"><Label htmlFor="staff-password">{editing === 'new' ? t('Initial password (optional)') : t('New password (optional)')}</Label><Input id="staff-password" type="password" value={draft.password} minLength={consts.adminPasswordMinLength} maxLength={consts.adminPasswordMaxLength} autoComplete="new-password" onChange={event => setDraft({ ...draft, password: event.target.value })} placeholder={editing === 'new' ? t('local panel password') : t('leave blank to keep current')} /><p className="text-xs text-zinc-600">{t(editing === 'new' ? 'Enables local login; with only a game identifier this will be an in-game-only account.' : 'Setting this resets their local password and marks it temporary.')}</p></div>
+                            {editing !== 'new' && <div className="space-y-2"><Label htmlFor="staff-password">{t('New password (optional)')}</Label><Input id="staff-password" type="password" value={draft.password} minLength={consts.adminPasswordMinLength} maxLength={consts.adminPasswordMaxLength} autoComplete="new-password" onChange={event => setDraft({ ...draft, password: event.target.value })} placeholder={t('leave blank to keep current')} /><p className="text-xs text-zinc-600">{t('Setting this resets their local password and marks it temporary.')}</p></div>}
                             <div className="space-y-2"><Label htmlFor="staff-fivem">{t('Cfx.re username or fivem ID')}</Label><Input id="staff-fivem" value={draft.citizenfxID} onChange={event => setDraft({ ...draft, citizenfxID: event.target.value })} placeholder={t('optional')} /></div>
                             <div className="space-y-2"><Label htmlFor="staff-discord">{t('Discord user ID')}</Label><Input id="staff-discord" value={draft.discordID} disabled={!!draft.email.trim()} onChange={event => setDraft({ ...draft, discordID: event.target.value })} placeholder={t('optional')} /><p className="text-xs text-zinc-600">{draft.email.trim() ? t('Discord must be connected through chyarologin for this account.') : t('Used for in-game administrator matching.')}</p></div>
                         </div>
@@ -240,6 +244,26 @@ export default function AdminsPage() {
                     </section>
                 </div>
                 <DialogFooter><Button variant="outline" onClick={() => setEditing(null)}>{t('Cancel')}</Button><Button disabled={saving} onClick={save}>{saving ? t('Saving…') : t('Save local access')}</Button></DialogFooter>
+            </DialogContent>
+        </Dialog>
+        <Dialog open={temporaryCredentials !== null} onOpenChange={open => !open && setTemporaryCredentials(null)}>
+            <DialogContent className="max-w-lg border-white/10 bg-[#17191e]">
+                <DialogHeader>
+                    <DialogTitle>{t('Temporary login created')}</DialogTitle>
+                    <DialogDescription>{t('Give these credentials to the staff member now. This password is shown once and must be changed on first login.')}</DialogDescription>
+                </DialogHeader>
+                <div className="space-y-3 rounded-xl border border-amber-500/20 bg-amber-500/5 p-4">
+                    <div><Label>{t('Username')}</Label><p className="mt-1 select-all font-mono text-sm text-white">{temporaryCredentials?.username}</p></div>
+                    <div><Label>{t('Temporary password')}</Label><p className="mt-1 select-all break-all font-mono text-sm text-amber-200">{temporaryCredentials?.password}</p></div>
+                </div>
+                <DialogFooter>
+                    <Button variant="outline" onClick={() => {
+                        if (!temporaryCredentials) return;
+                        void navigator.clipboard.writeText(`${temporaryCredentials.username}\n${temporaryCredentials.password}`);
+                        txToast.success(t('Credentials copied.'));
+                    }}>{t('Copy credentials')}</Button>
+                    <Button onClick={() => setTemporaryCredentials(null)}>{t('Done')}</Button>
+                </DialogFooter>
             </DialogContent>
         </Dialog>
     </div>;

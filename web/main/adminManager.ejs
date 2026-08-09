@@ -219,7 +219,7 @@
         const formData = {
             name: $('#modAdmin-name').val().trim(),
             chyaroEmail: $('#modAdmin-chyaroEmail').val().trim(),
-            password: $('#modAdmin-password').val(),
+            password: $('#modAdmin-password').val() || '',
             citizenfxID: $('#modAdmin-citizenfxID').val().trim(),
             discordID: $('#modAdmin-discordID').val().trim(),
             permissions: (permissions.length)? permissions : false
@@ -237,6 +237,9 @@
             success: function (data) {
                 if (checkApiLogoutRefresh(data)) return;
                 updateMarkdownNotification(data, notify);
+                if (data.temporaryPassword) {
+                    window.alert(`Temporary login for ${formData.name}\n\nPassword: ${data.temporaryPassword}\n\nThis password must be changed on first login.`);
+                }
             },
             error: function (xmlhttprequest, textstatus, message) {
                 notify.update('progress', 0);
