@@ -49,7 +49,7 @@ export const fetchWebPipe = async <T = any>(
   clearTimeout(timeoutId);
 
   if (resp.status === 404) {
-    return false;
+    return false as T;
   }
 
   return await resp.json();

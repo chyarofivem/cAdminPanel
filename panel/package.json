@@ -9,7 +9,7 @@
     "dev": "vite --port 40122 --strictPort --host",
     "build": "vite build",
     "test": "vitest",
-    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "typecheck": "node ../scripts/prepare-typecheck.js && tsc -p tsconfig.json --noEmit",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview",
     "license:report": "npx license-report > ../.reports/license/panel.html"

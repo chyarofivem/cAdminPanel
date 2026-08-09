@@ -44,10 +44,10 @@ export const MockedPlayerDetails: PlayerModalSuccess = {
         "isRegistered": true,
         "isConnected": true,
         "license": "9b9fc300cc65d22ad3b536175a4d15c0e4933753",
-        "ids": [
+        "idsOnline": [
             "license:9b9fc300cc65d22ad3b536175a4d15c0e4933753"
         ],
-        "hwids": [
+        "hwidsOnline": [
             "9:0000000000000000000000000000000000000000000000000000000000000005",
             "9:0000000000000000000000000000000000000000000000000000000000000006"
         ],
@@ -321,12 +321,12 @@ export const MockedPlayerDetails: PlayerModalSuccess = {
         "tsJoined": 1590812869,
         "playTime": 4706,
         "tsWhitelisted": 1667314521,
-        "oldIds": [
+        "idsOffline": [
             "license:9b9fc300cc65d22ad3b536175a4d15c0e4933753",
             "fivem:271816",
             "discord:272800190639898628"
         ],
-        "oldHwids": [
+        "hwidsOffline": [
             "9:0000000000000000000000000000000000000000000000000000000000000001",
             "9:0000000000000000000000000000000000000000000000000000000000000002",
             "9:0000000000000000000000000000000000000000000000000000000000000003",

@@ -20,6 +20,7 @@ export interface ServerCtx {
   panelName: string;
   accent: string;
   accentColor: string;
+  logoUrl?: string;
   bannerUrl: string;
   alignRight: boolean;
 }

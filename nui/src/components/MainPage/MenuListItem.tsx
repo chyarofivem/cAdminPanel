@@ -33,6 +33,7 @@ const RowButton = styled(ButtonBase, {
   color: theme.palette.text.primary,
   opacity: isDimmed ? 0.58 : 1,
   backgroundColor: isActive ? alpha(theme.palette.primary.main, 0.12) : "transparent",
+  borderLeft: `3px solid ${isActive ? theme.palette.primary.main : 'transparent'}`,
   boxShadow: isActive
     ? `inset 0 0 0 1px ${alpha(theme.palette.primary.main, 0.34)}`
     : `inset 0 0 0 1px transparent`,
@@ -69,7 +70,7 @@ const IconChip = styled(Box, {
 
 const RowTitle = styled(Typography)({
   fontSize: 14.5,
-  fontWeight: 650,
+  fontWeight: 500,
   lineHeight: 1.3,
 });
 

@@ -39,6 +39,7 @@ export default async function Intercom(ctx: InitializedCtx) {
             panelName: panelDisplayName(),
             accent,
             accentColor: ACCENTS[accent].hex,
+            logoUrl: await readBrandingDataUrl('logo'),
             bannerUrl: await readBrandingDataUrl('banner'),
         });
     } else if (scope == 'resources') {

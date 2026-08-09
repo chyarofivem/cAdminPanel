@@ -99,7 +99,7 @@ export const useAuth = () => {
 
     const logout = () => fetchWithTimeout<ApiLogoutResp>(`/auth/logout`, {
         method: 'POST',
-        headers: authData?.csrfToken ? { 'X-TxAdmin-CsrfToken': authData.csrfToken } : undefined,
+        headers: authData && authData.csrfToken ? { 'X-TxAdmin-CsrfToken': authData.csrfToken } : undefined,
     }).then(data => {
         if (data.logout) {
             console.log('[useAuth] Manually triggered logout.');

@@ -34,7 +34,7 @@ export async function fetchNui<T = any>(
     const resp = await fetch(`https://monitor/${eventName}`, options);
     return await resp.json();
   } catch (error) {
-    if (error.name === 'SyntaxError') {
+    if (error instanceof SyntaxError) {
       throw new Error(`JSON error. Maybe the NUI Callback \'${eventName}\' is not registered. This can be caused if the file that registers it has a lua syntax error.`);
     } else {
       throw error;

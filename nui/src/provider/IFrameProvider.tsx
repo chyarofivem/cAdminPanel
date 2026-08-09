@@ -10,16 +10,16 @@ import React, {
 import { txAdminMenuPage, usePage } from "../state/page.state";
 import { useIsMenuVisibleValue } from "../state/visibility.state";
 
-const iFrameCtx = createContext(null);
+const iFrameCtx = createContext<iFrameContextValue | null>(null);
 
 type ValidPath = `/${string}`;
 
 interface iFrameContextValue {
   goToFramePage: (path: ValidPath) => void;
   setFramePage: (path: ValidPath) => void;
-  currentFramePg: string;
+  currentFramePath: ValidPath | null;
   fullFrameSrc: string;
-  handleChildPost: (data: IFramePostData) => string;
+  handleChildPost: (data: IFramePostData) => void;
 }
 
 export interface IFramePostData {
@@ -30,7 +30,11 @@ export interface IFramePostData {
 
 export const BASE_IFRAME_PATH = "https://monitor/WebPipe";
 
-export const useIFrameCtx = () => useContext<iFrameContextValue>(iFrameCtx);
+export const useIFrameCtx = () => {
+  const context = useContext(iFrameCtx);
+  if (!context) throw new Error("useIFrameCtx must be used within IFrameProvider");
+  return context;
+};
 
 interface IFrameProviderProps {
   children: ReactNode;

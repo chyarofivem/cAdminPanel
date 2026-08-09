@@ -98,13 +98,13 @@ export const settingsTabs: SettingTabsDatum[] = settingsTabsBase.map((tab) => {
 
 
 export default function SettingsPage({ embeddedAllowlist = false }: { embeddedAllowlist?: boolean }) {
+    const { hasPerm } = useAdminPerms();
     const displayedTabs = embeddedAllowlist
         ? settingsTabs.filter(tab => tab.ctx.tabId === 'whitelist')
-        : settingsTabs.filter(tab => tab.ctx.tabId !== 'whitelist');
+        : settingsTabs.filter(tab => tab.ctx.tabId !== 'whitelist' && (tab.ctx.tabId !== 'fxserver' || hasPerm('master')));
     const [cardPendingSave, setCardPendingSave] = useState<SettingsCardContext | null>(null);
     const [isSaving, setIsSaving] = useState(false);
     const openConfirmDialog = useOpenConfirmDialog();
-    const { hasPerm } = useAdminPerms();
 
     // FIXME:NEXT:UPDATE remove
     const setUrlHash = (hash: string) => {

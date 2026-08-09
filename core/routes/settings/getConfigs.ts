@@ -8,6 +8,9 @@ import { PartialTxConfigs, TxConfigs } from '@modules/ConfigStore/schema';
 import { ConfigChangelogEntry } from '@modules/ConfigStore/changelog';
 import { redactApiKeys, redactStartupSecrets } from '@lib/misc';
 import { txHostConfig } from '@core/globalData';
+import fsp from 'node:fs/promises';
+import { resolveCFGFilePath } from '@lib/fxserver/fxsConfigHelper';
+import { getTcpPortFromServerCfg } from '@lib/fxserver/serverCfgPort';
 const console = consoleFactory(modulename);
 
 
@@ -51,6 +54,16 @@ export default async function GetSettingsConfigs(ctx: AuthedCtx) {
         defaultConfigs: ConfigStore.SchemaDefaults,
         forceQuietMode: txHostConfig.forceQuietMode,
     };
+
+    if (!outData.storedConfigs.cadmin?.apiUrl) {
+        try {
+            const cfgPath = resolveCFGFilePath(txConfig.server.cfgPath, txConfig.server.dataPath);
+            const cfg = await fsp.readFile(cfgPath, 'utf8');
+            outData.defaultConfigs.cadmin.apiUrl = `http://127.0.0.1:${getTcpPortFromServerCfg(cfg)}/cadminpanel`;
+        } catch (error) {
+            console.warn(`Could not derive the Character Management bridge port: ${(error as Error).message}`);
+        }
+    }
 
     //Redact sensitive data if the user doesn't have the write permission
     if (!ctx.admin.hasPermission('settings.write')) {

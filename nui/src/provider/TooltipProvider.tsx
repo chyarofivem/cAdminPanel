@@ -20,9 +20,13 @@ interface TooltipContextValue {
   tooltipOpen: boolean;
 }
 
-const TooltipCtx = createContext(null);
+const TooltipCtx = createContext<TooltipContextValue | null>(null);
 
-export const useTooltip = () => useContext<TooltipContextValue>(TooltipCtx);
+export const useTooltip = () => {
+  const context = useContext(TooltipCtx);
+  if (!context) throw new Error("useTooltip must be used within TooltipProvider");
+  return context;
+};
 
 const HIDE_TOOLTIP_AFTER_MS = 7000;
 

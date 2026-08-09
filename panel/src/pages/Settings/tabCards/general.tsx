@@ -6,11 +6,13 @@ import SettingsCardShell from "../SettingsCardShell"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { txToast } from "@/components/TxToaster"
 import { t } from "@/lib/i18n"
+import { RestartScheduleBox, TimeZoneWarning } from './fxserver'
 
 
 export const pageConfigs = {
     serverName: getPageConfig('general', 'serverName'),
     language: getPageConfig('general', 'language'),
+    restarterSchedule: getPageConfig('restarter', 'schedule'),
 } as const;
 
 export default function ConfigCardGeneral({ cardCtx, pageCtx }: SettingsCardProps) {
@@ -99,6 +101,11 @@ export default function ConfigCardGeneral({ cardCtx, pageCtx }: SettingsCardProp
                 <SettingItemDesc>
                     {t('The language used by the panel, in-game menu, chat, and Discord messages.')}
                 </SettingItemDesc>
+            </SettingItem>
+            <SettingItem label={t('Restart Schedule')} showOptional>
+                <RestartScheduleBox restartTimes={states.restarterSchedule} setRestartTimes={cfg.restarterSchedule.state.set} disabled={pageCtx.isReadOnly} />
+                <TimeZoneWarning />
+                <SettingItemDesc>{t('Times use the server timezone. Scheduled restarts remain available without exposing FXServer configuration.')}</SettingItemDesc>
             </SettingItem>
         </SettingsCardShell>
     )

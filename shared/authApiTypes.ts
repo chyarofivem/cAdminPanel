@@ -11,6 +11,7 @@ export type ReactAuthDataType = {
     discordAvatar?: string;
     discordIdentifier?: string;
     cfxIdentifier?: string;
+    locale?: string;
     csrfToken?: string;
 };
 
@@ -20,6 +21,8 @@ export type ApiLogoutResp = { logout: true };
 export type ApiVerifyPasswordReq = { username: string; password: string };
 export type ApiVerifyPasswordResp = { error: string } | ReactAuthDataType;
 export type ApiChangePasswordReq = { oldPassword?: string; newPassword: string };
+export type ApiSelfPreferencesReq = { locale: string };
+export type ApiSelfPreferencesResp = { success: true; locale: string } | { error: string };
 
 export type ApiSelfIdentifiersResp = {
     success: true;

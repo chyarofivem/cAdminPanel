@@ -40,8 +40,13 @@ const classes = {
 };
 
 const StyledList = styled(List)(({ theme }) => ({
+  padding: 0,
+  display: "flex",
+  flexDirection: "column",
+  gap: 6,
   [`& .${classes.listItem}`]: {
-    borderRadius: 8,
+    minHeight: 46,
+    borderRadius: 10,
     "&.Mui-selected:hover": {
       backgroundColor: "rgba(255, 255, 255, 0.08)",
     },
@@ -76,6 +81,17 @@ const StyledCloseButton = styled(IconButton)(({ theme }) => ({
   right: theme.spacing(2),
 }));
 
+const ModalHeader = styled(DialogTitle)(({ theme }) => ({
+  position: "relative",
+  padding: "20px 64px 18px 24px",
+  borderBottom: "1px solid rgba(255,255,255,0.1)",
+  fontSize: 19,
+  fontWeight: 600,
+  lineHeight: 1.3,
+  background: "rgba(255,255,255,0.025)",
+  "& small": { display: "block", marginTop: 4, color: theme.palette.text.secondary, fontSize: 12, fontWeight: 500 },
+}));
+
 type PlayerModalProps = {
   onClose: () => void
 };
@@ -86,18 +102,19 @@ const PlayerModal: React.FC<PlayerModalProps> = ({onClose}) => {
 
   if (!assocPlayer) return null;
 
-  const error = (playerDetails as any).error;
+  const error = playerDetails && 'error' in playerDetails ? playerDetails.error : undefined;
+  const loadedPlayer = playerDetails && 'player' in playerDetails ? playerDetails.player : undefined;
 
   return (
     <>
-      <DialogTitle style={{ borderBottom: "1px solid rgba(221,221,221,0.54)" }}>
-        [{assocPlayer.id}]{" "}
-        {playerDetails?.player?.displayName ?? assocPlayer.displayName}
+      <ModalHeader>
+        {loadedPlayer?.displayName ?? assocPlayer.displayName}
+        <small>Player ID {assocPlayer.id}</small>
         <StyledCloseButton onClick={onClose} size="large">
           <Close />
         </StyledCloseButton>
-      </DialogTitle>
-      <Box display="flex" px={2} pb={2} pt={2} flexGrow={1} overflow="hidden">
+      </ModalHeader>
+      <Box display="flex" p={3} gap={3} flexGrow={1} overflow="hidden">
         <PlayerModalErrorBoundary>
           {error ? (
             <>
@@ -117,9 +134,9 @@ const PlayerModal: React.FC<PlayerModalProps> = ({onClose}) => {
           ) : (
             <>
               <Box
-                minWidth={200}
-                pr={2}
-                borderRight="1px solid rgba(221,221,221,0.54)"
+                minWidth={220}
+                pr={3}
+                borderRight="1px solid rgba(255,255,255,0.1)"
               >
                 <DialogList />
               </Box>

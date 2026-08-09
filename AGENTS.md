@@ -53,6 +53,13 @@
 • Qbox ACE cleanup may remove only grants established by cAdminPanel. Preserve inherited grants from server configuration or other resources. Release cAdminPanel-owned grants on character unload, player drop, character mismatch, and resource stop.
 • The in-game Players page must preserve its player modal action, filters, sorting, periodic refresh, and unbounded incremental loading.
 • Announcement and direct-message notifications use compact communication cards. Avoid duplicate notification icons, oversized wrappers, and decorative outer borders.
+• FXServer settings and Master Actions are master-only in navigation, routing, and backend enforcement. Restart scheduling belongs in General settings so delegated settings access does not expose FXServer configuration.
+• Master Actions uses the React panel workspace for database backup, cleanup, and allowlist maintenance. Keep destructive actions explicit and confirmed.
+• New local administrator accounts receive a generated temporary password that is shown once and must be changed on first login. When a chyarologin email is supplied, verify that it belongs to a registered chyarologin user and do not generate a local password.
+• Personal language preferences apply to both the web panel and that administrator's in-game menu. They must not change the server-wide language for other administrators.
+• Character Management bridge URLs derive their FXServer port from the active TCP endpoint in server.cfg when no explicit URL is stored.
+• Qbox character lookup accepts the prefixed and unprefixed license forms found in deployed player tables. A resolved character must expose Money, Job, Group, Inventory, and Garage tools according to server-side permissions.
+• Web and in-game branding share the configured accent and logo. Keep the web panel theme isolated from NUI theme construction while synchronizing branding values through intercom.
 
 ## Change routing
 • For an API or socket contract change, update `shared/` first, then update every producer and consumer in `core/`, `panel/`, and `nui/`.
@@ -61,6 +68,7 @@
 • In-game menu work belongs in `nui/src/` and the corresponding Lua handlers under `resource/menu/` when behavior changes.
 • Keep permission enforcement server-side. Client-side hiding and disabled states are usability measures only.
 • Preserve user changes in a dirty worktree. Inspect `git status` and the relevant diff before editing, and avoid unrelated cleanup.
+• Update this AGENTS.md after every functional change. Record new product invariants, cross-workspace routing, validation requirements, or operator behavior introduced by the change before handoff.
 
 ## Development commands
 Run commands from the repository root unless a workflow says otherwise.
@@ -87,6 +95,7 @@ npm.cmd run build
 • The release workflow creates `monitor.zip` after the root build. The root `npm run build` command does not create that archive.
 • Static files copied into `dist/` may retain their source modification timestamps. Verify freshness through a clean output directory, successful build logs, current generated bundle timestamps, and hashes where needed.
 • Workspace typechecks are the useful default. The current core and shared TypeScript project references form a cycle for build-mode typechecking; report that condition accurately and do not remove references as an incidental fix.
+• Panel and NUI typechecks prepare dependency declarations through `scripts/prepare-typecheck.js`. Keep this cross-platform preparation step when shared or core contracts change; direct `tsc` calls can otherwise report TS6305 against a clean `.tsc/` directory.
 
 ## Validation expectations
 • Run the narrowest relevant tests while iterating, then run each affected workspace test, typecheck, lint, or production build in proportion to the change.
@@ -103,3 +112,4 @@ npm.cmd run build
 • Reuse the existing localization and theme systems. Avoid hard-coded user-facing text when the surrounding feature is localized.
 • Follow the event naming rules in `docs/development.md`: `txcl:` for client events, `txsv:` for server events, and `txsv:req` for request-style server events.
 • Do not modify `web/public/css/coreui.css`. Use the project custom styles or the relevant source variables described in `docs/development.md`.
+• Keep NUI React contexts explicitly typed and preserve nullable player state at the Recoil boundary. Update browser mocks whenever shared player or server-context contracts change so strict typechecks remain useful.
