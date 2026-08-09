@@ -67,8 +67,19 @@ end
 local function publishServerCtx()
   GlobalState.txAdminServerCtx = ServerCtxObj
   for adminID, _ in pairs(TX_ADMINS) do
-    TriggerClientEvent('txcl:setServerCtx', adminID, ServerCtxObj)
+    TX_SEND_SERVER_CTX(adminID)
   end
+end
+
+function TX_SEND_SERVER_CTX(adminID)
+  local personalized = {}
+  for key, value in pairs(ServerCtxObj) do personalized[key] = value end
+  local admin = TX_ADMINS[tostring(adminID)]
+  if admin and type(admin.locale) == 'string' and admin.locale ~= '' then
+    personalized.locale = admin.locale
+    personalized.localeData = false
+  end
+  TriggerClientEvent('txcl:setServerCtx', tonumber(adminID), personalized)
 end
 
 local function syncBranding()
@@ -148,7 +159,7 @@ end
 
 RegisterNetEvent('txsv:req:serverCtx', function()
   local src = source
-  TriggerClientEvent('txcl:setServerCtx', src, ServerCtxObj)
+  TX_SEND_SERVER_CTX(src)
 end)
 
 -- Everytime the txAdmin convars are changed this event will fire

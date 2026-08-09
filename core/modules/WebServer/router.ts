@@ -42,6 +42,7 @@ export default () => {
     //Authentication
     router.get('/auth/self', apiAuthMw, routes.auth_self);
     router.post('/auth/self/identifiers', apiAuthMw, routes.auth_selfIdentifiers);
+    router.post('/auth/self/preferences', apiAuthMw, routes.auth_selfPreferences);
     router.post('/auth/password', authLimiter, routes.auth_verifyPassword);
     router.post('/auth/changePassword', apiAuthMw, routes.auth_changePassword);
     router.post('/auth/logout', authLimiter, routes.auth_logout);

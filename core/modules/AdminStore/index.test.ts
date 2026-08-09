@@ -102,4 +102,18 @@ describe('AdminStore first-run account selection', () => {
         expect(store.admins[0].providers.chyarologin.identifier).toBe('host@example.com');
         expect(store.admins[0].providers.discord).toBeUndefined();
     });
+
+    it('persists administrator preferences used by web and game sessions', async () => {
+        hostConfig.defaults.account = {
+            username: 'hostadmin',
+            password: '$2b$11$K3HwDzkoUfhU6.W.tScfhOLEtR5uNc9qpQ685emtERx3dZ7fmgXCy',
+        };
+        const store = new AdminStore();
+        if (store.refreshRoutine) clearInterval(store.refreshRoutine);
+
+        await store.setAdminPreferences('hostadmin', { locale: 'hr' });
+
+        const saved = JSON.parse(await fs.readFile(path.join(hostConfig.root, 'admins.json'), 'utf8'));
+        expect(saved[0].preferences).toEqual({ locale: 'hr' });
+    });
 });

@@ -21,6 +21,7 @@ export class AuthedAdmin {
     public readonly discordAvatar: string | undefined;
     public readonly discordIdentifier: string | undefined;
     public readonly cfxIdentifier: string | undefined;
+    public readonly locale: string | undefined;
     public readonly csrfToken?: string;
 
     constructor(vaultAdmin: any, csrfToken?: string) {
@@ -45,6 +46,7 @@ export class AuthedAdmin {
         //The explicitly linked identifier wins: it is set by the admin themselves
         //in the user settings page, while fivemLicense comes from chyarologin.
         this.cfxIdentifier = vaultAdmin.providers?.citizenfx?.identifier || chyaroData.fivemLicense;
+        this.locale = typeof vaultAdmin.preferences?.locale === 'string' ? vaultAdmin.preferences.locale : undefined;
         this.discordAvatar = chyaroData.discordId && chyaroData.discordAvatar
             ? `https://cdn.discordapp.com/avatars/${chyaroData.discordId}/${chyaroData.discordAvatar}.jpg?size=128`
             : undefined;
@@ -109,6 +111,7 @@ export class AuthedAdmin {
             discordAvatar: this.discordAvatar,
             discordIdentifier: this.discordIdentifier,
             cfxIdentifier: this.cfxIdentifier,
+            locale: this.locale,
             csrfToken: this.csrfToken ?? 'not_set',
         }
     }

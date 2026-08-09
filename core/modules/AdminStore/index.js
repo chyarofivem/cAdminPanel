@@ -867,6 +867,16 @@ export default class AdminStore {
         return newHash;
     }
 
+    /** Persist preferences shared by an administrator's web and game-menu sessions. */
+    async setAdminPreferences(name, preferences) {
+        if (this.admins == false) throw new Error('Admins not set');
+        const admin = this.admins.find((user) => name.toLowerCase() === user.name.toLowerCase());
+        if (!admin) throw new Error('Admin not found');
+        admin.preferences = { ...(admin.preferences || {}), ...preferences };
+        await this.writeAdminsFile();
+        await this.refreshOnlineAdmins();
+    }
+
 
     /**
      * Checks the one-time console PIN used to authorize first-run SSO setup.
