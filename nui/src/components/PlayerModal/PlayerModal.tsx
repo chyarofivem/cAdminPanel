@@ -108,7 +108,7 @@ const PlayerModal: React.FC<PlayerModalProps> = ({onClose}) => {
   return (
     <>
       <ModalHeader>
-        {loadedPlayer?.displayName ?? assocPlayer.displayName}
+        {playerDetails?.player?.displayName ?? assocPlayer.displayName}
         <small>Player ID {assocPlayer.id}</small>
         <StyledCloseButton onClick={onClose} size="large">
           <Close />
