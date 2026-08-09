@@ -52,13 +52,13 @@ const playerDetails = {
 };
 
 export const usePlayerDetailsValue = () =>
-  useRecoilValue<PlayerModalResp>(playerDetails.selectedPlayerData);
+  useRecoilValue(playerDetails.selectedPlayerData) as PlayerModalResp;
 
 export const useForcePlayerRefresh = () =>
   useSetRecoilState(playerDetails.forcePlayerRefresh);
 
 export const useAssociatedPlayerValue = () =>
-  useRecoilValue<PlayerData>(playerDetails.associatedPlayer);
+  useRecoilValue(playerDetails.associatedPlayer) as PlayerData;
 
 export const useSetAssociatedPlayer = () =>
-  useSetRecoilState<PlayerData>(playerDetails.associatedPlayer);
+  useSetRecoilState(playerDetails.associatedPlayer);

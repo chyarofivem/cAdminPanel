@@ -95,6 +95,7 @@ npm.cmd run build
 • The release workflow creates `monitor.zip` after the root build. The root `npm run build` command does not create that archive.
 • Static files copied into `dist/` may retain their source modification timestamps. Verify freshness through a clean output directory, successful build logs, current generated bundle timestamps, and hashes where needed.
 • Workspace typechecks are the useful default. The current core and shared TypeScript project references form a cycle for build-mode typechecking; report that condition accurately and do not remove references as an incidental fix.
+• Panel and NUI typechecks prepare dependency declarations through `scripts/prepare-typecheck.js`. Keep this cross-platform preparation step when shared or core contracts change; direct `tsc` calls can otherwise report TS6305 against a clean `.tsc/` directory.
 
 ## Validation expectations
 • Run the narrowest relevant tests while iterating, then run each affected workspace test, typecheck, lint, or production build in proportion to the change.
@@ -111,3 +112,4 @@ npm.cmd run build
 • Reuse the existing localization and theme systems. Avoid hard-coded user-facing text when the surrounding feature is localized.
 • Follow the event naming rules in `docs/development.md`: `txcl:` for client events, `txsv:` for server events, and `txsv:req` for request-style server events.
 • Do not modify `web/public/css/coreui.css`. Use the project custom styles or the relevant source variables described in `docs/development.md`.
+• Keep NUI React contexts explicitly typed and preserve nullable player state at the Recoil boundary. Update browser mocks whenever shared player or server-context contracts change so strict typechecks remain useful.

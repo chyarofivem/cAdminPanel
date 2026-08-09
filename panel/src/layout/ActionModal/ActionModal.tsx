@@ -1,7 +1,7 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { useActionModalStateValue } from "@/hooks/actionModal";
-import { EraserIcon, InfoIcon, ListIcon, Trash2Icon, Undo2Icon } from "lucide-react";
+import { InfoIcon, ListIcon, Undo2Icon } from "lucide-react";
 import { useEffect, useState } from "react";
 import GenericSpinner from "@/components/GenericSpinner";
 import { cn } from "@/lib/utils";
@@ -10,7 +10,6 @@ import { HistoryActionModalResp, HistoryActionModalSuccess } from "@shared/histo
 import ActionIdsTab from "./ActionIdsTab";
 import ActionInfoTab from "./ActionInfoTab";
 import ActionModifyTab from "./ActionModifyTab";
-import ActionDeleteTab from "./ActionDeleteTab";
 import { ModalContent, ModalTabMessage, ModalTabsList, ModalTabWrapper, type ModalTabInfo } from "@/components/modal-tabs";
 
 

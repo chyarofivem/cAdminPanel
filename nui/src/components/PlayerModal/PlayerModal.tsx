@@ -102,7 +102,8 @@ const PlayerModal: React.FC<PlayerModalProps> = ({onClose}) => {
 
   if (!assocPlayer) return null;
 
-  const error = (playerDetails as any).error;
+  const error = playerDetails && 'error' in playerDetails ? playerDetails.error : undefined;
+  const loadedPlayer = playerDetails && 'player' in playerDetails ? playerDetails.player : undefined;
 
   return (
     <>

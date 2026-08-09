@@ -29,7 +29,7 @@ export default function GarageTab({ player, refresh }: { player: CadminPlayer; r
     const canManage = hasPerm('cadmin.garage.manage');
     const identifier = cadminCharacterIdentifier(player);
     const garageUrl = canView ? cadminApiPath(`garage/${encodeURIComponent(identifier)}`) : null;
-    const garage = useSWR<GarageVehicle[]>(garageUrl, async url => (
+    const garage = useSWR<GarageVehicle[]>(garageUrl, async (url: string) => (
         cadminData(await fetcher<CadminResponse<GarageVehicle[]>>(url))
     ));
     const [model, setModel] = useState('');

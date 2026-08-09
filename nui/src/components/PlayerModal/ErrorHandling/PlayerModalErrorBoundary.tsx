@@ -1,4 +1,4 @@
-import React from "react";
+import React, { type ReactNode } from "react";
 import { PlayerModalHasError } from "./PlayerModalHasError";
 
 interface PlayerErrorBoundaryState {
@@ -7,7 +7,7 @@ interface PlayerErrorBoundaryState {
 }
 
 export class PlayerModalErrorBoundary extends React.Component<
-  any,
+  { children: ReactNode },
   PlayerErrorBoundaryState
 > {
   public state = {
@@ -15,11 +15,11 @@ export class PlayerModalErrorBoundary extends React.Component<
     errorMessage: "Unknown Error Occurred",
   };
 
-  public constructor(props) {
+  public constructor(props: { children: ReactNode }) {
     super(props);
   }
 
-  static getDerivedStateFromError(error) {
+  static getDerivedStateFromError(error: Error): PlayerErrorBoundaryState {
     return { hasError: true, errorMessage: error.message };
   }
 

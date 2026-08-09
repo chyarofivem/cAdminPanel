@@ -1,7 +1,6 @@
 import React, {
   ChangeEvent,
   createContext,
-  ReactEventHandler,
   ReactNode,
   useCallback,
   useContext,
@@ -41,7 +40,7 @@ interface DialogProviderContext {
   isDialogOpen: boolean;
 }
 
-const DialogContext = createContext(null);
+const DialogContext = createContext<DialogProviderContext | null>(null);
 
 const defaultDialogState = {
   description: "This is the default description for whatever",
@@ -106,8 +105,7 @@ export const DialogProvider: React.FC<DialogProviderProps> = ({ children }) => {
     setListenForExit(false);
   }, []);
 
-  const handleDialogClose: ReactEventHandler<{}> = useCallback((e) => {
-    e.stopPropagation();
+  const handleDialogClose = useCallback(() => {
     setDialogOpen(false);
     setListenForExit(true);
   }, []);
@@ -128,7 +126,7 @@ export const DialogProvider: React.FC<DialogProviderProps> = ({ children }) => {
       }}
     >
       <Dialog
-        onClose={handleDialogClose}
+        onClose={() => handleDialogClose()}
         open={dialogOpen}
         fullWidth
         TransitionProps={{
@@ -234,7 +232,7 @@ export const DialogProvider: React.FC<DialogProviderProps> = ({ children }) => {
               </Box>
               <Box sx={{ display: "flex", gap: 1 }}>
                 <Button
-                  onClick={handleDialogClose}
+                  onClick={() => handleDialogClose()}
                   variant="text"
                   color="secondary"
                 >
@@ -252,5 +250,8 @@ export const DialogProvider: React.FC<DialogProviderProps> = ({ children }) => {
   );
 };
 
-export const useDialogContext = () =>
-  useContext<DialogProviderContext>(DialogContext);
+export const useDialogContext = () => {
+  const context = useContext(DialogContext);
+  if (!context) throw new Error("useDialogContext must be used within DialogProvider");
+  return context;
+};

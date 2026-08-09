@@ -102,6 +102,11 @@ const MenuObject = {
           },
           switchPageKey: "Tab",
           txAdminVersion: "1.0.0",
+          panelName: "FiveM Panel",
+          accent: "blue",
+          accentColor: "#2563eb",
+          logoUrl: "",
+          bannerUrl: "",
         },
       },
     ]);
