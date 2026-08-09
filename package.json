@@ -12,6 +12,7 @@
   ],
   "scripts": {
     "build": "rimraf dist tmp_core_tsc && npm run build -w nui && npm run build -w panel && npm run build -w core && npm run license:distfile",
+    "fullcompile": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/fullcompile.ps1",
     "prepare": "husky install",
     "test": "npm run test --workspaces",
     "typecheck": "npm run typecheck --workspaces",

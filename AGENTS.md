@@ -93,6 +93,7 @@ npm.cmd run build
 • The root build runs NUI, panel, core publishing, static-file copying, and third-party license generation.
 • The root build removes `dist/` and `tmp_core_tsc`. For a specifically requested zero-cache build, first verify the exact workspace paths, then remove `dist/`, `.tsc/`, `tmp_core_tsc/`, the root `node_modules/.vite/`, and each workspace `node_modules/.vite/`. Keep `node_modules/` itself.
 • The release workflow creates `monitor.zip` after the root build. The root `npm run build` command does not create that archive.
+• `npm run fullcompile` performs the complete production build and then replaces `monitor.zip`. It uses the root package version when `GITHUB_REF` is unset, and every archived path is stored under one top-level `monitor/` directory.
 • Static files copied into `dist/` may retain their source modification timestamps. Verify freshness through a clean output directory, successful build logs, current generated bundle timestamps, and hashes where needed.
 • Workspace typechecks are the useful default. The current core and shared TypeScript project references form a cycle for build-mode typechecking; report that condition accurately and do not remove references as an incidental fix.
 • Panel and NUI typechecks prepare dependency declarations through `scripts/prepare-typecheck.js`. Keep this cross-platform preparation step when shared or core contracts change; direct `tsc` calls can otherwise report TS6305 against a clean `.tsc/` directory.

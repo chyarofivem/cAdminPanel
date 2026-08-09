@@ -87,6 +87,14 @@ The building process is normally done in the GitHub Action workflow only, but if
 npm run test --workspaces
 GITHUB_REF="refs/tags/v9.9.9" npm run build
 ```
+
+On Windows, the complete local build and release archive can be recreated with:
+```powershell
+npm run fullcompile
+```
+This command uses the root package version when `GITHUB_REF` is unset, rebuilds the complete `dist/` directory, and
+replaces `monitor.zip` with the build stored under a single top-level `monitor/` directory.
+
 > FIXME: add linting & typechecking back into the workflow above
 
 
