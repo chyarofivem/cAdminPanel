@@ -12,9 +12,17 @@ bundle_size_report.html
 .github/.cienv
 scripts/**/*.local.*
 .runtime/
+*.tsbuildinfo
+*.timestamp-*.mjs
+.vite/
 
 # IDE Specific
 .idea
+.vscode/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
 
 ## Github's default node gitignore
 # Logs
@@ -77,6 +85,8 @@ yarn.lock
 
 # dotenv environment variables file
 .env
+.env.*
+!.env.example
 
 # next.js build output
 .next

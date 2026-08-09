@@ -88,6 +88,9 @@ export default async function SaveSettingsConfigs(ctx: AuthedCtx) {
     if (['cadmin', 'character-management'].includes(ctx.params.card) && !ctx.admin.isMaster) {
         return sendTypedResp({ type: 'error', msg: 'Only the master can configure Character Management.' });
     }
+    if (ctx.params.card === 'fxserver' && !ctx.admin.isMaster) {
+        return sendTypedResp({ type: 'error', msg: 'Only the master can configure FXServer.' });
+    }
 
     //Validating input
     const paramsSchemaRes = paramsSchema.safeParse(ctx.params);

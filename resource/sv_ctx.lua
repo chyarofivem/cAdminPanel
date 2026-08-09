@@ -18,6 +18,7 @@ local ServerCtxObj = {
   panelName = 'FiveM Panel',
   accent = 'blue',
   accentColor = '#2563eb',
+  logoUrl = '',
   bannerUrl = '',
   alignRight = false,
   announceNotiPos = '', -- top-center, top-right, top-left, bottom-center, bottom-right, bottom-left
@@ -66,8 +67,19 @@ end
 local function publishServerCtx()
   GlobalState.txAdminServerCtx = ServerCtxObj
   for adminID, _ in pairs(TX_ADMINS) do
-    TriggerClientEvent('txcl:setServerCtx', adminID, ServerCtxObj)
+    TX_SEND_SERVER_CTX(adminID)
   end
+end
+
+function TX_SEND_SERVER_CTX(adminID)
+  local personalized = {}
+  for key, value in pairs(ServerCtxObj) do personalized[key] = value end
+  local admin = TX_ADMINS[tostring(adminID)]
+  if admin and type(admin.locale) == 'string' and admin.locale ~= '' then
+    personalized.locale = admin.locale
+    personalized.localeData = false
+  end
+  TriggerClientEvent('txcl:setServerCtx', tonumber(adminID), personalized)
 end
 
 local function syncBranding()
@@ -84,6 +96,7 @@ local function syncBranding()
     ServerCtxObj.panelName = branding.panelName or ServerCtxObj.panelName
     ServerCtxObj.accent = branding.accent or ServerCtxObj.accent
     ServerCtxObj.accentColor = branding.accentColor or ServerCtxObj.accentColor
+    ServerCtxObj.logoUrl = branding.logoUrl or ServerCtxObj.logoUrl
     ServerCtxObj.bannerUrl = branding.bannerUrl or ServerCtxObj.bannerUrl
     publishServerCtx()
   end, 'POST', payload, { ['Content-Type'] = 'application/json' })
@@ -146,7 +159,7 @@ end
 
 RegisterNetEvent('txsv:req:serverCtx', function()
   local src = source
-  TriggerClientEvent('txcl:setServerCtx', src, ServerCtxObj)
+  TX_SEND_SERVER_CTX(src)
 end)
 
 -- Everytime the txAdmin convars are changed this event will fire

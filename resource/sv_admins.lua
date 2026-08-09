@@ -81,8 +81,10 @@ RegisterNetEvent('txsv:checkIfAdmin', function()
             tag = adminTag,
             username = resp.name,
             perms = resp.permissions,
-            bucket = 0
+            bucket = 0,
+            locale = resp.locale
         }
+        if TX_SEND_SERVER_CTX then TX_SEND_SERVER_CTX(src) end
         sendInitialPlayerlist(src)
         TriggerClientEvent('txcl:setAdmin', src, resp.name, resp.permissions)
         TriggerEvent('txAdmin:events:adminAuth', {

@@ -31,6 +31,7 @@ import TxAdminLogPage from '@/pages/TxAdminLogPage';
 import SetupPage from '@/pages/Setup/SetupPage';
 import { t } from '@/lib/i18n';
 import UserSettingsPage from '@/pages/UserSettingsPage';
+import MasterActionsPage from '@/pages/MasterActions/MasterActionsPage';
 
 
 type RouteType = {
@@ -120,8 +121,8 @@ const allRoutes: RouteType[] = [
     {
         path: '/system/master-actions',
         title: 'Master Actions',
-        //NOTE: content is readonly for unauthorized accounts
-        Page: <Iframe legacyUrl="masterActions" />
+        permission: 'master',
+        Page: <MasterActionsPage />
     },
     {
         path: '/system/diagnostics',

@@ -38,7 +38,7 @@ type RestartScheduleBoxProps = {
     disabled?: boolean;
 };
 
-function RestartScheduleBox({ restartTimes, setRestartTimes, disabled }: RestartScheduleBoxProps) {
+export function RestartScheduleBox({ restartTimes, setRestartTimes, disabled }: RestartScheduleBoxProps) {
     const [isTimeInputOpen, setIsTimeInputOpen] = useState(false);
     const [animationParent] = useAutoAnimate();
 
@@ -165,7 +165,7 @@ const getServerDataPlaceholder = (hostSuggested?: string) => {
 }
 
 // Check if the browser timezone is different from the server timezone
-function TimeZoneWarning() {
+export function TimeZoneWarning() {
     try {
         const browserTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
         if (window.txConsts.serverTimezone !== browserTimezone) {
@@ -184,7 +184,6 @@ function TimeZoneWarning() {
 
 export const pageConfigs = {
     dataPath: getPageConfig('server', 'dataPath'),
-    restarterSchedule: getPageConfig('restarter', 'schedule'),
     quietMode: getPageConfig('server', 'quiet'),
 
     cfgPath: getPageConfig('server', 'cfgPath', true),
@@ -376,18 +375,6 @@ export default function ConfigCardFxserver({ cardCtx, pageCtx }: SettingsCardPro
                             {window.txConsts.hostConfigSource}: This path should start with <InlineCode>{pageCtx.apiData.dataPath}</InlineCode> .
                         </span>
                     </>)}
-                </SettingItemDesc>
-            </SettingItem>
-            <SettingItem label="Restart Schedule" showOptional>
-                <RestartScheduleBox
-                    restartTimes={states.restarterSchedule}
-                    setRestartTimes={cfg.restarterSchedule.state.set}
-                    disabled={pageCtx.isReadOnly}
-                />
-                <TimeZoneWarning />
-                <SettingItemDesc>
-                    At which times of day to restart the server. <br />
-                    <strong>Note:</strong> Make sure your schedule matches your server time and not your local time.
                 </SettingItemDesc>
             </SettingItem>
             <SettingItem label="Quiet Mode">

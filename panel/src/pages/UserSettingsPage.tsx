@@ -11,7 +11,7 @@ import { useAuth, useSetAuthData } from '@/hooks/auth';
 import { useAccent } from '@/hooks/theme';
 import { useBackendApi } from '@/hooks/fetch';
 import { txToast } from '@/components/TxToaster';
-import type { ApiChangePasswordReq, ApiSelfIdentifiersResp } from '@shared/authApiTypes';
+import type { ApiChangePasswordReq, ApiSelfIdentifiersResp, ApiSelfPreferencesReq, ApiSelfPreferencesResp } from '@shared/authApiTypes';
 import type { GenericApiResp } from '@shared/genericApiTypes';
 import consts from '@shared/consts';
 import { cn } from '@/lib/utils';
@@ -38,6 +38,10 @@ export default function UserSettingsPage() {
     const changePasswordApi = useBackendApi<GenericApiResp, ApiChangePasswordReq>({
         method: 'POST',
         path: '/auth/changePassword',
+    });
+    const savePreferencesApi = useBackendApi<ApiSelfPreferencesResp, ApiSelfPreferencesReq>({
+        method: 'POST',
+        path: '/auth/self/preferences',
     });
     if (!authData) return null;
 
@@ -95,11 +99,19 @@ export default function UserSettingsPage() {
         setAccent(value);
     };
     const selectLanguage = (value: string) => {
-        localStorage.setItem(LANGUAGE_STORAGE_KEY, value);
-        document.cookie = `panelLocale=${encodeURIComponent(value)};path=/;SameSite=Lax;max-age=31536000`;
-        window.location.reload();
+        savePreferencesApi({
+            data: { locale: value },
+            toastLoadingMessage: t('Saving language...'),
+            error: message => txToast.error(message),
+            success: data => {
+                if ('error' in data) return txToast.error(data.error);
+                localStorage.setItem(LANGUAGE_STORAGE_KEY, data.locale);
+                document.cookie = `panelLocale=${encodeURIComponent(data.locale)};path=/;SameSite=Lax;max-age=31536000`;
+                window.location.reload();
+            },
+        });
     };
-    const language = localStorage.getItem(LANGUAGE_STORAGE_KEY) || window.txConsts.uiLocale;
+    const language = authData.locale || localStorage.getItem(LANGUAGE_STORAGE_KEY) || window.txConsts.uiLocale;
     const avatar = authData.discordAvatar || authData.profilePicture;
 
     return <div className="pb-10">
@@ -132,7 +144,7 @@ export default function UserSettingsPage() {
                             <SelectItem value="hr">Hrvatski</SelectItem>
                         </SelectContent>
                     </Select>
-                    <p className="mt-3 text-sm text-muted-foreground">{t('This preference applies only to your browser and does not change the server language.')}</p>
+                    <p className="mt-3 text-sm text-muted-foreground">{t('This preference applies to your web panel and in-game menu. It does not change the server-wide language.')}</p>
                 </CardContent>
             </Card>
 

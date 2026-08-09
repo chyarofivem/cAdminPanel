@@ -316,9 +316,10 @@ end
 --- characters and choosing one here would recreate the old LIMIT 1 bug.
 function adapter.getPlayersByLicense(playerLicense)
     resolveColumns()
+    local bareLicense = string.gsub(string.gsub(playerLicense, '^license:', ''), '^license2:', '')
     local rows = MySQL.query.await(
-        ('SELECT %s FROM `%s` WHERE license = ? ORDER BY `citizenid` LIMIT 50'):format(playerSelect, T.qbPlayers),
-        { playerLicense }
+        ('SELECT %s FROM `%s` WHERE license IN (?, ?, ?) ORDER BY `citizenid` LIMIT 50'):format(playerSelect, T.qbPlayers),
+        { playerLicense, 'license:' .. bareLicense, bareLicense }
     ) or {}
 
     local byCharacter = {}
@@ -328,7 +329,8 @@ function adapter.getPlayersByLicense(playerLicense)
     end
     for _, playerId in ipairs(GetPlayers()) do
         local player = core:GetPlayer(tonumber(playerId))
-        if player and player.PlayerData.license == playerLicense then
+        local liveLicense = player and tostring(player.PlayerData.license or '') or ''
+        if player and (liveLicense == playerLicense or liveLicense == bareLicense or liveLicense == 'license:' .. bareLicense) then
             local normalized = normalizeOnline(player)
             byCharacter[normalized.characterId] = normalized
         end

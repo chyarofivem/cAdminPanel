@@ -8,6 +8,7 @@ const console = consoleFactory(modulename);
  */
 export default async function MasterActionsPage(ctx: AuthedCtx) {
     const isMasterAdmin = (ctx.admin.hasPermission('master'));
+    if (!isMasterAdmin) return ctx.utils.error(403, 'Only the master account can access Master Actions.');
     return ctx.utils.render('main/masterActions', {
         headerTitle: 'Master Actions',
         isMasterAdmin,

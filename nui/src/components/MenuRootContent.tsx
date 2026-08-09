@@ -75,7 +75,7 @@ export const MenuRootContent: React.FC = React.memo(() => {
       <HeaderRow>
         <LogoSlot>
           <img
-            src={serverCtx.bannerUrl || fallbackLogo}
+            src={serverCtx.logoUrl || fallbackLogo}
             alt={serverCtx.panelName}
             style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }}
           />

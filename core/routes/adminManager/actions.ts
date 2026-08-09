@@ -4,6 +4,8 @@ import consts from '@shared/consts';
 import consoleFactory from '@lib/console';
 import { AuthedCtx } from '@modules/WebServer/ctxTypes';
 import { checkRateLimit } from '@lib/rateLimiters/actionLimiter';
+import { nanoid } from 'nanoid';
+import { fetchChyaroUsers } from '@lib/chyaroApi';
 const console = consoleFactory(modulename);
 
 //Helpers
@@ -67,7 +69,7 @@ async function handleAdd(ctx: AuthedCtx) {
     //Prepare and filter variables
     const name = ctx.request.body.name.trim();
     const chyaroEmail = (ctx.request.body.chyaroEmail ?? '').trim().toLowerCase();
-    const password = ctx.request.body.password ?? '';
+    let password = ctx.request.body.password ?? '';
     const citizenfxID = ctx.request.body.citizenfxID.trim();
     const discordID = ctx.request.body.discordID.trim();
     let permissions = (Array.isArray(ctx.request.body.permissions)) ? ctx.request.body.permissions : [];
@@ -82,6 +84,19 @@ async function handleAdd(ctx: AuthedCtx) {
     if (chyaroEmail.length && (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(chyaroEmail) || chyaroEmail.length > 254)) {
         return ctx.send({ type: 'danger', message: 'Enter a valid chyarologin email address.' });
     }
+    if (chyaroEmail.length) {
+        try {
+            const users = await fetchChyaroUsers();
+            if (!users.some(user => user.email.trim().toLowerCase() === chyaroEmail)) {
+                return ctx.send({ type: 'danger', message: 'No chyarologin account is registered with that email address.' });
+            }
+        } catch (error) {
+            console.warn(`Could not verify chyarologin email '${chyaroEmail}': ${(error as Error).message}`);
+            return ctx.send({ type: 'danger', message: 'Could not verify the chyarologin email. No administrator was created; please try again.' });
+        }
+    } else {
+        password = nanoid(16);
+    }
     if (password.trim() !== password) {
         return ctx.send({ type: 'danger', message: 'The password cannot start or end with a space.' });
     }
@@ -89,12 +104,6 @@ async function handleAdd(ctx: AuthedCtx) {
         return ctx.send({
             type: 'danger',
             message: `Password must be between ${consts.adminPasswordMinLength} and ${consts.adminPasswordMaxLength} characters.`,
-        });
-    }
-    if (!chyaroEmail.length && !password.length && !citizenfxID.length && !discordID.length) {
-        return ctx.send({
-            type: 'danger',
-            message: 'Set a local password, chyarologin email, or game identifier for this administrator.',
         });
     }
     if (chyaroEmail.length && discordID.length) {
@@ -175,7 +184,12 @@ async function handleAdd(ctx: AuthedCtx) {
     try {
         await txCore.adminStore.addAdmin(name, citizenfxData, discordData, chyaroEmail, permissions, password || undefined);
         ctx.admin.logAction(`Adding user '${name}' with ${JSON.stringify(changes)}`);
-        return ctx.send({ type: 'success', message: 'Admin saved.', refresh: true });
+        return ctx.send({
+            type: 'success',
+            message: 'Admin saved.',
+            refresh: true,
+            temporaryPassword: chyaroEmail ? undefined : password,
+        });
     } catch (error) {
         return ctx.send({ type: 'danger', message: (error as Error).message });
     }
@@ -206,6 +220,17 @@ async function handleEdit(ctx: AuthedCtx) {
     const discordID = ctx.request.body.discordID.trim();
     if (chyaroEmail.length && (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(chyaroEmail) || chyaroEmail.length > 254)) {
         return ctx.send({ type: 'danger', message: 'Enter a valid chyarologin email address.' });
+    }
+    if (chyaroEmail.length) {
+        try {
+            const users = await fetchChyaroUsers();
+            if (!users.some(user => user.email.trim().toLowerCase() === chyaroEmail)) {
+                return ctx.send({ type: 'danger', message: 'No chyarologin account is registered with that email address.' });
+            }
+        } catch (error) {
+            console.warn(`Could not verify chyarologin email '${chyaroEmail}': ${(error as Error).message}`);
+            return ctx.send({ type: 'danger', message: 'Could not verify the chyarologin email. No administrator was changed; please try again.' });
+        }
     }
     if (password.trim() !== password) {
         return ctx.send({ type: 'danger', message: 'The password cannot start or end with a space.' });
