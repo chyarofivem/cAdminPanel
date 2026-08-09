@@ -279,12 +279,12 @@ export default function ThreadPerfCard() {
 
 
     return (
-        <div className="py-2 md:rounded-xl border bg-card shadow-sm flex flex-col col-span-3 fill-primary h-[20rem] max-h-[20rem]">
-            <div className="px-4 flex flex-row items-center justify-between space-y-0 pb-2 text-muted-foreground">
-                <h3 className="tracking-tight text-sm font-medium line-clamp-1">
+        <div className="py-6 rounded-2xl bg-white/5 flex flex-col col-span-3 fill-primary h-[20rem] max-h-[20rem]">
+            <div className="px-6 flex flex-row items-center justify-between space-y-0 pb-2">
+                <h3 className="text-xs uppercase tracking-widest text-neutral-500 line-clamp-1">
                     {t('{thread} performance', { thread: cursorThreadLabel ?? selectedThread })} {titleTimeIndicator}
                 </h3>
-                <div className="flex gap-4">
+                <div className="flex gap-4 text-neutral-500">
                     <Select
                         defaultValue={selectedThread}
                         onValueChange={setSelectedThread}
@@ -308,7 +308,7 @@ export default function ThreadPerfCard() {
                             </SelectItem>
                         </SelectContent>
                     </Select>
-                    <div className='hidden xs:block'><BarChartHorizontalIcon /></div>
+                    <div className='hidden xs:block'><BarChartHorizontalIcon className="size-4" /></div>
                 </div>
             </div>
             <DebouncedResizeContainer onDebouncedResize={setChartSize}>

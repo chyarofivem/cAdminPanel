@@ -1,41 +1,51 @@
 import React from "react";
-import { Box, styled } from "@mui/material";
+import { alpha, Box, styled } from "@mui/material";
 import { PlayerPageHeader } from "./PlayerPageHeader";
 import { useFilteredSortedPlayers } from "../../state/players.state";
 import { PlayersListEmpty } from "./PlayersListEmpty";
 import { PlayersListGrid } from "./PlayersListGrid";
 import { usePlayerListListener } from "../../hooks/usePlayerListListener";
+import { nuiTokens } from "@nui/src/styles/nuiTokens";
+import { useTranslate } from "react-polyglot";
 
-const RootStyled = styled(Box)(({ theme }) => ({
-  backgroundColor: theme.palette.background.default,
-  height: "50vh",
-  borderRadius: 15,
+const PlayersShell = styled("section")(({ theme }) => ({
   flex: 1,
+  minHeight: 0,
+  width: "100%",
+  marginTop: 14,
+  borderRadius: nuiTokens.radius,
+  color: theme.palette.text.primary,
+  background: `linear-gradient(145deg, ${alpha(
+    theme.palette.background.paper,
+    0.98
+  )} 0%, ${theme.palette.background.default} 72%)`,
+  boxShadow: `inset 0 0 0 1px ${nuiTokens.ring}, 0 24px 70px rgba(0,0,0,0.48)`,
+  overflow: "hidden",
 }));
 
-const GridStyled = styled(Box)(({ theme }) => ({
+const DirectoryBody = styled(Box)({
   display: "flex",
+  flex: 1,
+  minHeight: 0,
   flexDirection: "column",
-  height: "85%",
-}));
+});
 
 export const PlayersPage: React.FC<{ visible: boolean }> = ({ visible }) => {
   const players = useFilteredSortedPlayers();
+  const t = useTranslate();
 
   usePlayerListListener();
 
   return (
-    <RootStyled
-      mt={2}
-      mb={10}
-      pt={4}
-      px={4}
-      display={visible ? "initial" : "none"}
+    <PlayersShell
+      aria-label={t("nui_menu.page_players.misc.online_players")}
+      aria-hidden={!visible}
+      style={{ display: visible ? "flex" : "none", flexDirection: "column" }}
     >
-      <PlayerPageHeader />
-      <GridStyled>
+      <PlayerPageHeader visiblePlayerCount={players.length} />
+      <DirectoryBody>
         {players.length ? <PlayersListGrid /> : <PlayersListEmpty />}
-      </GridStyled>
-    </RootStyled>
+      </DirectoryBody>
+    </PlayersShell>
   );
 };

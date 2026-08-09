@@ -8,6 +8,13 @@ body {
     -moz-osx-font-smoothing: grayscale;
     height: 100vh;
     overflow: hidden;
+    box-sizing: border-box;
+}
+
+*,
+*::before,
+*::after {
+    box-sizing: inherit;
 }
 
 #root {

@@ -204,10 +204,10 @@ export default function PlayerDropCard() {
     }
 
     return (
-        <div className="col-span-3 sm:col-span-2 3xl:col-span-3 py-2 md:rounded-xl border bg-card shadow-sm flex flex-col min-w-64 h-[20rem] max-h-[20rem]">
-            <div className="px-4 flex flex-row items-center justify-between space-y-0 pb-2 text-muted-foreground">
-                <h3 className="tracking-tight text-sm font-medium line-clamp-1">{t('Player drop cause (last 6h)')}</h3>
-                <div className='hidden sm:block'><DoorOpenIcon /></div>
+        <div className="col-span-3 sm:col-span-2 3xl:col-span-3 pt-6 pb-4 rounded-2xl bg-white/5 flex flex-col min-w-64 h-[20rem] max-h-[20rem]">
+            <div className="px-6 flex flex-row items-center justify-between space-y-0 pb-4">
+                <h3 className="text-xs uppercase tracking-widest text-neutral-500 line-clamp-1">{t('Player drop cause (last 6h)')}</h3>
+                <div className='hidden sm:block text-neutral-500'><DoorOpenIcon className="size-4" /></div>
             </div>
             {/* <div className='font-mono'>
                 {Object.entries(playerDropCategories).map(([reason, { label, color }]) => {
@@ -219,7 +219,7 @@ export default function PlayerDropCard() {
             <DebouncedResizeContainer onDebouncedResize={setChartSize}>
                 {contentNode}
             </DebouncedResizeContainer>
-            {displayLegends && <div className='px-4 mx-auto flex flex-wrap justify-center gap-2'>
+            {displayLegends && <div className='px-6 pt-3 mx-auto flex flex-wrap justify-center gap-2'>
                 {displayLegends.map(legend => {
                     return (
                         <div

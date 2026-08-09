@@ -128,12 +128,12 @@ export default function ServerStatsCard() {
     }
 
     return (
-        <div className="col-span-3 sm:col-span-1 3xl:col-span-2 min-w-52 py-2 px-4 flex flex-col md:rounded-xl border shadow-sm bg-card">
-            <div className="flex flex-row items-center justify-between space-y-0 pb-2 text-muted-foreground">
-                <h3 className="tracking-tight text-sm font-medium line-clamp-1">
+        <div className="col-span-3 sm:col-span-1 3xl:col-span-2 min-w-52 p-6 flex flex-col rounded-2xl bg-white/5">
+            <div className="flex flex-row items-center justify-between space-y-0 pb-4">
+                <h3 className="text-xs uppercase tracking-widest text-neutral-500 line-clamp-1">
                     {t('Server stats')} {titleNode}
                 </h3>
-                <div className='hidden xs:block'><GaugeIcon /></div>
+                <div className='hidden xs:block text-neutral-500'><GaugeIcon className="size-4" /></div>
             </div>
             {contentNode}
         </div>

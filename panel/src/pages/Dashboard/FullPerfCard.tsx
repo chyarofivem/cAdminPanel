@@ -225,12 +225,12 @@ export default function FullPerfCard() {
     }
 
     return (
-        <div className="w-full h-[28rem] pt-2 md:rounded-xl border bg-card shadow-sm flex flex-col fill-primary">
-            <div className="px-4 flex flex-row items-center justify-between space-y-0 pb-2 text-muted-foreground">
-                <h3 className="tracking-tight text-sm font-medium line-clamp-1">
+        <div className="w-full h-[28rem] pt-6 rounded-2xl bg-white/5 flex flex-col fill-primary">
+            <div className="px-6 flex flex-row items-center justify-between space-y-0 pb-2">
+                <h3 className="text-xs uppercase tracking-widest text-neutral-500 line-clamp-1">
                     {t('Server performance')}
                 </h3>
-                <div className="flex gap-4">
+                <div className="flex gap-4 text-neutral-500">
                     <Select defaultValue={selectedThread} onValueChange={setSelectedThread}>
                         <SelectTrigger className="w-32 grow md:grow-0 h-6 px-3 py-1 text-sm" >
                             <SelectValue placeholder={t('Select thread')} />
@@ -247,7 +247,7 @@ export default function FullPerfCard() {
                             </SelectItem>
                         </SelectContent>
                     </Select>
-                    <div className='hidden xs:block'><LineChartIcon /></div>
+                    <div className='hidden xs:block'><LineChartIcon className="size-4" /></div>
                 </div>
             </div>
             <DebouncedResizeContainer onDebouncedResize={setChartSize}>

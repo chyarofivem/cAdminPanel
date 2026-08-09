@@ -5,8 +5,8 @@ import { cloneDeep } from 'lodash-es';
 import { nanoid } from 'nanoid';
 import { txHostConfig } from '@core/globalData';
 import { createHash, timingSafeEqual } from 'node:crypto';
-import consoleFactory from '@lib/console.js';
-import fatalError from '@lib/fatalError.js';
+import consoleFactory from '@lib/console';
+import fatalError from '@lib/fatalError';
 import { chalkInversePad } from '@lib/misc';
 const console = consoleFactory(modulename);
 
@@ -120,12 +120,31 @@ export default class AdminStore {
             }
         }
 
-        //Printing PIN or starting loop
+        //Create the hosting-provided local account when present. Profiles
+        //without one keep the chyarologin bootstrap flow and console PIN.
         if (!adminFileExists) {
-            // This never leaves the server process. It binds first-run identity-provider
-            // setup and the first OAuth callback to someone who can see the txAdmin console.
-            this.addMasterPin = nanoid(16);
-            this.admins = false;
+            if (txHostConfig.defaults.account) {
+                const { username, fivemId, password } = txHostConfig.defaults.account;
+                const temporaryPassword = password ? undefined : nanoid(16);
+                this.createAdminsFile(
+                    username,
+                    fivemId ? `fivem:${fivemId}` : undefined,
+                    undefined,
+                    password ?? temporaryPassword,
+                    temporaryPassword ? true : false,
+                    undefined,
+                    !!temporaryPassword,
+                );
+                console.ok(`Created master account ${chalkInversePad(username)} with credentials provided by ${txHostConfig.sourceName}.`);
+                if (temporaryPassword) {
+                    console.warn(`Temporary password for ${username}: ${chalkInversePad(temporaryPassword)} (change it after signing in).`);
+                }
+            } else {
+                //This never leaves the server process. It binds first-run identity-provider
+                //setup and the first OAuth callback to someone who can see the txAdmin console.
+                this.addMasterPin = nanoid(16);
+                this.admins = false;
+            }
         } else {
             this.loadAdminsFile();
             this.setupRefreshRoutine();
@@ -150,9 +169,11 @@ export default class AdminStore {
      * @param {string|undefined} discordId with the discord: prefix
      * @param {string|undefined} password backup password
      * @param {boolean|undefined} isPlainTextPassword
+     * @param {object|undefined} chyaroData verified chyarologin profile
+     * @param {boolean|undefined} isTemporaryPassword
      * @returns {(boolean)} true or throws an error
      */
-    createAdminsFile(username, fivemId, discordId, password, isPlainTextPassword, chyaroData) {
+    createAdminsFile(username, fivemId, discordId, password, isPlainTextPassword, chyaroData, isTemporaryPassword) {
         //Sanity check
         if (this.admins !== false && this.admins !== null) throw new Error('Admins file already exists.');
         if (typeof username !== 'string' || username.length < 3) throw new Error('Invalid username parameter.');
@@ -161,7 +182,7 @@ export default class AdminStore {
         let password_hash, password_temporary;
         if (password) {
             password_hash = isPlainTextPassword ? GetPasswordHash(password) : password;
-            // password_temporary = false; //undefined will do the same
+            password_temporary = isTemporaryPassword ? true : undefined;
         } else {
             const veryRandomString = `${username}-password-not-meant-to-be-used-${nanoid()}`;
             password_hash = GetPasswordHash(veryRandomString);
@@ -181,7 +202,7 @@ export default class AdminStore {
             providers.discord = {
                 id: discordId,
                 identifier: `discord:${discordId}`,
-                data: {},
+                data: chyaroData ? { source: 'chyarologin' } : {},
             };
         }
         if (chyaroData) {
@@ -376,8 +397,13 @@ export default class AdminStore {
             admin.providers.discord = {
                 id: user.discordId,
                 identifier: `discord:${user.discordId}`,
-                data: admin.providers.discord?.data || {},
+                data: { source: 'chyarologin' },
             };
+        } else {
+            //A linked chyarologin account is authoritative for Discord. Do not
+            //retain a manual/stale Discord identifier when the verified profile
+            //is no longer linked to Discord.
+            delete admin.providers.discord;
         }
         try {
             await this.writeAdminsFile();
@@ -442,19 +468,25 @@ export default class AdminStore {
      * @param {object|false} discordData or false
      * @param {string} chyaroEmail
      * @param {array} permissions
+     * @param {string|undefined} password initial local password
      */
-    async addAdmin(name, citizenfxData, discordData, chyaroEmail, permissions) {
+    async addAdmin(name, citizenfxData, discordData, chyaroEmail, permissions, password) {
         if (this.admins == false) throw new Error('Admins not set');
 
         //Check if username is already taken
         if (this.getAdminByName(name)) throw new Error('Username already taken');
 
         //Preparing admin
+        const hasInitialPassword = typeof password === 'string' && password.length > 0;
+        const passwordSeed = hasInitialPassword
+            ? password
+            : `${name}-password-not-meant-to-be-used-${nanoid()}`;
         const admin = {
             $schema: ADMIN_SCHEMA_VERSION,
             name,
             master: false,
-            password_hash: GetPasswordHash(`${name}-sso-only-${nanoid()}`),
+            password_hash: GetPasswordHash(passwordSeed),
+            password_temporary: hasInitialPassword ? true : undefined,
             providers: {},
             permissions,
         };
@@ -469,7 +501,7 @@ export default class AdminStore {
                 data: {},
             };
         }
-        if (discordData) {
+        if (discordData && !chyaroEmail) {
             const existingDiscord = this.getAdminByProviderUID(discordData.id);
             if (existingDiscord) throw new Error('Discord ID already taken');
             admin.providers.discord = {
@@ -507,8 +539,9 @@ export default class AdminStore {
      * @param {object|false} [discordData] or false
      * @param {string} [chyaroEmail]
      * @param {string[]} [permissions]
+     * @param {string|undefined} [password] optional temporary local password
      */
-    async editAdmin(name, citizenfxData, discordData, chyaroEmail, permissions) {
+    async editAdmin(name, citizenfxData, discordData, chyaroEmail, permissions, password) {
         if (this.admins == false) throw new Error('Admins not set');
 
         //Find admin index
@@ -517,6 +550,25 @@ export default class AdminStore {
             return (username === user.name.toLowerCase());
         });
         if (adminIndex == -1) throw new Error('Admin not found');
+
+        //Validate every new provider before mutating the in-memory record. This
+        //both prevents duplicate identities and keeps a later validation error
+        //from leaving an earlier provider change partially applied.
+        const assertProviderAvailable = (providerData, label) => {
+            if (!providerData) return;
+            const byUid = this.getAdminByProviderUID(providerData.id);
+            const byIdentifier = this.getAdminByIdentifiers([providerData.identifier]);
+            const existing = byUid || byIdentifier;
+            if (existing && existing.name.toLowerCase() !== username) {
+                throw new Error(`${label} already taken`);
+            }
+        };
+        assertProviderAvailable(citizenfxData, 'CitizenFX ID');
+        assertProviderAvailable(discordData, 'Discord ID');
+        if (typeof chyaroEmail === 'string' && chyaroEmail.trim().length) {
+            const normalizedEmail = chyaroEmail.trim().toLowerCase();
+            assertProviderAvailable({ id: normalizedEmail, identifier: normalizedEmail }, 'chyarologin email');
+        }
 
         //Editing admin
         if (typeof citizenfxData !== 'undefined') {
@@ -543,17 +595,42 @@ export default class AdminStore {
         }
         if (typeof chyaroEmail !== 'undefined') {
             const email = chyaroEmail.trim().toLowerCase();
-            const existingChyaro = this.getAdminByProviderUID(email);
-            if (existingChyaro && existingChyaro.name.toLowerCase() !== username) {
-                throw new Error('chyarologin email already taken');
+            if (!email.length) {
+                delete this.admins[adminIndex].providers.chyarologin;
+            } else {
+                const existingChyaro = this.getAdminByProviderUID(email);
+                if (existingChyaro && existingChyaro.name.toLowerCase() !== username) {
+                    throw new Error('chyarologin email already taken');
+                }
+                const currentChyaro = this.admins[adminIndex].providers.chyarologin;
+                const chyaroData = currentChyaro?.identifier?.toLowerCase() === email
+                    ? currentChyaro.data ?? {}
+                    : {};
+                this.admins[adminIndex].providers.chyarologin = {
+                    id: email,
+                    identifier: email,
+                    data: chyaroData,
+                };
+
+                //Linking chyarologin atomically removes any manually managed
+                //Discord provider. A previously verified Chyaro Discord link is
+                //rebuilt from Chyaro's stored profile data instead.
+                if (chyaroData.discordId) {
+                    this.admins[adminIndex].providers.discord = {
+                        id: chyaroData.discordId,
+                        identifier: `discord:${chyaroData.discordId}`,
+                        data: { source: 'chyarologin' },
+                    };
+                } else {
+                    delete this.admins[adminIndex].providers.discord;
+                }
             }
-            this.admins[adminIndex].providers.chyarologin = {
-                id: email,
-                identifier: email,
-                data: this.admins[adminIndex].providers.chyarologin?.data ?? {},
-            };
         }
         if (typeof permissions !== 'undefined') this.admins[adminIndex].permissions = permissions;
+        if (typeof password === 'string' && password.length) {
+            this.admins[adminIndex].password_hash = GetPasswordHash(password);
+            this.admins[adminIndex].password_temporary = true;
+        }
 
         //Prevent race condition, will allow the session to be updated before refreshing socket.io
         //sessions which will cause reauth and closing of the temp password modal on first access
@@ -766,6 +843,28 @@ export default class AdminStore {
      */
     genCsrfToken() {
         return nanoid();
+    }
+
+
+    /** Set an administrator's local password and persist the new hash. */
+    async setAdminPassword(name, password, isTemporary = false) {
+        if (this.admins == false) throw new Error('Admins not set');
+        const username = name.toLowerCase();
+        const adminIndex = this.admins.findIndex((user) => username === user.name.toLowerCase());
+        if (adminIndex === -1) throw new Error('Admin not found');
+
+        const newHash = GetPasswordHash(password);
+        this.admins[adminIndex].password_hash = newHash;
+        if (isTemporary) {
+            this.admins[adminIndex].password_temporary = true;
+        } else {
+            delete this.admins[adminIndex].password_temporary;
+        }
+        await this.writeAdminsFile();
+
+        //Allow the caller to update its own password-backed session first.
+        setTimeout(() => this.refreshOnlineAdmins().catch(() => {}), 250);
+        return newHash;
     }
 
 

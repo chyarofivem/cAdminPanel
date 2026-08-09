@@ -173,10 +173,11 @@ export const useHudListenersService = () => {
         message={message}
         title={t("nui_menu.misc.announcement_title", { author })}
       />,
-      {
-        variant: "warning",
-        className: "tx-communication-notification tx-communication-notification--announcement",
-        autoHideDuration: getNotiDuration(message) * 1000,
+        {
+          variant: "warning",
+          className: "tx-communication-notification tx-communication-notification--announcement",
+          hideIconVariant: true,
+          autoHideDuration: getNotiDuration(message) * 1000,
         anchorOrigin: {
           horizontal: notiPos.horizontal,
           vertical: notiPos.vertical,
@@ -193,10 +194,11 @@ export const useHudListenersService = () => {
         message={message}
         title={t("nui_menu.misc.directmessage_title", { author })}
       />,
-      {
-        variant: "info",
-        className: "tx-communication-notification tx-communication-notification--direct-message",
-        autoHideDuration: getNotiDuration(message) * 1000 * 2, //*2 to slow things down
+        {
+          variant: "info",
+          className: "tx-communication-notification tx-communication-notification--direct-message",
+          hideIconVariant: true,
+          autoHideDuration: getNotiDuration(message) * 1000,
         anchorOrigin: {
           horizontal: notiPos.horizontal,
           vertical: notiPos.vertical,

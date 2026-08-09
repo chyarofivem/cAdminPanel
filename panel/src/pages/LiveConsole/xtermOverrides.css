@@ -5,7 +5,7 @@
 
 .xterm-viewport {
     scrollbar-width: thin; /* Firefox Only */
-    scrollbar-color: hsl(var(--secondary)) hsl(var(--card));
+    scrollbar-color: hsl(var(--secondary)) transparent;
     padding-right: 8px;
 }
 
@@ -14,7 +14,7 @@
 }
 
 .xterm-viewport::-webkit-scrollbar-track {
-    background: hsl(var(--card));
+    background: transparent;
 }
 
 .xterm-viewport::-webkit-scrollbar-thumb {

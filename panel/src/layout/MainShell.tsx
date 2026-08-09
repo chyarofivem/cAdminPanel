@@ -10,8 +10,6 @@ import WarningBar from './WarningBar';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import PromptDialog from '@/components/PromptDialog';
 import TxToaster from '@/components/TxToaster';
-import AccountDialog from './AccountDialog';
-import { useOpenAccountModal } from '@/hooks/dialogs';
 import PlayerModal from './PlayerModal/PlayerModal';
 import { playerModalUrlParam, useOpenPlayerModal } from '@/hooks/playerModal';
 import MainSocket from './MainSocket';
@@ -22,13 +20,11 @@ import { actionModalUrlParam, useOpenActionModal } from '@/hooks/actionModal';
 
 export default function MainShell() {
     const expireSession = useExpireAuthData();
-    const openAccountModal = useOpenAccountModal();
     const openPlayerModal = useOpenPlayerModal();
     const openActionModal = useOpenActionModal();
 
     useEventListener('message', (event: TxMessageEvent) => {
         if (event.data.type === 'logoutNotice') expireSession('child iframe', 'got logoutNotice');
-        else if (event.data.type === 'openAccountModal') openAccountModal();
         else if (event.data.type === 'openPlayerModal') openPlayerModal(event.data.ref);
         else if (event.data.type === 'navigateToPage') setLocation(event.data.href);
     });
@@ -63,7 +59,6 @@ export default function MainShell() {
         <ConfirmDialog />
         <PromptDialog />
         <TxToaster />
-        <AccountDialog />
         <PlayerModal />
         <ActionModal />
         <MainSocket />

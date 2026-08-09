@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react';
 import { getSocket } from '@/lib/utils';
 import { useExpireAuthData, useSetAuthData } from '@/hooks/auth';
 import { useSetGlobalStatus } from '@/hooks/status';
-import { useProcessUpdateAvailableEvent, useSetOfflineWarning } from '@/hooks/useWarningBar';
+import { useSetOfflineWarning } from '@/hooks/useWarningBar';
 import { useProcessPlayerlistEvents } from '@/hooks/playerlist';
 import { LogoutReasonHash } from '@/pages/auth/Login';
 
@@ -18,7 +18,6 @@ export default function MainSocket() {
     const setIsSocketOffline = useSetOfflineWarning();
     const setGlobalStatus = useSetGlobalStatus();
     const processPlayerlistEvents = useProcessPlayerlistEvents();
-    const processUpdateAvailableEvent = useProcessUpdateAvailableEvent();
 
     //Runing on mount only
     useEffect(() => {
@@ -59,9 +58,6 @@ export default function MainSocket() {
         socket.on('playerlist', function (playerlistData) {
             if (!window.txConsts.isWebInterface) return;
             processPlayerlistEvents(playerlistData);
-        });
-        socket.on('updateAvailable', function (data) {
-            processUpdateAvailableEvent(data);
         });
         socket.on('updateAuthData', function (authData) {
             console.warn('Got updateAuthData from websocket', authData);

@@ -100,9 +100,7 @@ export default async function getReactIndex(ctx: CtxWithVars | AuthedCtx) {
     const injectedConsts: InjectedTxConsts = {
         //env
         fxsVersion: txEnv.fxsVersionTag,
-        fxsOutdated: txCore.updateChecker.fxsUpdateData,
         txaVersion: txEnv.txaVersion,
-        txaOutdated: txCore.updateChecker.txaUpdateData,
         serverTimezone,
         isWindows: txEnv.isWindows,
         isWebInterface: ctx.txVars.isWebInterface,

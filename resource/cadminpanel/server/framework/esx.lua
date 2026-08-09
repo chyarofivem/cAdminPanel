@@ -286,7 +286,22 @@ end
 function adapter.setJob(identifier, jobName, grade)
     local xPlayer = adapter.getOnlineByIdentifier(identifier)
     if xPlayer then
+        local previous = xPlayer.getJob() or {}
         xPlayer.setJob(jobName, grade)
+
+        -- ESX normally persists this on its next save tick/drop. Writing the
+        -- row now makes a panel change durable even if the server restarts
+        -- before that tick, while setJob above still updates live state/events.
+        local saved, updated = pcall(function()
+            return MySQL.update.await(
+                ('UPDATE `%s` SET `job` = ?, `job_grade` = ? WHERE identifier = ?'):format(T.esxUsers),
+                { jobName, grade, identifier }
+            )
+        end)
+        if not saved or updated == nil then
+            if previous.name then pcall(xPlayer.setJob, previous.name, previous.grade or 0) end
+            return false, 'The job changed live but could not be saved to the ESX users table.'
+        end
         return true
     end
 
@@ -294,27 +309,44 @@ function adapter.setJob(identifier, jobName, grade)
         ('UPDATE `%s` SET `job` = ?, `job_grade` = ? WHERE identifier = ?'):format(T.esxUsers),
         { jobName, grade, identifier }
     )
-    if not updated or updated == 0 then return false, 'No such character.' end
+    -- The handler already verified that the character exists. Affected rows can
+    -- legitimately be zero when the requested job is already set.
+    if updated == nil then return false, 'The character job could not be saved.' end
     return true
 end
 
 function adapter.setGroup(identifier, group)
-    local xPlayer = adapter.getOnlineByIdentifier(identifier)
-    if xPlayer then
-        xPlayer.setGroup(group)
-        return true
+    if not CAdmin.schema.hasColumn(T.esxUsers, 'group') then
+        return false, ('The `%s` table has no `group` column, so the group cannot be persisted.')
+            :format(T.esxUsers)
     end
 
-    if not CAdmin.schema.hasColumn(T.esxUsers, 'group') then
-        return false, ('The `%s` table has no `group` column, so the group cannot be set offline.')
-            :format(T.esxUsers)
+    local xPlayer = adapter.getOnlineByIdentifier(identifier)
+    if xPlayer then
+        local previous = xPlayer.getGroup()
+        xPlayer.setGroup(group)
+
+        -- xPlayer.setGroup updates ACEs and state bags but current ESX defers
+        -- the database write until its save cycle. Persist immediately so a
+        -- restart cannot revert a panel assignment.
+        local saved, updated = pcall(function()
+            return MySQL.update.await(
+                ('UPDATE `%s` SET `group` = ? WHERE identifier = ?'):format(T.esxUsers),
+                { group, identifier }
+            )
+        end)
+        if not saved or updated == nil then
+            if previous then pcall(xPlayer.setGroup, previous) end
+            return false, 'The group changed live but could not be saved to the ESX users table.'
+        end
+        return true
     end
 
     local updated = MySQL.update.await(
         ('UPDATE `%s` SET `group` = ? WHERE identifier = ?'):format(T.esxUsers),
         { group, identifier }
     )
-    if not updated or updated == 0 then return false, 'No such character.' end
+    if updated == nil then return false, 'The character group could not be saved.' end
     return true
 end
 

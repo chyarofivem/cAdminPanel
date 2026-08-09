@@ -55,7 +55,8 @@ async function handleAdd(ctx: AuthedCtx) {
     //Sanity check
     if (
         typeof ctx.request.body.name !== 'string'
-        || typeof ctx.request.body.chyaroEmail !== 'string'
+        || (ctx.request.body.chyaroEmail !== undefined && typeof ctx.request.body.chyaroEmail !== 'string')
+        || (ctx.request.body.password !== undefined && typeof ctx.request.body.password !== 'string')
         || typeof ctx.request.body.citizenfxID !== 'string'
         || typeof ctx.request.body.discordID !== 'string'
         || ctx.request.body.permissions === undefined
@@ -65,7 +66,8 @@ async function handleAdd(ctx: AuthedCtx) {
 
     //Prepare and filter variables
     const name = ctx.request.body.name.trim();
-    const chyaroEmail = ctx.request.body.chyaroEmail.trim().toLowerCase();
+    const chyaroEmail = (ctx.request.body.chyaroEmail ?? '').trim().toLowerCase();
+    const password = ctx.request.body.password ?? '';
     const citizenfxID = ctx.request.body.citizenfxID.trim();
     const discordID = ctx.request.body.discordID.trim();
     let permissions = (Array.isArray(ctx.request.body.permissions)) ? ctx.request.body.permissions : [];
@@ -77,8 +79,29 @@ async function handleAdd(ctx: AuthedCtx) {
     if (!consts.regexValidFivemUsername.test(name)) {
         return ctx.send({ type: 'danger', markdown: true, message: `**Invalid username, it must follow the rule:**\n${nameRegexDesc}` });
     }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(chyaroEmail) || chyaroEmail.length > 254) {
+    if (chyaroEmail.length && (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(chyaroEmail) || chyaroEmail.length > 254)) {
         return ctx.send({ type: 'danger', message: 'Enter a valid chyarologin email address.' });
+    }
+    if (password.trim() !== password) {
+        return ctx.send({ type: 'danger', message: 'The password cannot start or end with a space.' });
+    }
+    if (password.length && (password.length < consts.adminPasswordMinLength || password.length > consts.adminPasswordMaxLength)) {
+        return ctx.send({
+            type: 'danger',
+            message: `Password must be between ${consts.adminPasswordMinLength} and ${consts.adminPasswordMaxLength} characters.`,
+        });
+    }
+    if (!chyaroEmail.length && !password.length && !citizenfxID.length && !discordID.length) {
+        return ctx.send({
+            type: 'danger',
+            message: 'Set a local password, chyarologin email, or game identifier for this administrator.',
+        });
+    }
+    if (chyaroEmail.length && discordID.length) {
+        return ctx.send({
+            type: 'danger',
+            message: 'For chyarologin accounts, connect Discord in chyarologin instead of entering it manually.',
+        });
     }
 
     //Validate & translate FiveM ID
@@ -109,6 +132,10 @@ async function handleAdd(ctx: AuthedCtx) {
             }
         } catch (error) {
             console.error(`Failed to resolve CitizenFX ID to game identifier with error: ${(error as Error).message}`);
+            return ctx.send({
+                type: 'danger',
+                message: 'Could not validate the Cfx.re identifier. No administrator was created; please try again.',
+            });
         }
     }
 
@@ -140,14 +167,15 @@ async function handleAdd(ctx: AuthedCtx) {
         cfxId: citizenfxData ? citizenfxData.identifier : undefined,
         discordId: discordData ? discordData.identifier : undefined,
         chyaroEmail,
+        localPassword: password.length ? 'temporary password set' : 'not set',
         permissions: permissions,
     };
 
     //Add admin and give output
     try {
-        await txCore.adminStore.addAdmin(name, citizenfxData, discordData, chyaroEmail, permissions);
+        await txCore.adminStore.addAdmin(name, citizenfxData, discordData, chyaroEmail, permissions, password || undefined);
         ctx.admin.logAction(`Adding user '${name}' with ${JSON.stringify(changes)}`);
-        return ctx.send({ type: 'success', message: 'Admin saved. They can now sign in with chyarologin.', refresh: true });
+        return ctx.send({ type: 'success', message: 'Admin saved.', refresh: true });
     } catch (error) {
         return ctx.send({ type: 'danger', message: (error as Error).message });
     }
@@ -161,7 +189,8 @@ async function handleEdit(ctx: AuthedCtx) {
     //Sanity check
     if (
         typeof ctx.request.body.name !== 'string'
-        || typeof ctx.request.body.chyaroEmail !== 'string'
+        || (ctx.request.body.chyaroEmail !== undefined && typeof ctx.request.body.chyaroEmail !== 'string')
+        || (ctx.request.body.password !== undefined && typeof ctx.request.body.password !== 'string')
         || typeof ctx.request.body.citizenfxID !== 'string'
         || typeof ctx.request.body.discordID !== 'string'
         || ctx.request.body.permissions === undefined
@@ -171,11 +200,21 @@ async function handleEdit(ctx: AuthedCtx) {
 
     //Prepare and filter variables
     const name = ctx.request.body.name.trim();
-    const chyaroEmail = ctx.request.body.chyaroEmail.trim().toLowerCase();
+    const chyaroEmail = (ctx.request.body.chyaroEmail ?? '').trim().toLowerCase();
+    const password = ctx.request.body.password ?? '';
     const citizenfxID = ctx.request.body.citizenfxID.trim();
     const discordID = ctx.request.body.discordID.trim();
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(chyaroEmail) || chyaroEmail.length > 254) {
+    if (chyaroEmail.length && (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(chyaroEmail) || chyaroEmail.length > 254)) {
         return ctx.send({ type: 'danger', message: 'Enter a valid chyarologin email address.' });
+    }
+    if (password.trim() !== password) {
+        return ctx.send({ type: 'danger', message: 'The password cannot start or end with a space.' });
+    }
+    if (password.length && (password.length < consts.adminPasswordMinLength || password.length > consts.adminPasswordMaxLength)) {
+        return ctx.send({
+            type: 'danger',
+            message: `Password must be between ${consts.adminPasswordMinLength} and ${consts.adminPasswordMaxLength} characters.`,
+        });
     }
 
     //Check if editing himself
@@ -220,13 +259,17 @@ async function handleEdit(ctx: AuthedCtx) {
             }
         } catch (error) {
             console.error(`Failed to resolve CitizenFX ID to game identifier with error: ${(error as Error).message}`);
+            return ctx.send({
+                type: 'danger',
+                message: 'Could not validate the Cfx.re identifier. The existing administrator was not changed; please try again.',
+            });
         }
     }
 
     //Validate Discord ID
     //FIXME: you cannot remove a discord id by erasing from the field
-    let discordData: ProviderDataType | false = false;
-    if (discordID.length) {
+    let discordData: ProviderDataType | false | undefined = chyaroEmail.length ? undefined : false;
+    if (!chyaroEmail.length && discordID.length) {
         if (!consts.validIdentifierParts.discord.test(discordID)) {
             return ctx.send({ type: 'danger', message: 'Invalid Discord ID' });
         }
@@ -279,17 +322,20 @@ async function handleEdit(ctx: AuthedCtx) {
         changes.push(`Changed Cfx.re ID from ${prevCfxId} to ${citizenfxData.identifier}.`);
     }
     const prevDiscordId = admin.providers?.discord?.identifier;
-    if (!prevDiscordId && discordData) {
-        changes.push(`Added Discord ID: ${discordData.identifier}.`);
-    } else if (prevDiscordId && !discordData) {
-        changes.push(`Removed Discord ID: ${prevDiscordId}.`);
-    } else if (prevDiscordId && discordData && prevDiscordId !== discordData.identifier) {
-        changes.push(`Changed Discord ID from ${prevDiscordId} to ${discordData.identifier}.`);
+    if (discordData !== undefined) {
+        if (!prevDiscordId && discordData) {
+            changes.push(`Added Discord ID: ${discordData.identifier}.`);
+        } else if (prevDiscordId && !discordData) {
+            changes.push(`Removed Discord ID: ${prevDiscordId}.`);
+        } else if (prevDiscordId && discordData && prevDiscordId !== discordData.identifier) {
+            changes.push(`Changed Discord ID from ${prevDiscordId} to ${discordData.identifier}.`);
+        }
     }
     const prevChyaroEmail = admin.providers?.chyarologin?.identifier;
     if (prevChyaroEmail !== chyaroEmail) {
         changes.push(`Changed chyarologin email from ${prevChyaroEmail || 'unset'} to ${chyaroEmail}.`);
     }
+    if (password.length) changes.push('Reset the local password to a temporary password.');
 
     //Add admin and give output
     try {
@@ -299,7 +345,7 @@ async function handleEdit(ctx: AuthedCtx) {
         } else {
             logMessage += '. No changes were made.';
         }
-        await txCore.adminStore.editAdmin(name, citizenfxData, discordData, chyaroEmail, permissions);
+        await txCore.adminStore.editAdmin(name, citizenfxData, discordData, chyaroEmail, permissions, password || undefined);
         ctx.admin.logAction(logMessage);
         return ctx.send({ type: 'success', refresh: true });
     } catch (error) {

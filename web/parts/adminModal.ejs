@@ -18,15 +18,29 @@
 <div class="form-group row">
     <label for="modAdmin-chyaroEmail" class="col-sm-3 col-form-label">
         chyarologin Email
-        <small class="text-danger">(required)</small>
+        <small class="text-muted">(optional)</small>
     </label>
     <div class="col-sm-9">
         <div class="input-group">
             <input type="email" class="form-control" id="modAdmin-chyaroEmail" maxlength="254"
-                autocomplete="off" value="<%= chyaro_email %>" required>
+                autocomplete="off" value="<%= chyaro_email %>">
         </div>
         <span class="form-text text-muted">
             The verified email this administrator uses in chyarologin. Remote roles do not grant panel permissions.
+        </span>
+    </div>
+</div>
+
+<!-- Field: Local Password -->
+<div class="form-group row">
+    <label for="modAdmin-password" class="col-sm-3 col-form-label">
+        <%= isNewAdmin ? 'Initial Password' : 'New Password' %><br>
+        <small class="text-muted">(optional)</small>
+    </label>
+    <div class="col-sm-9">
+        <input type="password" class="form-control" id="modAdmin-password" minlength="6" maxlength="128" autocomplete="new-password">
+        <span class="form-text text-muted">
+            Enables username/password login. <%= isNewAdmin ? 'The administrator will be asked to replace it.' : 'Leave blank to keep the current password.' %>
         </span>
     </div>
 </div>

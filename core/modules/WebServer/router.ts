@@ -37,11 +37,13 @@ export default () => {
     router.get('/legacy/resources', webAuthMw, routes.resources);
     // FIXME:NEXT:UPDATE rename route handler
     router.get('/legacy/allowlist', webAuthMw, routes.whitelist_page);
-    router.get('/legacy/setup', webAuthMw, routes.setup_get);
     router.get('/legacy/deployer', webAuthMw, routes.deployer_stepper);
 
     //Authentication
     router.get('/auth/self', apiAuthMw, routes.auth_self);
+    router.post('/auth/self/identifiers', apiAuthMw, routes.auth_selfIdentifiers);
+    router.post('/auth/password', authLimiter, routes.auth_verifyPassword);
+    router.post('/auth/changePassword', apiAuthMw, routes.auth_changePassword);
     router.post('/auth/logout', authLimiter, routes.auth_logout);
     router.post('/auth/chyaro/setup', authLimiter, routes.auth_chyaroSetup);
     router.get('/auth/chyaro/login', authLimiter, routes.auth_chyaroLogin);
@@ -73,6 +75,7 @@ export default () => {
     router.post('/api/cadmin/install/:action', apiAuthMw, routes.cadmin_install);
 
     //Settings
+    router.get('/setup/data', apiAuthMw, routes.setup_data);
     router.post('/setup/:action', apiAuthMw, routes.setup_post);
     router.get('/deployer/status', apiAuthMw, routes.deployer_status);
     router.post('/deployer/recipe/:action', apiAuthMw, routes.deployer_actions);

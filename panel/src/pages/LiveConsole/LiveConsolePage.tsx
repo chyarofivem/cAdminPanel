@@ -30,6 +30,7 @@ import { darkThemeColors, lightThemeColors, ANSI } from './liveConsoleColors';
 import { useTerminalOptions } from './liveConsoleHooks';
 import { DensityModes } from './xtermOptions';
 import { t } from '@/lib/i18n';
+import { Card } from '@/components/ui/card';
 
 
 //Consts
@@ -383,59 +384,61 @@ export default function LiveConsolePage() {
 
 
     return (
-        <section className="flex h-contentvh min-h-[38rem] w-full flex-col overflow-hidden rounded-2xl border border-white/10 bg-zinc-950/70 shadow-2xl shadow-black/20">
+        <section className="flex h-contentvh min-h-[38rem] w-full flex-col pb-6">
             <LiveConsoleHeader
                 options={savedOptions}
                 setOptions={updateTerminalOptions}
                 isConnected={isConnected}
             />
 
-            <div className="relative m-2 flex grow flex-col overflow-hidden rounded-xl border border-white/[0.07] bg-[#08090b] sm:m-3">
-                {/* Connecting overlay */}
-                {!isConnected ? (
-                    <div className="absolute inset-0 z-20 grid place-items-center bg-black/65 backdrop-blur-[2px]">
-                        <div className="flex select-none items-center gap-3 rounded-xl border border-white/10 bg-zinc-950/90 px-5 py-3 text-sm text-zinc-400 shadow-xl">
-                            <Loader2Icon className="size-5 animate-spin text-brand-400" />
-                            <span>{t('Connecting to FXServer console...')}</span>
+            <Card className="flex min-h-0 flex-1 flex-col overflow-hidden border-white/10 bg-[#0b0d11]">
+                <div className="relative min-h-0 flex-1 overflow-hidden bg-[#08090b]">
+                    {/* Connecting overlay */}
+                    {!isConnected ? (
+                        <div className="absolute inset-0 z-20 grid place-items-center bg-black/65 backdrop-blur-[2px]">
+                            <div className="flex select-none items-center gap-3 rounded-xl border border-white/10 bg-zinc-950/90 px-5 py-3 text-sm text-zinc-400 shadow-xl">
+                                <Loader2Icon className="size-5 animate-spin text-brand-400" />
+                                <span>{t('Connecting to FXServer console...')}</span>
+                            </div>
                         </div>
-                    </div>
-                ) : null}
+                    ) : null}
 
-                <LiveConsoleSaveSheet
-                    isOpen={isSaveSheetOpen}
-                    closeSheet={() => setIsSaveSheetOpen(false)}
-                    toTermInput={(cmd) => inputSuggestions(cmd)}
+                    <LiveConsoleSaveSheet
+                        isOpen={isSaveSheetOpen}
+                        closeSheet={() => setIsSaveSheetOpen(false)}
+                        toTermInput={(cmd) => inputSuggestions(cmd)}
+                    />
+
+                    {/* Terminal container */}
+                    <div ref={containerRef} className="absolute inset-y-2 left-3 right-1" />
+
+                    {/* Search bar */}
+                    <LiveConsoleSearchBar
+                        show={showSearchBar}
+                        setShow={setShowSearchBar}
+                        searchAddon={searchAddon}
+                    />
+
+                    {/* Scroll to bottom */}
+                    <button
+                        ref={jumpBottomBtnRef}
+                        className="absolute bottom-3 right-3 z-10 hidden rounded-full border border-white/10 bg-zinc-900/90 p-2 text-zinc-400 shadow-lg transition-colors hover:bg-zinc-800 hover:text-white"
+                        onClick={() => { term.scrollToBottom() }}
+                        aria-label={t('Jump to latest console output')}
+                    >
+                        <ChevronsDownIcon className="size-5" />
+                    </button>
+                </div>
+
+                <LiveConsoleFooter
+                    termInputRef={termInputRef}
+                    isConnected={isConnected}
+                    consoleWrite={consoleWrite}
+                    consoleClear={clearConsole}
+                    toggleSaveSheet={toggleSaveSheet}
+                    toggleSearchBar={toggleSearchBar}
                 />
-
-                {/* Terminal container */}
-                <div ref={containerRef} className="absolute inset-y-2 left-3 right-1" />
-
-                {/* Search bar */}
-                <LiveConsoleSearchBar
-                    show={showSearchBar}
-                    setShow={setShowSearchBar}
-                    searchAddon={searchAddon}
-                />
-
-                {/* Scroll to bottom */}
-                <button
-                    ref={jumpBottomBtnRef}
-                    className="absolute bottom-3 right-3 z-10 hidden rounded-full border border-white/10 bg-zinc-900/90 p-2 text-zinc-400 shadow-lg transition-colors hover:bg-zinc-800 hover:text-white"
-                    onClick={() => { term.scrollToBottom() }}
-                    aria-label={t('Jump to latest console output')}
-                >
-                    <ChevronsDownIcon className="size-5" />
-                </button>
-            </div>
-
-            <LiveConsoleFooter
-                termInputRef={termInputRef}
-                isConnected={isConnected}
-                consoleWrite={consoleWrite}
-                consoleClear={clearConsole}
-                toggleSaveSheet={toggleSaveSheet}
-                toggleSearchBar={toggleSearchBar}
-            />
+            </Card>
         </section>
     )
 }

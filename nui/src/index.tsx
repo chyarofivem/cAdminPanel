@@ -2,7 +2,7 @@ import React, { useMemo } from "react";
 import { createRoot } from "react-dom/client";
 import MenuWrapper from "./MenuWrapper";
 import "./index.css";
-import { ThemeProvider, StyledEngineProvider, createTheme } from "@mui/material";
+import { alpha, ThemeProvider, StyledEngineProvider, createTheme, type Theme } from "@mui/material";
 import { RecoilRoot } from "recoil";
 import { KeyboardNavProvider } from "./provider/KeyboardNavProvider";
 import { MaterialDesignContent, SnackbarProvider } from "notistack";
@@ -33,39 +33,38 @@ const menuRedmTheme = createTheme(rawMenuRedmTheme);
 
 //Overwriting the notistack colors
 //Actually using the colors from the RedM theme, but could start using `theme` if needed
-const StyledMaterialDesignContent = styled(MaterialDesignContent)(({ theme }) => ({
-  '&.tx-communication-notification': {
-    width: 'min(440px, calc(100vw - 32px))',
-    minWidth: 0,
-    padding: 0,
-    overflow: 'hidden',
-    color: '#f8fafc',
-    background: 'rgba(10, 15, 21, 0.96)',
-    border: '1px solid rgba(255, 255, 255, 0.12)',
-    borderRadius: 16,
-    boxShadow: '0 20px 55px rgba(0, 0, 0, 0.46), 0 4px 14px rgba(0, 0, 0, 0.26)',
-    backdropFilter: 'blur(18px)',
-  },
+const StyledMaterialDesignContent = styled(MaterialDesignContent)(({ theme }) => {
+  const muiTheme = theme as Theme;
+
+  return ({
   '&.tx-communication-notification--announcement': {
     '--tx-comms-accent': '#fbbf24',
     '--tx-comms-accent-soft': 'rgba(251, 191, 36, 0.14)',
   },
   '&.tx-communication-notification--direct-message': {
-    '--tx-comms-accent': theme.palette.primary.main,
-    '--tx-comms-accent-soft': 'rgba(0, 197, 140, 0.14)',
+    '--tx-comms-accent': muiTheme.palette.primary.main,
+    '--tx-comms-accent-soft': alpha(muiTheme.palette.primary.main, 0.14),
   },
   '& .tx-communication-card': {
     position: 'relative',
     display: 'grid',
-    gridTemplateColumns: '48px minmax(0, 1fr)',
-    gap: 14,
+    gridTemplateColumns: '36px minmax(0, 1fr)',
+    gap: 11,
     width: '100%',
-    padding: '18px 20px 18px 18px',
+    padding: '13px 15px 13px 14px',
+    boxSizing: 'border-box',
+    overflow: 'hidden',
+    color: '#f8fafc',
+    background: 'rgba(10, 15, 21, 0.96)',
+    border: 0,
+    borderRadius: 12,
+    boxShadow: '0 14px 38px rgba(0, 0, 0, 0.38), 0 3px 10px rgba(0, 0, 0, 0.2)',
+    backdropFilter: 'blur(14px)',
   },
   '& .tx-communication-card__accent': {
     position: 'absolute',
     inset: '0 auto 0 0',
-    width: 4,
+    width: 3,
     background: 'var(--tx-comms-accent)',
     boxShadow: '0 0 24px var(--tx-comms-accent)',
   },
@@ -73,15 +72,15 @@ const StyledMaterialDesignContent = styled(MaterialDesignContent)(({ theme }) =>
     display: 'grid',
     placeItems: 'center',
     alignSelf: 'start',
-    width: 46,
-    height: 46,
-    border: '1px solid color-mix(in srgb, var(--tx-comms-accent) 42%, transparent)',
-    borderRadius: 13,
+    width: 36,
+    height: 36,
+    border: 0,
+    borderRadius: 10,
     color: 'var(--tx-comms-accent)',
     background: 'var(--tx-comms-accent-soft)',
   },
   '& .tx-communication-card__icon svg': {
-    fontSize: 24,
+    fontSize: 20,
   },
   '& .tx-communication-card__content': {
     minWidth: 0,
@@ -89,16 +88,16 @@ const StyledMaterialDesignContent = styled(MaterialDesignContent)(({ theme }) =>
   '& .tx-communication-card__title': {
     margin: 0,
     color: '#ffffff',
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: 750,
     lineHeight: 1.35,
   },
   '& .tx-communication-card__message': {
-    margin: '8px 0 0',
-    color: 'rgba(241, 245, 249, 0.84)',
-    fontSize: 14,
-    fontWeight: 450,
-    lineHeight: 1.55,
+    margin: '4px 0 0',
+    color: 'rgba(241, 245, 249, 0.88)',
+    fontSize: 13.5,
+    fontWeight: 500,
+    lineHeight: 1.45,
     overflowWrap: 'anywhere',
     whiteSpace: 'pre-wrap',
   },
@@ -122,7 +121,33 @@ const StyledMaterialDesignContent = styled(MaterialDesignContent)(({ theme }) =>
     backgroundColor: menuRedmTheme.palette.error.main,
     color: menuRedmTheme.palette.error.contrastText,
   },
-}));
+
+  //The communication notifications draw their own card, so the notistack
+  //content root must stay fully transparent - otherwise the variant colors
+  //above paint a solid frame around the card. Declared last (and with the
+  //variant class) so it always wins over the variant rules.
+  '&.tx-communication-notification, &.tx-communication-notification.notistack-MuiContent-info, &.tx-communication-notification.notistack-MuiContent-warning': {
+    display: 'block',
+    width: 'min(400px, calc(100vw - 32px))',
+    maxWidth: '100%',
+    minWidth: 0,
+    padding: 0,
+    overflow: 'hidden',
+    border: 'none',
+    borderRadius: 12,
+    background: 'transparent',
+    backgroundColor: 'transparent',
+    backgroundImage: 'none',
+    boxShadow: 'none',
+    color: '#f8fafc',
+  },
+  '&.tx-communication-notification > #notistack-snackbar': {
+    display: 'block',
+    width: '100%',
+    padding: 0,
+  },
+  });
+});
 
 
 const App = () => {
@@ -175,6 +200,9 @@ const App = () => {
 
 
 const rootContainer = document.getElementById("root");
+if (!rootContainer) {
+  throw new Error("Unable to mount txAdmin NUI: #root was not found");
+}
 const root = createRoot(rootContainer);
 root.render(
   <RecoilRoot>

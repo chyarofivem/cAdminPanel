@@ -82,7 +82,7 @@
                                 <td class="tableActions">
                                     <% if (admin.isSelf) { %>
                                         <button class="btn btn-sm btn-outline-primary"
-                                            onclick="openAccountModal()">
+                                            onclick="openUserSettings()">
                                             <i class="icon-pencil"></i> Your Account
                                         </button>
                                     <% } else { %>
@@ -166,9 +166,9 @@
     }
 
     
-    //============================================== Show Your Account Modal
-    function openAccountModal() {
-        window.parent.postMessage({ type: 'openAccountModal' });
+    //============================================== Open User Settings Page
+    function openUserSettings() {
+        window.parent.postMessage({ type: 'navigateToPage', href: '/user-settings' });
     }
 
     //============================================== Show Admin Modal
@@ -219,15 +219,13 @@
         const formData = {
             name: $('#modAdmin-name').val().trim(),
             chyaroEmail: $('#modAdmin-chyaroEmail').val().trim(),
+            password: $('#modAdmin-password').val(),
             citizenfxID: $('#modAdmin-citizenfxID').val().trim(),
             discordID: $('#modAdmin-discordID').val().trim(),
             permissions: (permissions.length)? permissions : false
         }
         if(formData.name.length < 3) {
             return $.notify({ message: 'The Username is not long enough.' }, { type: 'warning' });
-        }
-        if(!formData.chyaroEmail) {
-            return $.notify({ message: 'The chyarologin email is required.' }, { type: 'warning' });
         }
         const notify = $.notify({ message: '<p class="text-center">Saving...</p>' }, {});
         const action = (isNewAdmin) ? 'add' : 'edit';

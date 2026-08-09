@@ -1,32 +1,46 @@
 import React from "react";
-import { Box, styled, Typography } from "@mui/material";
-import { Error } from "@mui/icons-material";
+import { alpha, Box, styled, Typography } from "@mui/material";
+import { PersonSearchRounded } from "@mui/icons-material";
 import { useTranslate } from "react-polyglot";
+import { nuiTokens } from "@nui/src/styles/nuiTokens";
 
-const BoxRoot = styled(Box)(({ theme }) => ({
+const EmptyRoot = styled(Box)(({ theme }) => ({
+  display: "flex",
+  flex: 1,
+  minHeight: 180,
+  margin: 18,
+  flexDirection: "column",
+  alignItems: "center",
+  justifyContent: "center",
+  gap: 12,
+  borderRadius: nuiTokens.radiusSm,
   color: theme.palette.text.secondary,
-  fontWeight: 300,
+  backgroundColor: "rgba(0,0,0,0.12)",
+  boxShadow: `inset 0 0 0 1px ${nuiTokens.ring}`,
 }));
 
-const ErrorIcon = styled(Error)(({ theme }) => ({
-  paddingRight: theme.spacing(2),
+const EmptyIcon = styled(Box)(({ theme }) => ({
+  display: "grid",
+  width: 52,
+  height: 52,
+  placeItems: "center",
+  borderRadius: 999,
+  color: theme.palette.primary.main,
+  backgroundColor: alpha(theme.palette.primary.main, 0.12),
+  "& svg": { fontSize: 26 },
 }));
 
 export const PlayersListEmpty: React.FC = () => {
   const t = useTranslate();
 
   return (
-    <BoxRoot
-      display="flex"
-      // flexDirection="column"
-      height="100%"
-      justifyContent="center"
-      alignItems="center"
-    >
-      <ErrorIcon fontSize="large" color="inherit" />
-      <Typography color="inherit" variant="h6">
+    <EmptyRoot role="status">
+      <EmptyIcon aria-hidden="true">
+        <PersonSearchRounded />
+      </EmptyIcon>
+      <Typography sx={{ fontSize: 14, fontWeight: 650 }} color="inherit">
         {t("nui_menu.page_players.misc.zero_players")}
       </Typography>
-    </BoxRoot>
+    </EmptyRoot>
   );
 };

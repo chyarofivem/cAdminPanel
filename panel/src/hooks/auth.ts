@@ -1,7 +1,7 @@
 import { ApiLogoutResp, ReactAuthDataType } from '@shared/authApiTypes';
 import { atom, useAtom, useAtomValue, useSetAtom } from 'jotai';
 import { atomEffect } from 'jotai-effect';
-import { accountModalOpenAtom, confirmDialogOpenAtom, promptDialogOpenAtom } from './dialogs';
+import { confirmDialogOpenAtom, promptDialogOpenAtom } from './dialogs';
 import { isGlobalMenuSheetOpenAtom, isPlayerlistSheetOpenAtom, isServerSheetOpenAtom } from './sheets';
 import { playerModalOpenAtom } from './playerModal';
 import { globalStatusAtom } from './status';
@@ -131,7 +131,6 @@ export const logoutWatcher: ReturnType<typeof atomEffect> = atomEffect((get, set
     if (isAuthenticated) return;
 
     console.info('[logoutWatcher] Logout Detected, closing all dialogs and modals.');
-    set(accountModalOpenAtom, false);
     set(confirmDialogOpenAtom, false);
     set(promptDialogOpenAtom, false);
     set(isGlobalMenuSheetOpenAtom, false);

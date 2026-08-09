@@ -20,11 +20,6 @@ export type { PDLChangeEventType } from '@core/modules/Metrics/playerDrop/player
 //Other stuff
 export type { ApiAddLegacyBanReqSchema, ApiRevokeActionReqSchema } from "@core/routes/history/actions";
 
-export type UpdateDataType = {
-    version: string;
-    isImportant: boolean;
-} | undefined;
-
 export type ThemeType = {
     name: string;
     isDark: boolean;
@@ -41,9 +36,7 @@ export type AccentType = {
 export type InjectedTxConsts = {
     //Env
     fxsVersion: string;
-    fxsOutdated: UpdateDataType,
     txaVersion: string;
-    txaOutdated: UpdateDataType,
 
     serverTimezone: string;
     isWindows: boolean;

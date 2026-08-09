@@ -92,7 +92,10 @@ function DashboardPageInner() {
     return (
         <div className="w-full min-w-96 flex flex-col gap-4 pb-10">
             <CadminDashboard />
-            <div className="mt-2 border-t border-dashed border-white/5 pt-6"><h2 className="text-lg font-medium">{t('Server performance')}</h2></div>
+            <div className="mt-6 border-t border-dashed border-white/5 pt-6">
+                <h2 className="text-lg font-semibold">{t('Server performance')}</h2>
+                <p className="mt-1 text-sm text-zinc-400">{t('Runtime health of the game server.')}</p>
+            </div>
             <div className="w-full grid grid-cols-1 md:grid-cols-3 3xl:grid-cols-8 gap-4">
                 <PlayerDropCard />
                 <ServerStatsCard />

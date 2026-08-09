@@ -17,6 +17,7 @@ export class AuthedAdmin {
     public readonly isTempPassword: boolean;
     public readonly profilePicture: string | undefined;
     public readonly email: string | undefined;
+    public readonly chyaroLinked: boolean;
     public readonly discordAvatar: string | undefined;
     public readonly discordIdentifier: string | undefined;
     public readonly cfxIdentifier: string | undefined;
@@ -26,16 +27,24 @@ export class AuthedAdmin {
         this.name = vaultAdmin.name;
         this.isMaster = vaultAdmin.master;
         this.permissions = vaultAdmin.permissions;
-        this.isTempPassword = false;
+        this.isTempPassword = vaultAdmin.password_temporary === true;
         this.csrfToken = csrfToken;
 
         const cachedPfp = txCore.cacheStore.get(`admin:picture:${vaultAdmin.name}`);
         this.profilePicture = typeof cachedPfp === 'string' ? cachedPfp : undefined;
+        this.chyaroLinked = !!vaultAdmin.providers?.chyarologin;
         const chyaroData = vaultAdmin.providers?.chyarologin?.data || {};
         this.email = chyaroData.email || vaultAdmin.providers?.chyarologin?.identifier;
-        const discordId = chyaroData.discordId || vaultAdmin.providers?.discord?.id;
+        //Once chyarologin is linked it is the authority for Discord identity. In
+        //particular, do not surface a stale/manual provider when the verified
+        //chyarologin profile has no Discord account attached.
+        const discordId = this.chyaroLinked
+            ? chyaroData.discordId
+            : vaultAdmin.providers?.discord?.id;
         this.discordIdentifier = discordId ? `discord:${discordId}` : undefined;
-        this.cfxIdentifier = chyaroData.fivemLicense || vaultAdmin.providers?.citizenfx?.identifier;
+        //The explicitly linked identifier wins: it is set by the admin themselves
+        //in the user settings page, while fivemLicense comes from chyarologin.
+        this.cfxIdentifier = vaultAdmin.providers?.citizenfx?.identifier || chyaroData.fivemLicense;
         this.discordAvatar = chyaroData.discordId && chyaroData.discordAvatar
             ? `https://cdn.discordapp.com/avatars/${chyaroData.discordId}/${chyaroData.discordAvatar}.jpg?size=128`
             : undefined;
@@ -92,6 +101,7 @@ export class AuthedAdmin {
         return {
             name: this.name,
             email: this.email,
+            chyaroLinked: this.chyaroLinked,
             permissions: this.isMaster ? ['all_permissions'] : this.permissions,
             isMaster: this.isMaster,
             isTempPassword: this.isTempPassword,
@@ -139,7 +149,19 @@ const validChyaroSessAuthSchema = z.object({
 });
 export type ChyaroSessAuthType = z.infer<typeof validChyaroSessAuthSchema>;
 
-const validSessAuthSchema = validChyaroSessAuthSchema;
+const validPassSessAuthSchema = z.object({
+    type: z.literal('password'),
+    username: z.string(),
+    csrfToken: z.string(),
+    expiresAt: z.literal(false),
+    password_hash: z.string(),
+});
+export type PassSessAuthType = z.infer<typeof validPassSessAuthSchema>;
+
+const validSessAuthSchema = z.discriminatedUnion('type', [
+    validChyaroSessAuthSchema,
+    validPassSessAuthSchema,
+]);
 
 
 /**
@@ -188,9 +210,15 @@ export const normalAuthLogic = (
             return failResp(`Admin '${sessAuth.username}' not found.`);
         }
 
-        const configuredEmail = vaultAdmin.providers.chyarologin?.identifier;
-        if (configuredEmail?.toLowerCase() !== sessAuth.identifier.toLowerCase()) {
-            return failResp(`chyarologin identity doesn't match for '${sessAuth.username}'.`);
+        if (sessAuth.type === 'password') {
+            if (vaultAdmin.password_hash !== sessAuth.password_hash) {
+                return failResp(`Password hash doesn't match for '${sessAuth.username}'.`);
+            }
+        } else {
+            const configuredEmail = vaultAdmin.providers.chyarologin?.identifier;
+            if (configuredEmail?.toLowerCase() !== sessAuth.identifier.toLowerCase()) {
+                return failResp(`chyarologin identity doesn't match for '${sessAuth.username}'.`);
+            }
         }
         return successResp(vaultAdmin, sessAuth.csrfToken);
     } catch (error) {

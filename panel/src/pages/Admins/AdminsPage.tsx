@@ -20,6 +20,7 @@ import {
     type CadminResponse,
 } from '@/pages/CAdmin/api';
 import { t } from '@/lib/i18n';
+import consts from '@shared/consts';
 
 type StaffMember = {
     name: string;
@@ -49,10 +50,11 @@ type StaffDraft = {
     email: string;
     citizenfxID: string;
     discordID: string;
+    password: string;
     permissions: string[];
 };
 
-const emptyDraft: StaffDraft = { name: '', email: '', citizenfxID: '', discordID: '', permissions: [] };
+const emptyDraft: StaffDraft = { name: '', email: '', citizenfxID: '', discordID: '', password: '', permissions: [] };
 const sectionOrder: Permission['section'][] = ['Panel & Server', 'Character Management', 'In-game Menu'];
 
 const permissionSummary = (member: StaffMember) => {
@@ -124,6 +126,7 @@ export default function AdminsPage() {
             email: member.email,
             citizenfxID: member.citizenfxId,
             discordID: member.discordId,
+            password: '',
             permissions: member.permissions,
         });
         setEditing(member);
@@ -136,7 +139,16 @@ export default function AdminsPage() {
     }));
     const save = async () => {
         if (!draft.name.trim()) return txToast.error(t('Enter a username.'));
-        if (!draft.email.trim()) return txToast.error(t('Enter the verified chyarologin email used by this staff member.'));
+        if (draft.password.trim() !== draft.password) return txToast.error(t('The password cannot start or end with a space.'));
+        if (draft.password.length && (draft.password.length < consts.adminPasswordMinLength || draft.password.length > consts.adminPasswordMaxLength)) {
+            return txToast.error(t('Password must be between {min} and {max} characters.', {
+                min: consts.adminPasswordMinLength,
+                max: consts.adminPasswordMaxLength,
+            }));
+        }
+        if (editing === 'new' && !draft.email.trim() && !draft.password && !draft.citizenfxID.trim() && !draft.discordID.trim()) {
+            return txToast.error(t('Set a local password, chyarologin email, or game identifier.'));
+        }
         setSaving(true);
         try {
             const action = editing === 'new' ? 'add' : 'edit';
@@ -146,7 +158,8 @@ export default function AdminsPage() {
                     name: draft.name.trim(),
                     chyaroEmail: draft.email.trim(),
                     citizenfxID: draft.citizenfxID.trim(),
-                    discordID: draft.discordID.trim(),
+                    discordID: draft.email.trim() ? '' : draft.discordID.trim(),
+                    password: draft.password,
                     permissions: draft.permissions,
                 },
             });
@@ -177,7 +190,7 @@ export default function AdminsPage() {
         <PageHeader title={t('Staff & Permissions')} icon={<ShieldCheck className="size-6" />} />
         <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
             <div>
-                <p className="max-w-3xl text-sm text-zinc-400">{t("Access is stored locally in txAdmin's admins.json. chyarologin supplies the verified email and profile identity only; it never grants a permission.")}</p>
+                <p className="max-w-3xl text-sm text-zinc-400">{t("Access is stored locally in txAdmin's admins.json. Staff can sign in with a local username/password, an optional chyarologin account, or use linked game identifiers in-menu.")}</p>
                 {swr.data && <p className="mt-1 text-xs text-zinc-600">{t(swr.data.admins.length === 1 ? '{count} local staff account' : '{count} local staff accounts', { count: swr.data.admins.length })}</p>}
             </div>
             <Button onClick={() => openNew()}><Plus className="mr-2 size-4" />{t('Add staff member')}</Button>
@@ -194,7 +207,7 @@ export default function AdminsPage() {
                         <tbody className="divide-y divide-dashed divide-white/5">
                             {swr.data?.admins.map(member => <tr key={member.name} className="transition hover:bg-white/[0.03]">
                                 <td className="px-6 py-4"><div className="flex items-center gap-3"><span className="grid size-9 place-items-center rounded-xl bg-brand-500/10 text-brand-400"><UserRound className="size-4" /></span><div><p className="font-medium text-white">{member.name}{member.isSelf && <span className="ml-2 text-xs text-brand-400">{t('you')}</span>}</p><p className="text-xs text-zinc-600">{member.master ? t('Owner') : t('Staff')}</p></div></div></td>
-                                <td className="px-6 py-4"><p className="text-zinc-300">{member.email || t('No email bound')}</p><p className="mt-0.5 font-mono text-xs text-zinc-600">{member.citizenfxIdentifier || (member.discordId ? `discord:${member.discordId}` : t('No game identifier'))}</p></td>
+                                <td className="px-6 py-4"><p className="text-zinc-300">{member.email || t('Local username')}</p><p className="mt-0.5 font-mono text-xs text-zinc-600">{member.citizenfxIdentifier || (member.discordId ? `discord:${member.discordId}` : t('No game identifier'))}</p></td>
                                 <td className="px-6 py-4"><span className={cn('rounded-md px-2 py-1 text-xs', member.master || member.permissions.includes('all_permissions') ? 'bg-amber-500/10 text-amber-300' : 'bg-white/5 text-zinc-400')}>{permissionSummary(member)}</span></td>
                                 <td className="px-6 py-4"><div className="flex justify-end gap-2">{!member.isSelf && <Button size="sm" variant="outline" disabled={member.disableEdit} onClick={() => openEdit(member)}><Pencil className="mr-1 size-3.5" />{t('Edit')}</Button>}<Button size="sm" variant="destructive" disabled={member.disableDelete} onClick={() => remove(member)}><Trash2 className="size-3.5" /></Button></div></td>
                             </tr>)}
@@ -213,9 +226,10 @@ export default function AdminsPage() {
                         <h3 className="mb-4 flex items-center text-sm font-semibold text-white"><UserRound className="mr-2 size-4 text-brand-400" />{t('Identity')}</h3>
                         <div className="grid gap-4 md:grid-cols-2">
                             <div className="space-y-2"><Label htmlFor="staff-name">{t('Username')}</Label><Input id="staff-name" value={draft.name} readOnly={editing !== 'new'} onChange={event => setDraft({ ...draft, name: event.target.value })} placeholder={t('panel username')} /></div>
-                            <div className="space-y-2"><Label htmlFor="staff-email">{t('chyarologin email')}</Label><Input id="staff-email" type="email" value={draft.email} onChange={event => setDraft({ ...draft, email: event.target.value })} placeholder="verified@example.com" /><p className="text-xs text-zinc-600">{t('Used only to match the verified login to this local account.')}</p></div>
+                            <div className="space-y-2"><Label htmlFor="staff-email">{t('chyarologin email (optional)')}</Label><Input id="staff-email" type="email" value={draft.email} onChange={event => setDraft({ ...draft, email: event.target.value })} placeholder="verified@example.com" /><p className="text-xs text-zinc-600">{t('Used only to match an optional verified login to this local account.')}</p></div>
+                            <div className="space-y-2"><Label htmlFor="staff-password">{editing === 'new' ? t('Initial password (optional)') : t('New password (optional)')}</Label><Input id="staff-password" type="password" value={draft.password} minLength={consts.adminPasswordMinLength} maxLength={consts.adminPasswordMaxLength} autoComplete="new-password" onChange={event => setDraft({ ...draft, password: event.target.value })} placeholder={editing === 'new' ? t('local panel password') : t('leave blank to keep current')} /><p className="text-xs text-zinc-600">{t(editing === 'new' ? 'Enables local login; with only a game identifier this will be an in-game-only account.' : 'Setting this resets their local password and marks it temporary.')}</p></div>
                             <div className="space-y-2"><Label htmlFor="staff-fivem">{t('Cfx.re username or fivem ID')}</Label><Input id="staff-fivem" value={draft.citizenfxID} onChange={event => setDraft({ ...draft, citizenfxID: event.target.value })} placeholder={t('optional')} /></div>
-                            <div className="space-y-2"><Label htmlFor="staff-discord">{t('Discord user ID')}</Label><Input id="staff-discord" value={draft.discordID} onChange={event => setDraft({ ...draft, discordID: event.target.value })} placeholder={t('optional')} /></div>
+                            <div className="space-y-2"><Label htmlFor="staff-discord">{t('Discord user ID')}</Label><Input id="staff-discord" value={draft.discordID} disabled={!!draft.email.trim()} onChange={event => setDraft({ ...draft, discordID: event.target.value })} placeholder={t('optional')} /><p className="text-xs text-zinc-600">{draft.email.trim() ? t('Discord must be connected through chyarologin for this account.') : t('Used for in-game administrator matching.')}</p></div>
                         </div>
                     </section>
                     <section className="rounded-2xl border border-white/5 bg-white/[0.025] p-5">

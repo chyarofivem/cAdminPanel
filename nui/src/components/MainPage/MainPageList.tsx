@@ -8,7 +8,6 @@ import {
   CenterFocusWeak,
   ControlCamera,
   DirectionsCar,
-  ExpandMore,
   Favorite,
   FileCopy,
   GpsFixed,
@@ -39,33 +38,19 @@ import { getVehicleSpawnDialogData, vehiclePlaceholderReplacer } from "@nui/src/
 import { useNuiEvent } from "@nui/src/hooks/useNuiEvent";
 import { usePlayerModalContext } from "@nui/src/provider/PlayerModalProvider";
 
-const fadeHeight = 20;
 const listHeight = 402;
 
-const BoxFadeTop = styled(Box)(({ theme }) => ({
-  backgroundImage: `linear-gradient(to top, transparent, ${theme.palette.background.default})`,
-  position: "relative",
-  bottom: listHeight + fadeHeight - 4,
-  height: fadeHeight,
-}));
-
-const BoxFadeBottom = styled(Box)(({ theme }) => ({
-  backgroundImage: `linear-gradient(to bottom, transparent, ${theme.palette.background.default})`,
-  position: "relative",
-  height: fadeHeight,
-  bottom: fadeHeight * 2,
-}));
-
-const BoxIcon = styled(Box)(({ theme }) => ({
-  color: theme.palette.text.secondary,
-  marginTop: -(fadeHeight * 2),
-  display: "flex",
-  justifyContent: "center",
-}));
-
+/**
+ * The scrolling action area. The old build faked depth with two gradient
+ * overlays and a floating chevron; this uses a mask so the fade tracks the
+ * real scroll position instead of the selected index.
+ */
 const StyledList = styled(List)({
   maxHeight: listHeight,
   overflow: "auto",
+  padding: 0,
+  maskImage:
+    "linear-gradient(to bottom, transparent 0, #000 12px, #000 calc(100% - 12px), transparent 100%)",
   "&::-webkit-scrollbar": {
     display: "none",
   },
@@ -524,8 +509,7 @@ export const MainPageList: React.FC = () => {
   );
 
   return (
-    // add pb={2} if we don't have that arrow at the bottom
-    (<Box sx={{ pointerEvents: 'none' }}>
+    <Box sx={{ pointerEvents: 'none' }}>
       <StyledList>
         {menuListItems.map((item, index) =>
           item.isMultiAction ? (
@@ -545,22 +529,6 @@ export const MainPageList: React.FC = () => {
           )
         )}
       </StyledList>
-      <BoxFadeTop style={{ opacity: curSelected <= 1 ? 0 : 1 }} />
-      <BoxFadeBottom style={{ opacity: curSelected >= 6 ? 0 : 1 }} />
-      <BoxIcon display="flex" justifyContent="center">
-        <ExpandMore />
-      </BoxIcon>
-      {/* <Typography
-        color="textSecondary"
-        style={{
-          fontWeight: 500,
-          marginTop: -20,
-          textAlign: "left",
-          fontSize: 12,
-        }}
-      >
-        v{serverCtx.txAdminVersion}
-      </Typography>  */}
-    </Box>)
+    </Box>
   );
 };

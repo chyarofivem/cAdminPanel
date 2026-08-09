@@ -24,7 +24,10 @@ export { default as cadmin_overview } from './cadmin/overview';
 export { default as auth_chyaroSetup } from './authentication/chyaroSetup';
 export { default as auth_chyaroLogin } from './authentication/chyaroLogin';
 export { default as auth_chyaroCallback } from './authentication/chyaroCallback';
+export { default as auth_verifyPassword } from './authentication/verifyPassword';
+export { default as auth_changePassword } from './authentication/changePassword';
 export { default as auth_self } from './authentication/self';
+export { default as auth_selfIdentifiers } from './authentication/selfIdentifiers';
 export { default as auth_logout } from './authentication/logout';
 
 export { default as adminManager_page } from './adminManager/page.js';
@@ -51,7 +54,7 @@ export { default as masterActions_page } from './masterActions/page';
 export { default as masterActions_getBackup } from './masterActions/getBackup';
 export { default as masterActions_actions } from './masterActions/actions';
 
-export { default as setup_get } from './setup/get';
+export { default as setup_data } from './setup/data';
 export { default as setup_post } from './setup/post';
 
 export { default as fxserver_commands } from './fxserver/commands';

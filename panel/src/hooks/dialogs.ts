@@ -1,42 +1,8 @@
 import { buttonVariants } from "@/components/ui/button";
 import { VariantProps } from "class-variance-authority";
-import { atom, useAtom, useAtomValue, useSetAtom } from "jotai";
+import { atom, useAtomValue, useSetAtom } from "jotai";
 import { atomWithReset } from 'jotai/utils';
 import { ReactElement } from "react";
-
-
-/**
- * MARK: Account Modal Stuff
- */
-export const accountModalOpenAtom = atom(false);
-const accountModalTabAtom = atom<undefined | string>(undefined);
-
-export const useAccountModal = () => {
-    const [isAccountModalOpen, setAccountModalOpen] = useAtom(accountModalOpenAtom);
-    const [accountModalTab, setAccountModalTab] = useAtom(accountModalTabAtom);
-    return {
-        isAccountModalOpen,
-        setAccountModalOpen,
-        accountModalTab,
-        setAccountModalTab,
-    }
-}
-
-export const useOpenAccountModal = () => {
-    const setAccountModalOpen = useSetAtom(accountModalOpenAtom);
-    const setAccountModalTab = useSetAtom(accountModalTabAtom);
-    return (tab?: string) => {
-        setAccountModalOpen(true);
-        if (tab) setAccountModalTab(tab);
-    }
-}
-
-export const useCloseAccountModal = () => {
-    const setAccountModalOpen = useSetAtom(accountModalOpenAtom);
-    return () => {
-        setAccountModalOpen(false);
-    }
-}
 
 
 /**

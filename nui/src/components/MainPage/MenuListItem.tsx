@@ -1,17 +1,7 @@
 import React, { memo, useEffect, useRef, useState } from "react";
-import { styled } from '@mui/material/styles';
-import {
-  Box,
-  BoxProps,
-  ListItem,
-  ListItemButton,
-  ListItemIcon,
-  ListItemSecondaryAction,
-  ListItemText,
-  Typography,
-} from "@mui/material";
+import { Box, ButtonBase, Typography, alpha, styled } from "@mui/material";
 import { useKeyboardNavigation } from "../../hooks/useKeyboardNavigation";
-import { Code } from "@mui/icons-material";
+import { ChevronLeft, ChevronRight } from "@mui/icons-material";
 import { fetchNui } from "../../utils/fetchNui";
 import { useTranslate } from "react-polyglot";
 import {
@@ -21,48 +11,88 @@ import {
 import { userHasPerm } from "../../utils/miscUtils";
 import { useSnackbar } from "notistack";
 import { useTooltip } from "../../provider/TooltipProvider";
+import { microLabel, nuiTokens } from "@nui/src/styles/nuiTokens";
 
-const PREFIX = 'MenuListItem';
-
-const classes = {
-  root: `${PREFIX}-root`,
-  rootDisabled: `${PREFIX}-rootDisabled`,
-  icon: `${PREFIX}-icon`,
-  overrideText: `${PREFIX}-overrideText`
-};
-
-const Root = styled('div')(({ theme }) => ({
-  [`& .${classes.root}`]: {
-    borderRadius: 10,
-    marginBottom: 3,
-    minHeight: 44,
-    border: '1px solid transparent',
-    transition: 'background-color 120ms ease, border-color 120ms ease, transform 120ms ease',
-    '&:hover': {
-      backgroundColor: 'rgba(255,255,255,.06)',
-      transform: 'translateX(2px)',
-    },
-    '&.Mui-selected': {
-      backgroundColor: 'rgba(0,197,140,.12)',
-      borderColor: 'rgba(0,197,140,.34)',
-    },
+/**
+ * A single actionable row. Selection is driven by keyboard navigation from
+ * MainPageList, so the visual affordance has to read clearly without hover.
+ */
+const RowButton = styled(ButtonBase, {
+  shouldForwardProp: (prop) => prop !== "isActive" && prop !== "isDimmed",
+})<{ isActive: boolean; isDimmed: boolean }>(({ theme, isActive, isDimmed }) => ({
+  width: "100%",
+  minHeight: 48,
+  padding: "8px 11px",
+  marginBottom: 4,
+  borderRadius: nuiTokens.radiusSm,
+  display: "flex",
+  alignItems: "center",
+  gap: 10,
+  textAlign: "left",
+  justifyContent: "flex-start",
+  color: theme.palette.text.primary,
+  opacity: isDimmed ? 0.58 : 1,
+  backgroundColor: isActive ? alpha(theme.palette.primary.main, 0.12) : "transparent",
+  boxShadow: isActive
+    ? `inset 0 0 0 1px ${alpha(theme.palette.primary.main, 0.34)}`
+    : `inset 0 0 0 1px transparent`,
+  transition: "background-color 120ms ease, box-shadow 120ms ease",
+  "&:hover": {
+    backgroundColor: isActive
+      ? alpha(theme.palette.primary.main, 0.16)
+      : nuiTokens.surfaceHover,
   },
+}));
 
-  [`& .${classes.rootDisabled}`]: {
-    borderRadius: 10,
-    opacity: 0.32,
-    marginBottom: 3,
-  },
+/**
+ * The leading icon chip. Uses the accent tint when the row is selected so the
+ * eye lands on the same element the keyboard is pointing at.
+ */
+const IconChip = styled(Box, {
+  shouldForwardProp: (prop) => prop !== "isActive",
+})<{ isActive: boolean }>(({ theme, isActive }) => ({
+  flexShrink: 0,
+  width: 32,
+  height: 32,
+  borderRadius: nuiTokens.radiusXs,
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  color: isActive ? theme.palette.primary.main : theme.palette.text.secondary,
+  backgroundColor: isActive
+    ? alpha(theme.palette.primary.main, 0.14)
+    : nuiTokens.surface,
+  boxShadow: `inset 0 0 0 1px ${nuiTokens.ring}`,
+  transition: "color 120ms ease, background-color 120ms ease",
+  "& svg": { fontSize: 18 },
+}));
 
-  [`& .${classes.icon}`]: {
-    color: theme.palette.primary.main,
-    minWidth: 42,
-  },
+const RowTitle = styled(Typography)({
+  fontSize: 14.5,
+  fontWeight: 650,
+  lineHeight: 1.3,
+});
 
-  [`& .${classes.overrideText}`]: {
-    color: theme.palette.text.primary,
-    fontSize: 16,
-  }
+const RowValue = styled(Typography)({
+  ...microLabel,
+  marginTop: 1,
+  letterSpacing: '0.06em',
+});
+
+/**
+ * The left/right cycling affordance shown on multi-action rows. Only rendered
+ * as interactive-looking when the row is selected, since the arrow keys only
+ * act on the selected row.
+ */
+const CycleHint = styled(Box, {
+  shouldForwardProp: (prop) => prop !== "isActive",
+})<{ isActive: boolean }>(({ theme, isActive }) => ({
+  flexShrink: 0,
+  display: "flex",
+  alignItems: "center",
+  color: isActive ? theme.palette.primary.main : theme.palette.text.secondary,
+  opacity: isActive ? 1 : 0.65,
+  "& svg": { fontSize: 15 },
 }));
 
 export interface MenuListItemProps {
@@ -127,22 +157,17 @@ export const MenuListItem: React.FC<MenuListItemProps> = memo(
     });
 
     return (
-      <Root ref={divRef}>
-        <ListItemButton
+      <div ref={divRef}>
+        <RowButton
           onClick={handleEnter}
-          className={isUserAllowed ? classes.root : classes.rootDisabled}
-          dense
-          selected={selected}
+          isActive={selected}
+          isDimmed={!isUserAllowed}
+          disableRipple
         >
-          <ListItemIcon className={classes.icon}>{icon}</ListItemIcon>
-          <ListItemText
-            primary={title}
-            classes={{
-              primary: classes.overrideText,
-            }}
-          />
-        </ListItemButton>
-      </Root>
+          <IconChip isActive={selected}>{icon}</IconChip>
+          <RowTitle>{title}</RowTitle>
+        </RowButton>
+      </div>
     );
   }
 );
@@ -173,7 +198,9 @@ export const MenuListItemMulti: React.FC<MenuListItemMultiProps> = memo(
     const { enqueueSnackbar } = useSnackbar();
     const { setTooltipText } = useTooltip();
 
-    const isUserAllowed = requiredPermission && userHasPerm(requiredPermission, userPerms);
+    const isUserAllowed = requiredPermission
+      ? userHasPerm(requiredPermission, userPerms)
+      : true;
 
     const compMounted = useRef(false);
 
@@ -254,33 +281,28 @@ export const MenuListItemMulti: React.FC<MenuListItemMultiProps> = memo(
     });
 
     return (
-      <Root ref={divRef}>
-        <ListItemButton
-          className={isUserAllowed ? classes.root : classes.rootDisabled}
-          dense
-          selected={selected}
+      <div ref={divRef}>
+        <RowButton
+          onClick={handleEnter}
+          isActive={selected}
+          isDimmed={!isUserAllowed}
+          disableRipple
         >
-          <ListItemIcon className={classes.icon}>
+          <IconChip isActive={selected}>
             {actions[curState]?.icon ?? icon}
-          </ListItemIcon>
-          <ListItemText
-            primary={
-              <>
-                {title}:&nbsp;
-                <Typography component="span" color="text.secondary">
-                  {actions[curState]?.name ?? "???"}
-                </Typography>
-              </>
-            }
-            classes={{
-              primary: classes.overrideText,
-            }}
-          />
-          <ListItemSecondaryAction>
-            <Code className={classes.icon} />
-          </ListItemSecondaryAction>
-        </ListItemButton>
-      </Root>
+          </IconChip>
+          <Box flex={1} minWidth={0}>
+            <RowTitle>{title}</RowTitle>
+            <RowValue color="text.secondary">
+              {actions[curState]?.name ?? "???"}
+            </RowValue>
+          </Box>
+          <CycleHint isActive={selected}>
+            <ChevronLeft />
+            <ChevronRight />
+          </CycleHint>
+        </RowButton>
+      </div>
     );
   }
 );

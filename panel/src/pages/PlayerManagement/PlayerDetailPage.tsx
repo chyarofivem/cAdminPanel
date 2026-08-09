@@ -172,9 +172,11 @@ export default function PlayerDetailPage() {
                 <Tabs defaultValue="overview" className="rounded-2xl border border-white/5 bg-white/[0.025] p-4 md:p-6">
                     <TabsList className="h-auto w-full flex-wrap justify-start bg-white/5">
                         <TabsTrigger value="overview">{t('Overview')}</TabsTrigger>
-                        {character && <TabsTrigger value="character">{t('Character')}</TabsTrigger>}
+                        {character && <TabsTrigger value="money">{t('Money')}</TabsTrigger>}
+                        {character && <TabsTrigger value="job">{t('Job')}</TabsTrigger>}
+                        {character && <TabsTrigger value="group">{t('Group')}</TabsTrigger>}
                         {character && <TabsTrigger value="inventory">{t('Inventory')}</TabsTrigger>}
-                        {character && hasPerm('cadmin.garage.view') && <TabsTrigger value="garage">{t('Garage')}</TabsTrigger>}
+                        {character && <TabsTrigger value="garage">{t('Garage')}</TabsTrigger>}
                         {txPlayer && <TabsTrigger value="history">{t('History')}</TabsTrigger>}
                         {txPlayer && <TabsTrigger value="identifiers">{t('Identifiers')}</TabsTrigger>}
                     </TabsList>
@@ -182,20 +184,11 @@ export default function PlayerDetailPage() {
                     <TabsContent value="overview" className="mt-6">
                         <OverviewTab player={txDetails.data} character={character} license={license} refresh={refresh} />
                     </TabsContent>
-                    {character && <TabsContent value="character" className="mt-6">
-                        <Tabs defaultValue="money">
-                            <TabsList className="h-auto flex-wrap bg-white/5">
-                                <TabsTrigger value="money">{t('Money')}</TabsTrigger>
-                                <TabsTrigger value="job">{t('Job')}</TabsTrigger>
-                                <TabsTrigger value="group">{t('Group')}</TabsTrigger>
-                            </TabsList>
-                            <TabsContent value="money" className="mt-5"><MoneyTab player={character} refresh={refresh} /></TabsContent>
-                            <TabsContent value="job" className="mt-5"><JobTab player={character} refresh={refresh} /></TabsContent>
-                            <TabsContent value="group" className="mt-5"><GroupTab player={character} refresh={refresh} /></TabsContent>
-                        </Tabs>
-                    </TabsContent>}
+                    {character && <TabsContent value="money" className="mt-6"><MoneyTab player={character} refresh={refresh} /></TabsContent>}
+                    {character && <TabsContent value="job" className="mt-6"><JobTab player={character} refresh={refresh} /></TabsContent>}
+                    {character && <TabsContent value="group" className="mt-6"><GroupTab player={character} refresh={refresh} /></TabsContent>}
                     {character && <TabsContent value="inventory" className="mt-6"><InventoryTab player={character} refresh={refresh} /></TabsContent>}
-                    {character && hasPerm('cadmin.garage.view') && <TabsContent value="garage" className="mt-6"><GarageTab player={character} refresh={refresh} /></TabsContent>}
+                    {character && <TabsContent value="garage" className="mt-6"><GarageTab player={character} refresh={refresh} /></TabsContent>}
                     {txPlayer && <TabsContent value="history" className="mt-6"><HistoryTab actions={txPlayer.actionHistory} serverTime={txDetails.data!.serverTime} /></TabsContent>}
                     {txPlayer && <TabsContent value="identifiers" className="mt-6"><IdentifiersTab license={license} player={txPlayer} refresh={refresh} /></TabsContent>}
                 </Tabs>

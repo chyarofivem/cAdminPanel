@@ -19,6 +19,133 @@ local T = CAdminConfig.tables
 
 local core
 local adapter = { id = 'qbox' }
+local storedGroupCache = {}
+local managedGroupBySource = {}
+local reapplyGenerationBySource = {}
+
+-- Qbox permissions are ACEs attached to the live player source. The panel's
+-- durable value lives in cadmin_groups; these helpers are intentionally kept
+-- separate so a failed live ACE mutation can never be reported as a success.
+local KNOWN_ADMIN_GROUPS = { 'god', 'superadmin', 'admin', 'mod', 'helper' }
+
+local function errorText(value, fallback)
+    if type(value) == 'table' and type(value.message) == 'string' then return value.message end
+    if type(value) == 'string' and value ~= '' then return value end
+    return fallback
+end
+
+local function hasAceGroup(source, group)
+    if not source or not group or group == '' or group == 'user' then return false end
+    -- qbx_core's deprecated permission helpers historically checked `admin`,
+    -- while ox_lib command restrictions use `group.admin`. Supporting both is
+    -- necessary across Qbox releases and custom ACE layouts.
+    return IsPlayerAceAllowed(source, group)
+        or IsPlayerAceAllowed(source, 'group.' .. group)
+end
+
+local function mutateAceGroup(source, action, group)
+    if not group or group == '' or group == 'user' then return true end
+
+    local called, result = pcall(function()
+        if action == 'add' then return core:AddPermission(source, group) end
+        return core:RemovePermission(source, group)
+    end)
+    if not called then
+        return false, ('qbx_core could not %s permission "%s": %s')
+            :format(action, group, errorText(result, 'unknown export error'))
+    end
+    if result == false then
+        return false, ('qbx_core refused to %s permission "%s".'):format(action, group)
+    end
+
+    local present = hasAceGroup(source, group)
+    if action == 'add' and not present then
+        return false, ('qbx_core did not apply permission "%s". Check the server ACE configuration.')
+            :format(group)
+    end
+    if action == 'remove' and present then
+        return false, ('Permission "%s" is still inherited from server.cfg or another ACE principal.')
+            :format(group)
+    end
+    return true
+end
+
+local function sourceNumber(source)
+    local value = tonumber(source)
+    return value and value > 0 and value or nil
+end
+
+local function invalidateReapply(source)
+    source = sourceNumber(source)
+    if not source then return nil end
+    local generation = (reapplyGenerationBySource[source] or 0) + 1
+    reapplyGenerationBySource[source] = generation
+    return generation
+end
+
+-- Remove only the direct player principal cAdmin previously established. The
+-- effective ACE may remain true through server.cfg (or another principal),
+-- which is expected and must not be treated as permission we own.
+local function releaseManagedGroup(source)
+    source = sourceNumber(source)
+    local managed = source and managedGroupBySource[source] or nil
+    if not managed then return true end
+
+    local called, result = pcall(function()
+        return core:RemovePermission(source, managed.group)
+    end)
+    if not called then
+        return false, ('qbx_core could not release cAdmin permission "%s": %s')
+            :format(managed.group, errorText(result, 'unknown export error'))
+    end
+    if result == false then
+        return false, ('qbx_core refused to release cAdmin permission "%s".'):format(managed.group)
+    end
+
+    managedGroupBySource[source] = nil
+    if hasAceGroup(source, managed.group) then
+        util.log('Released cAdmin group "%s" from source %s; an unrelated ACE still grants it.',
+            managed.group, source)
+    end
+    return true
+end
+
+-- Always call AddPermission before recording ownership, even if the source is
+-- already allowed through server.cfg. This creates an idempotent direct
+-- player.* principal that cAdmin can later remove without touching inherited
+-- principals.
+local function applyManagedGroup(source, citizenid, group)
+    source = sourceNumber(source)
+    if not source or not citizenid or not group or group == '' or group == 'user' then
+        return true
+    end
+
+    local managed = managedGroupBySource[source]
+    if managed and (managed.citizenid ~= citizenid or managed.group ~= group) then
+        local released, releaseError = releaseManagedGroup(source)
+        if not released then return false, releaseError end
+        managed = nil
+    end
+    if managed and hasAceGroup(source, group) then return true end
+
+    local added, addError = mutateAceGroup(source, 'add', group)
+    if not added then return false, addError end
+    managedGroupBySource[source] = { citizenid = citizenid, group = group }
+    return true
+end
+
+local function storedGroupFor(citizenid)
+    if not citizenid or not CAdmin.schema.ready then return nil end
+    local cached = storedGroupCache[citizenid]
+    if cached ~= nil then return cached or nil end
+
+    local row = MySQL.single.await(
+        ('SELECT `group` FROM `%s` WHERE citizenid = ? LIMIT 1'):format(T.qbGroups),
+        { citizenid }
+    )
+    storedGroupCache[citizenid] = row and row.group or false
+    return row and row.group or nil
+end
 
 function adapter.detect()
     return GetResourceState('qbx_core') == 'started'
@@ -332,10 +459,18 @@ function adapter.setDirtyMoney(identifier, action, amount)
 end
 
 function adapter.setJob(identifier, jobName, grade)
-    local player = adapter.getOnlineByIdentifier(identifier)
-    if player then
-        player.Functions.SetJob(jobName, grade)
-        return true
+    -- Current Qbox owns both the primary `job` blob and its multi-job rows.
+    -- Its export updates them together for online and offline characters. The
+    -- direct SQL path remains only for older Qbox releases without SetJob.
+    local called, applied, errorResult = pcall(function()
+        return core:SetJob(identifier, jobName, grade)
+    end)
+    if called then
+        if applied then return true end
+        return false, errorText(errorResult, 'qbx_core refused the job change.')
+    end
+    if not string.find(tostring(applied), 'No such export', 1, true) then
+        return false, errorText(applied, 'qbx_core could not apply the job change.')
     end
 
     local citizenid = identifier
@@ -358,7 +493,7 @@ function adapter.setJob(identifier, jobName, grade)
             citizenid
         }
     )
-    if not updated or updated == 0 then return false, 'No such character.' end
+    if updated == nil then return false, 'The character job could not be saved.' end
     return true
 end
 
@@ -368,36 +503,103 @@ end
 function adapter.setGroup(identifier, group)
     local citizenid = identifier
 
-    local player = adapter.getOnlineByIdentifier(identifier)
-    if player then
-        local source = player.PlayerData.source
-        local current = adapter.getGroupBySource(source)
-        -- Version-sensitive: qbx_core Add/RemovePermission. Removing first keeps
-        -- a demotion from leaving the old, higher principal attached.
-        if current and current ~= '' and current ~= group then
-            pcall(function() core:RemovePermission(source, current) end)
-        end
-        pcall(function() core:AddPermission(source, group) end)
-    end
-
     if not CAdmin.schema.ready then
         return false, ('The `%s` table is missing and could not be created. Import sql/cadminpanel.sql.')
             :format(T.qbGroups)
     end
 
-    MySQL.prepare.await(
-        ([[INSERT INTO `%s` (citizenid, `group`) VALUES (?, ?)
-           ON DUPLICATE KEY UPDATE `group` = VALUES(`group`)]]):format(T.qbGroups),
-        { citizenid, group }
+    local storedRow = MySQL.single.await(
+        ('SELECT `group` FROM `%s` WHERE citizenid = ? LIMIT 1'):format(T.qbGroups),
+        { citizenid }
     )
+    local previous = storedRow and storedRow.group or nil
+
+    local player = adapter.getOnlineByIdentifier(identifier)
+    local source = player and sourceNumber(player.PlayerData.source) or nil
+    if source then
+        -- A pending load reconciliation must not overwrite this explicit edit.
+        invalidateReapply(source)
+
+        local managed = managedGroupBySource[source]
+        if managed and managed.citizenid ~= citizenid then
+            local released, releaseError = releaseManagedGroup(source)
+            if not released then return false, releaseError end
+            managed = nil
+        end
+
+        -- Seed ownership for the durable previous value. AddPermission is
+        -- idempotent, and claiming our own direct principal before removing it
+        -- means an inherited server.cfg principal is never mistaken for ours.
+        if previous and previous ~= 'user' then
+            local applied, applyError = applyManagedGroup(source, citizenid, previous)
+            if not applied then return false, applyError end
+        elseif managed and managed.citizenid == citizenid then
+            local released, releaseError = releaseManagedGroup(source)
+            if not released then return false, releaseError end
+        end
+
+        managed = managedGroupBySource[source]
+        if managed and managed.group ~= group then
+            local released, releaseError = releaseManagedGroup(source)
+            if not released then return false, releaseError end
+        end
+        if group ~= 'user' then
+            local applied, applyError = applyManagedGroup(source, citizenid, group)
+            if not applied then
+                if previous and previous ~= 'user' then
+                    applyManagedGroup(source, citizenid, previous)
+                end
+                return false, applyError
+            end
+        end
+    end
+
+    local saved, saveResult = pcall(function()
+        return MySQL.prepare.await(
+            ([[INSERT INTO `%s` (citizenid, `group`) VALUES (?, ?)
+               ON DUPLICATE KEY UPDATE `group` = VALUES(`group`)]]):format(T.qbGroups),
+            { citizenid, group }
+        )
+    end)
+    if not saved or saveResult == nil then
+        -- Keep live and durable state aligned if the database write fails.
+        if source and group ~= previous then
+            local managed = managedGroupBySource[source]
+            if managed and managed.citizenid == citizenid then
+                local released, releaseError = releaseManagedGroup(source)
+                if not released then
+                    util.log('Could not roll back group "%s" for character %s: %s',
+                        managed.group, citizenid, releaseError)
+                end
+            end
+            if previous and previous ~= 'user' then
+                local restored, restoreError = applyManagedGroup(source, citizenid, previous)
+                if not restored then
+                    util.log('Could not restore group "%s" for character %s: %s',
+                        previous, citizenid, restoreError)
+                end
+            end
+        end
+        return false, ('The group could not be saved: %s')
+            :format(errorText(saveResult, 'database error'))
+    end
+    storedGroupCache[citizenid] = group
     return true
 end
 
 function adapter.getGroupBySource(source)
     -- Highest first: a player holding both admin and mod principals is an admin.
-    for _, group in ipairs({ 'god', 'superadmin', 'admin', 'mod', 'helper' }) do
-        if IsPlayerAceAllowed(source, 'group.' .. group) then return group end
+    -- Do this before consulting the stored custom value so an externally
+    -- inherited higher ACE is never hidden by the panel.
+    for _, group in ipairs(KNOWN_ADMIN_GROUPS) do
+        if hasAceGroup(source, group) then return group end
     end
+
+    -- Keep custom groups previously assigned through the panel visible too.
+    local player = core and core:GetPlayer(tonumber(source)) or nil
+    local citizenid = player and player.PlayerData and player.PlayerData.citizenid or nil
+    local stored = storedGroupFor(citizenid)
+    if stored and hasAceGroup(source, stored) then return stored end
     return 'user'
 end
 
@@ -409,11 +611,7 @@ function adapter.getGroupByCitizenId(citizenid)
     -- answer an empty table would give.
     if not CAdmin.schema.ready then return 'user' end
 
-    local row = MySQL.single.await(
-        ('SELECT `group` FROM `%s` WHERE citizenid = ? LIMIT 1'):format(T.qbGroups),
-        { citizenid }
-    )
-    return (row and row.group) or 'user'
+    return storedGroupFor(citizenid) or 'user'
 end
 
 function adapter.getGroup(identifier)
@@ -632,24 +830,85 @@ end
 --- vanish on relog even though it remains in the local cadmin_groups table.
 local function reapplyGroup(src)
     if not CAdmin.bridge or CAdmin.bridge.frameworkName() ~= 'qbox' then return end
+    src = sourceNumber(src)
+    if not src then return end
+
+    -- Several Qbox compatibility events can fire for one load. The generation
+    -- also prevents a DB lookup started for the old character from granting
+    -- its group after the same source has already switched characters.
+    local generation = invalidateReapply(src)
 
     CreateThread(function()
         local citizenid = adapter.characterIdForSource(src)
         if not citizenid then return end
 
-        local stored = adapter.getGroupByCitizenId(citizenid)
-        -- 'user' is the absence of a group, not a principal to hand out.
-        if not stored or stored == 'user' then return end
-        if adapter.getGroupBySource(src) == stored then return end
+        local stored = storedGroupFor(citizenid)
+        if reapplyGenerationBySource[src] ~= generation
+            or adapter.characterIdForSource(src) ~= citizenid then
+            return
+        end
 
-        pcall(function() core:AddPermission(src, stored) end)
+        -- Release a grant tracked for the previous character before handling
+        -- the new value. Crucially, this happens before a no-row return: an
+        -- unmanaged character must not inherit the previous character's live
+        -- player.* principal. We never inspect/remove an arbitrary effective
+        -- ACE here, so server.cfg groups remain untouched.
+        local managed = managedGroupBySource[src]
+        if managed and (managed.citizenid ~= citizenid or managed.group ~= stored) then
+            local released, releaseError = releaseManagedGroup(src)
+            if not released then
+                util.log('Could not release cAdmin group "%s" from source %s: %s',
+                    managed.group, src, releaseError)
+                return
+            end
+        end
+
+        -- No row is deliberately different from an explicit `user` row only
+        -- in durable state. Neither should own a live cAdmin principal.
+        if not stored or stored == 'user' then return end
+
+        local applied, applyError = applyManagedGroup(src, citizenid, stored)
+        if not applied then
+            util.log('Could not re-apply group "%s" to character %s: %s',
+                stored, citizenid, applyError)
+            return
+        end
         util.log('Re-applied group "%s" to character %s on load.', stored, citizenid)
     end)
 end
 
+local function lifecycleSource(value)
+    if type(value) == 'table' and value.PlayerData then
+        return sourceNumber(value.PlayerData.source)
+    end
+    return sourceNumber(value) or sourceNumber(source)
+end
+
+local function cleanupSourceGroup(value, reason)
+    local src = lifecycleSource(value)
+    if not src then return end
+    invalidateReapply(src)
+
+    local managed = managedGroupBySource[src]
+    local released, releaseError = releaseManagedGroup(src)
+    if not released then
+        util.log('Could not release cAdmin group "%s" from source %s on %s: %s',
+            managed and managed.group or 'unknown', src, reason, releaseError)
+    end
+end
+
+-- Emitted by qbx_core when it creates the server-side player object. Keep this
+-- compatibility event because it exists across old and current Qbox releases.
 RegisterNetEvent('QBCore:Server:PlayerLoaded', function(player)
     local src = type(player) == 'table' and player.PlayerData and player.PlayerData.source
         or tonumber(player) or source
+    if src then reapplyGroup(src) end
+end)
+
+-- Emitted by the Qbox character client once spawning is complete. Some server
+-- versions/resources only expose this lifecycle hook to integrations.
+RegisterNetEvent('QBCore:Server:OnPlayerLoaded', function()
+    local src = source
     if src then reapplyGroup(src) end
 end)
 
@@ -657,6 +916,48 @@ AddEventHandler('qbx_core:server:playerLoaded', function(player)
     local src = type(player) == 'table' and player.PlayerData and player.PlayerData.source
         or tonumber(player) or source
     if src then reapplyGroup(src) end
+end)
+
+-- Current qbx_core emits this before discarding the player object, but it does
+-- not remove source ACE principals itself. Releasing our tracked principal here
+-- prevents it leaking to the next character selected on the same source.
+AddEventHandler('QBCore:Server:OnPlayerUnload', function(playerSource)
+    cleanupSourceGroup(playerSource, 'character unload')
+end)
+
+-- Keep the source table clean if a client disconnects without a normal Qbox
+-- logout. The direct principal is released while the source still identifies
+-- the disconnecting player.
+AddEventHandler('playerDropped', function()
+    cleanupSourceGroup(source, 'player drop')
+end)
+
+-- bridge.lua invokes this after framework and schema initialization. It covers
+-- restarting only cadminpanel while players are already online, when no Qbox
+-- player-loaded event will fire again.
+function adapter.onReady()
+    for _, playerId in ipairs(GetPlayers()) do
+        local src = tonumber(playerId)
+        if src then reapplyGroup(src) end
+    end
+end
+
+-- qbx_core leaves dynamically added principals alive when only cadminpanel is
+-- restarted. Release every principal this instance owns; adapter.onReady()
+-- will establish and track the durable groups again after startup.
+AddEventHandler('onResourceStop', function(resourceName)
+    if resourceName ~= GetCurrentResourceName() then return end
+
+    local sources = {}
+    for src in pairs(managedGroupBySource) do sources[#sources + 1] = src end
+    for _, src in ipairs(sources) do
+        local managed = managedGroupBySource[src]
+        local released, releaseError = releaseManagedGroup(src)
+        if not released then
+            util.log('Could not release cAdmin group "%s" from source %s on resource stop: %s',
+                managed and managed.group or 'unknown', src, releaseError)
+        end
+    end
 end)
 
 CAdmin.frameworks.qbox = adapter

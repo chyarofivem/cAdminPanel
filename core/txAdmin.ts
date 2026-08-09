@@ -16,7 +16,6 @@ import FxResources from '@modules/FxResources';
 import FxPlayerlist from '@modules/FxPlayerlist';
 import Database from '@modules/Database';
 import CacheStore from '@modules/CacheStore';
-import UpdateChecker from '@modules/UpdateChecker';
 const console = consoleFactory();
 
 
@@ -39,7 +38,6 @@ export type TxCoreType = {
     //Other
     discordBot: DiscordBot;
     translator: Translator;
-    updateChecker: UpdateChecker;
     webServer: WebServer;
 }
 
@@ -105,9 +103,6 @@ export default function bootTxAdmin() {
     _txCore.fxResources = startModule(FxResources);
     _txCore.fxPlayerlist = startModule(FxPlayerlist);
     _txCore.cacheStore = startModule(CacheStore);
-
-    //Very Low Priority
-    _txCore.updateChecker = startModule(UpdateChecker);
 
 
     /**

@@ -32,7 +32,7 @@ const ansi16ColorsDark = {
 };
 
 const baseColorsDark = {
-    background: '#222326', //card bg
+    background: '#0b0d11', //match the CFG editor surface
     foreground: '#F8F8F8', //primary
 }
 

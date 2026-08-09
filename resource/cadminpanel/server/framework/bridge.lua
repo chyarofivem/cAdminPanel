@@ -79,6 +79,16 @@ CreateThread(function()
         if not migrated then util.log('Could not migrate legacy pending item keys: %s', tostring(migrationError)) end
     end
 
+    -- Adapters can reconcile players who were already online when only this
+    -- resource restarted. This must happen after schema initialization because
+    -- Qbox group persistence is database-backed.
+    if adapter.onReady then
+        local reconciled, reconcileError = pcall(adapter.onReady)
+        if not reconciled then
+            util.log('Could not reconcile existing %s players: %s', adapter.id, tostring(reconcileError))
+        end
+    end
+
     util.log('Ready — %s detected%s.', adapter.id,
         GetResourceState('ox_inventory') == 'started' and ', ox_inventory found' or ', ox_inventory NOT found')
 

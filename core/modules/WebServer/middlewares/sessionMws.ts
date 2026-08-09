@@ -1,4 +1,4 @@
-import type { ChyaroSessAuthType } from "../authLogic";
+import type { ChyaroSessAuthType, PassSessAuthType } from "../authLogic";
 import { LRUCacheWithDelete } from "mnemonist";
 import { RawKoaCtx } from "../ctxTypes";
 import { Next } from "koa";
@@ -10,7 +10,7 @@ import type { DeepReadonly } from 'utility-types';
 
 //Types
 export type ValidSessionType = {
-    auth?: ChyaroSessAuthType;
+    auth?: ChyaroSessAuthType | PassSessAuthType;
     tmpChyaroLoginState?: string;
     tmpChyaroLoginCallbackUri?: string;
     tmpChyaroLoginRedirect?: string;

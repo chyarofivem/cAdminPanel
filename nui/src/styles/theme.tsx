@@ -30,7 +30,7 @@ export default {
     },
     text: {
       primary: "#fff",
-      secondary: "rgba(221,221,221,0.54)",
+      secondary: "rgba(232, 238, 243, 0.78)",
     },
   },
   components: {

@@ -28,6 +28,7 @@ import PlayerDetailPage from '@/pages/PlayerManagement/PlayerDetailPage';
 import PlayerManagementPage from '@/pages/PlayerManagement/PlayerManagementPage';
 import ResourcesPage from '@/pages/Resources/ResourcesPage';
 import TxAdminLogPage from '@/pages/TxAdminLogPage';
+import SetupPage from '@/pages/Setup/SetupPage';
 import { t } from '@/lib/i18n';
 import UserSettingsPage from '@/pages/UserSettingsPage';
 
@@ -161,7 +162,7 @@ const allRoutes: RouteType[] = [
         path: '/server/setup',
         title: 'Setup Wizard',
         permission: 'master', //FIXME: eithger change to all_permissions or create a new Setup/Deploy permission
-        Page: <Iframe legacyUrl="setup" />
+        Page: <SetupPage />
     },
     {
         path: '/server/deployer',

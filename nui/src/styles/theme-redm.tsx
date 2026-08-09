@@ -38,7 +38,7 @@ export default {
     },
     text: {
       primary: "#E8E1DC",
-      secondary: "#E6D5C9",
+      secondary: "rgba(230, 213, 201, 0.82)",
     },
   },
   components: {

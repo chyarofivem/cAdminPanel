@@ -1,3 +1,5 @@
+import "@mui/material/styles";
+
 declare module '@mui/material/styles' {
     interface Theme {
         name: string;
@@ -10,3 +12,5 @@ declare module '@mui/material/styles' {
         logo?: string;
     }
 }
+
+export {};
