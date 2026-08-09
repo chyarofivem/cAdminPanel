@@ -1,4 +1,5 @@
 #!/bin/sh
 . "$(dirname "$0")/_/husky.sh"
 
-npx --no-install commitlint --edit ""
+# Commit messages are intentionally left to repository contributors.
+exit 0

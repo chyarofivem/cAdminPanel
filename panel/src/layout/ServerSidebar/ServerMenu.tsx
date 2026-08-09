@@ -65,9 +65,9 @@ export default function ServerMenu() {
             { label: t('Player Drops'), href: '/insights/player-drops', icon: <Activity className="size-4" /> },
         ]} />
         <NavGroup label={t('System')} icon={<CircleGauge className={iconClass} />} links={[
-            { label: t('Allowlist'), href: '/allowlist', icon: <ClipboardCheck className="size-4" /> },
+            { label: t('Allowlist'), href: '/system/allowlist', icon: <ClipboardCheck className="size-4" /> },
             { label: t('Settings'), href: '/settings', icon: <Settings className="size-4" />, permission: 'settings.view' },
-            { label: t('Master Actions'), href: '/system/master-actions', icon: <Zap className="size-4" /> },
+            { label: t('Master Actions'), href: '/system/master-actions', icon: <Zap className="size-4" />, master: true },
             { label: t('Diagnostics'), href: '/system/diagnostics', icon: <ListChecks className="size-4" /> },
             { label: t('txAdmin Log'), href: '/system/txadmin-log', icon: <ScrollText className="size-4" />, permission: 'txadmin.log.combined' },
         ]} />

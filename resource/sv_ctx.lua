@@ -18,6 +18,7 @@ local ServerCtxObj = {
   panelName = 'FiveM Panel',
   accent = 'blue',
   accentColor = '#2563eb',
+  logoUrl = '',
   bannerUrl = '',
   alignRight = false,
   announceNotiPos = '', -- top-center, top-right, top-left, bottom-center, bottom-right, bottom-left
@@ -84,6 +85,7 @@ local function syncBranding()
     ServerCtxObj.panelName = branding.panelName or ServerCtxObj.panelName
     ServerCtxObj.accent = branding.accent or ServerCtxObj.accent
     ServerCtxObj.accentColor = branding.accentColor or ServerCtxObj.accentColor
+    ServerCtxObj.logoUrl = branding.logoUrl or ServerCtxObj.logoUrl
     ServerCtxObj.bannerUrl = branding.bannerUrl or ServerCtxObj.bannerUrl
     publishServerCtx()
   end, 'POST', payload, { ['Content-Type'] = 'application/json' })

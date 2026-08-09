@@ -19,8 +19,7 @@ export const nuiTokens = {
 
 export const microLabel = {
     fontSize: 11,
-    fontWeight: 700,
+    fontWeight: 550,
     lineHeight: 1.35,
-    letterSpacing: '0.1em',
-    textTransform: 'uppercase',
+    letterSpacing: '0.025em',
 } as const;
