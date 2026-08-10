@@ -28,6 +28,7 @@ export type PlayerModalPlayerData = {
 
     //only if server player
     netid?: number;
+    sessionRef?: string;
     sessionTime?: number; //calcular baseado no tsConnected
 
     //only if registered
@@ -84,6 +85,7 @@ export type PlayersTableReqType = {
 
 export type PlayersTablePlayerType = {
     license: string;
+    licenseIdentifiers: string[];
     displayName: string;
     playTime: number;
     tsJoined: number;

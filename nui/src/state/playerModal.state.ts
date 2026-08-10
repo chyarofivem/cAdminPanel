@@ -1,26 +1,4 @@
-import {
-  atom,
-  useRecoilState,
-  useRecoilValue,
-  useSetRecoilState,
-} from "recoil";
-
-export enum PlayerModalTabs {
-  ACTIONS,
-  INFO,
-  IDENTIFIERS,
-  HISTORY,
-  BAN,
-}
-
-const playerModalTabAtom = atom<PlayerModalTabs>({
-  key: "playerModalTab",
-  default: PlayerModalTabs.ACTIONS,
-});
-
-export const usePlayerModalTabValue = () => useRecoilValue(playerModalTabAtom);
-export const useSetPlayerModalTab = () => useSetRecoilState(playerModalTabAtom);
-export const usePlayerModalTab = () => useRecoilState(playerModalTabAtom);
+import { atom, useRecoilState, useRecoilValue, useSetRecoilState } from "recoil";
 
 const modalVisibilityAtom = atom({
   key: "playerModalVisibility",

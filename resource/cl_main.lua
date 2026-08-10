@@ -6,15 +6,18 @@ ServerCtx = false
 --- Updates ServerCtx based on GlobalState and will send it to NUI
 --- NOTE: for now the ServerCtx is only being set when the menu tries to load (enabled or not)
 function updateServerCtx()
-    stateBagServerCtx = GlobalState.txAdminServerCtx
-    if stateBagServerCtx == nil then
-        debugPrint('^3ServerCtx fallback support activated.')
-        TriggerServerEvent('txsv:req:serverCtx')
-    else
+    local stateBagServerCtx = GlobalState.txAdminServerCtx
+    if ServerCtx == false and stateBagServerCtx ~= nil then
         ServerCtx = stateBagServerCtx
         debugPrint('^2ServerCtx updated from global state.')
         sendMenuMessage('setServerCtx', ServerCtx)
+    elseif stateBagServerCtx == nil then
+        debugPrint('^3ServerCtx fallback support activated.')
     end
+
+    -- Always request the targeted context after React mounts. The global state
+    -- contains server defaults, while this response includes account preferences.
+    TriggerServerEvent('txsv:req:serverCtx')
 end
 
 RegisterNetEvent('txcl:setServerCtx', function(ctx)
@@ -47,6 +50,15 @@ RegisterNetEvent('txcl:showDirectMessage', function(message, author)
             author = author
         }
     )
+end)
+RegisterNetEvent('txcl:announcementResult', function(success)
+    sendMenuMessage('setSnackbarAlert', {
+        level = success and 'success' or 'error',
+        message = success
+            and 'nui_menu.page_main.announcement.dialog_success'
+            or 'nui_menu.misc.no_perms',
+        isTranslationKey = true,
+    })
 end)
 
 -- TODO: remove [SPACE] holding requirement?
@@ -174,8 +186,7 @@ CreateThread(function()
         '/txAdmin-menuEnabled',
         '/txAdmin-menuAlignRight',
         '/txAdmin-menuPageKey',
-        '/txAdmin-menuPlayerIdDistance',
-        '/txAdmin-menuDrunkDuration'
+        '/txAdmin-menuPlayerIdDistance'
     }
 
     for _, suggestion in ipairs(suggestionsToRemove) do

@@ -31,6 +31,7 @@ export function mockPlayerData(players = 500) {
     playerData.push({
       admin: isAdmin,
       id: i + 1,
+      connectionRef: `mock:${i + 1}`,
       dist: randomDist,
       health: Math.floor(Math.random() * 100),
       // health: -1,

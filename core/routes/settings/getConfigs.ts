@@ -6,11 +6,12 @@ import { GenericApiErrorResp } from '@shared/genericApiTypes';
 import ConfigStore from '@modules/ConfigStore';
 import { PartialTxConfigs, TxConfigs } from '@modules/ConfigStore/schema';
 import { ConfigChangelogEntry } from '@modules/ConfigStore/changelog';
-import { redactApiKeys, redactStartupSecrets } from '@lib/misc';
 import { txHostConfig } from '@core/globalData';
 import fsp from 'node:fs/promises';
 import { resolveCFGFilePath } from '@lib/fxserver/fxsConfigHelper';
 import { getTcpPortFromServerCfg } from '@lib/fxserver/serverCfgPort';
+import { cloneDeep } from 'lodash-es';
+import { getVisibleSettingsConfig } from './configAccess';
 const console = consoleFactory(modulename);
 
 
@@ -45,40 +46,32 @@ export default async function GetSettingsConfigs(ctx: AuthedCtx) {
     }));
     locales.sort((a, b) => a.label.localeCompare(b.label));
 
+    const access = {
+        isMaster: ctx.admin.isMaster,
+        canWrite: ctx.admin.hasPermission('settings.write'),
+    };
+    const defaultConfigs = cloneDeep(ConfigStore.SchemaDefaults) as any;
     const outData: GetConfigsResp = {
         locales,
         dataPath: txHostConfig.dataPath,
         hasCustomDataPath: txHostConfig.hasCustomDataPath,
         changelog: txCore.configStore.getChangelog(),
-        storedConfigs: txCore.configStore.getStoredConfig(),
-        defaultConfigs: ConfigStore.SchemaDefaults,
+        storedConfigs: getVisibleSettingsConfig(txCore.configStore.getStoredConfig(), access),
+        defaultConfigs,
         forceQuietMode: txHostConfig.forceQuietMode,
     };
 
     if (!outData.storedConfigs.cadmin?.apiUrl) {
         try {
+            if (typeof txConfig.server.cfgPath !== 'string' || typeof txConfig.server.dataPath !== 'string') {
+                throw new Error('FXServer paths are not configured.');
+            }
             const cfgPath = resolveCFGFilePath(txConfig.server.cfgPath, txConfig.server.dataPath);
             const cfg = await fsp.readFile(cfgPath, 'utf8');
-            outData.defaultConfigs.cadmin.apiUrl = `http://127.0.0.1:${getTcpPortFromServerCfg(cfg)}/cadminpanel`;
+            defaultConfigs.cadmin.apiUrl = `http://127.0.0.1:${getTcpPortFromServerCfg(cfg)}/cadminpanel`;
         } catch (error) {
             console.warn(`Could not derive the Character Management bridge port: ${(error as Error).message}`);
         }
-    }
-
-    //Redact sensitive data if the user doesn't have the write permission
-    if (!ctx.admin.hasPermission('settings.write')) {
-        const toRedact = outData.storedConfigs as any; //dont want to type this
-        if(outData.storedConfigs.server?.startupArgs) {
-            toRedact.server.startupArgs = redactStartupSecrets(outData.storedConfigs.server.startupArgs);
-        }
-        if(outData.storedConfigs.discordBot?.token) {
-            toRedact.discordBot.token = '[redacted by txAdmin]';
-        }
-    }
-    if (!ctx.admin.isMaster) {
-        const toRedact = outData.storedConfigs as any;
-        if (toRedact.chyaro?.apiKey) toRedact.chyaro.apiKey = '[redacted]';
-        if (toRedact.cadmin?.apiSecret) toRedact.cadmin.apiSecret = '[redacted]';
     }
 
     return sendTypedResp(outData);

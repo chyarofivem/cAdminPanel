@@ -16,9 +16,7 @@ import type { GenericApiResp } from '@shared/genericApiTypes';
 import consts from '@shared/consts';
 import { cn } from '@/lib/utils';
 import { t } from '@/lib/i18n';
-
-const ACCENT_STORAGE_KEY = 'panel:user-accent';
-const LANGUAGE_STORAGE_KEY = 'panel:user-language';
+import { reloadPanel } from '@/lib/navigation';
 
 export default function UserSettingsPage() {
     const { authData } = useAuth();
@@ -31,6 +29,8 @@ export default function UserSettingsPage() {
     const [newPassword, setNewPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
     const [isSavingPassword, setIsSavingPassword] = useState(false);
+    const [isSavingAccent, setIsSavingAccent] = useState(false);
+    const [isSavingLanguage, setIsSavingLanguage] = useState(false);
     const saveIdentifiersApi = useBackendApi<ApiSelfIdentifiersResp>({
         method: 'POST',
         path: '/auth/self/identifiers',
@@ -95,23 +95,50 @@ export default function UserSettingsPage() {
     };
 
     const selectAccent = (value: string) => {
-        localStorage.setItem(ACCENT_STORAGE_KEY, value);
+        if (value === accent || isSavingAccent) return;
+        const previousAccent = accent;
         setAccent(value);
-    };
-    const selectLanguage = (value: string) => {
+        setIsSavingAccent(true);
         savePreferencesApi({
-            data: { locale: value },
-            toastLoadingMessage: t('Saving language...'),
-            error: message => txToast.error(message),
-            success: data => {
-                if ('error' in data) return txToast.error(data.error);
-                localStorage.setItem(LANGUAGE_STORAGE_KEY, data.locale);
-                document.cookie = `panelLocale=${encodeURIComponent(data.locale)};path=/;SameSite=Lax;max-age=31536000`;
-                window.location.reload();
+            data: { accent: value },
+            toastLoadingMessage: t('Saving accent colour...'),
+            finally: () => setIsSavingAccent(false),
+            error: (message, toastId) => {
+                setAccent(previousAccent);
+                txToast.error(message, { id: toastId });
+            },
+            success: (data, toastId) => {
+                if ('error' in data) {
+                    setAccent(previousAccent);
+                    return txToast.error(data.error, { id: toastId });
+                }
+                const savedAccent = data.accent ?? value;
+                setAccent(savedAccent);
+                setAuthData({
+                    ...authData,
+                    accent: savedAccent,
+                    accentColor: data.accentColor,
+                });
+                txToast.success(t('Accent colour saved to your account.'), { id: toastId });
             },
         });
     };
-    const language = authData.locale || localStorage.getItem(LANGUAGE_STORAGE_KEY) || window.txConsts.uiLocale;
+    const selectLanguage = (value: string) => {
+        if (isSavingLanguage) return;
+        setIsSavingLanguage(true);
+        savePreferencesApi({
+            data: { locale: value },
+            toastLoadingMessage: t('Saving language...'),
+            finally: () => setIsSavingLanguage(false),
+            error: message => txToast.error(message),
+            success: data => {
+                if ('error' in data) return txToast.error(data.error);
+                setAuthData({ ...authData, locale: data.locale ?? value });
+                reloadPanel();
+            },
+        });
+    };
+    const language = authData.locale || window.txConsts.uiLocale;
     const avatar = authData.discordAvatar || authData.profilePicture;
 
     return <div className="pb-10">
@@ -121,12 +148,12 @@ export default function UserSettingsPage() {
                 <CardHeader><CardTitle className="flex items-center gap-2"><Palette className="size-5 text-brand-500" />{t('Appearance')}</CardTitle></CardHeader>
                 <CardContent>
                     <Label>{t('Accent colour')}</Label>
-                    <p className="mb-4 mt-1 text-sm text-muted-foreground">{t('Choose the colour used for highlights and primary actions on this device.')}</p>
+                    <p className="mb-4 mt-1 text-sm text-muted-foreground">{t('Choose the colour used for highlights and primary actions on every device signed in to this account.')}</p>
                     <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
-                        {accents.map(option => <button key={option.id} type="button" onClick={() => selectAccent(option.id)}
+                        {accents.map(option => <button key={option.id} type="button" disabled={isSavingAccent} onClick={() => selectAccent(option.id)}
                             className={cn('flex flex-col items-center gap-2 rounded-lg border p-3 text-xs transition-colors hover:bg-muted', accent === option.id && 'border-brand-500 bg-brand-500/10 ring-2 ring-brand-500/25')}
                             aria-pressed={accent === option.id}>
-                            <span className="size-8 rounded-full border border-white/20 shadow" style={{ backgroundColor: `oklch(${option.vars['brand-600']})` }} />
+                            <span className="size-8 rounded-full border border-white/20 shadow" style={{ backgroundColor: `rgb(${option.vars['brand-600']})` }} />
                             {t(option.label)}
                         </button>)}
                     </div>
@@ -137,7 +164,7 @@ export default function UserSettingsPage() {
                 <CardHeader><CardTitle className="flex items-center gap-2"><Languages className="size-5 text-brand-500" />{t('Language')}</CardTitle></CardHeader>
                 <CardContent>
                     <Label htmlFor="user-language">{t('Panel language')}</Label>
-                    <Select value={language} onValueChange={selectLanguage}>
+                    <Select value={language} disabled={isSavingLanguage} onValueChange={selectLanguage}>
                         <SelectTrigger id="user-language" className="mt-2"><SelectValue /></SelectTrigger>
                         <SelectContent>
                             <SelectItem value="en">{t('English (default)')}</SelectItem>

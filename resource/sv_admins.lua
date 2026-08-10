@@ -82,7 +82,9 @@ RegisterNetEvent('txsv:checkIfAdmin', function()
             username = resp.name,
             perms = resp.permissions,
             bucket = 0,
-            locale = resp.locale
+            locale = resp.locale,
+            accent = resp.accent,
+            accentColor = resp.accentColor
         }
         if TX_SEND_SERVER_CTX then TX_SEND_SERVER_CTX(src) end
         sendInitialPlayerlist(src)
@@ -99,6 +101,22 @@ end)
 -- Remove admin from table when disconnected
 AddEventHandler('playerDropped', function()
     TX_ADMINS[tostring(source)] = nil
+end)
+
+
+-- Apply an account preference change without clearing unrelated administrators.
+AddEventHandler('txAdmin:events:adminPreferencesUpdated', function(preferences)
+    if type(preferences) ~= 'table' or type(preferences.username) ~= 'string' then return end
+    local expectedUsername = string.lower(preferences.username)
+
+    for id, admin in pairs(TX_ADMINS) do
+        if type(admin.username) == 'string' and string.lower(admin.username) == expectedUsername then
+            admin.locale = type(preferences.locale) == 'string' and preferences.locale or nil
+            admin.accent = type(preferences.accent) == 'string' and preferences.accent or nil
+            admin.accentColor = type(preferences.accentColor) == 'string' and preferences.accentColor or nil
+            if TX_SEND_SERVER_CTX then TX_SEND_SERVER_CTX(id) end
+        end
+    end
 end)
 
 

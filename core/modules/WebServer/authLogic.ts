@@ -4,6 +4,9 @@ import { txEnv } from '@core/globalData';
 import consoleFactory from '@lib/console';
 import type { SessToolsType } from "./middlewares/sessionMws";
 import { ReactAuthDataType } from "@shared/authApiTypes";
+import localeMap from '@shared/localeMap';
+import { ACCENTS, type AccentId } from '@lib/theme';
+import { isUpdateSetupPending } from '@lib/updateSetup';
 const console = consoleFactory(modulename);
 
 
@@ -22,6 +25,8 @@ export class AuthedAdmin {
     public readonly discordIdentifier: string | undefined;
     public readonly cfxIdentifier: string | undefined;
     public readonly locale: string | undefined;
+    public readonly accent: AccentId | undefined;
+    public readonly accentColor: string | undefined;
     public readonly csrfToken?: string;
 
     constructor(vaultAdmin: any, csrfToken?: string) {
@@ -46,7 +51,17 @@ export class AuthedAdmin {
         //The explicitly linked identifier wins: it is set by the admin themselves
         //in the user settings page, while fivemLicense comes from chyarologin.
         this.cfxIdentifier = vaultAdmin.providers?.citizenfx?.identifier || chyaroData.fivemLicense;
-        this.locale = typeof vaultAdmin.preferences?.locale === 'string' ? vaultAdmin.preferences.locale : undefined;
+        const storedLocale = vaultAdmin.preferences?.locale;
+        this.locale = typeof storedLocale === 'string'
+            && Object.prototype.hasOwnProperty.call(localeMap, storedLocale)
+            ? storedLocale
+            : undefined;
+        const storedAccent = vaultAdmin.preferences?.accent;
+        this.accent = typeof storedAccent === 'string'
+            && Object.prototype.hasOwnProperty.call(ACCENTS, storedAccent)
+            ? storedAccent as AccentId
+            : undefined;
+        this.accentColor = this.accent ? ACCENTS[this.accent].hex : undefined;
         this.discordAvatar = chyaroData.discordId && chyaroData.discordAvatar
             ? `https://cdn.discordapp.com/avatars/${chyaroData.discordId}/${chyaroData.discordAvatar}.jpg?size=128`
             : undefined;
@@ -112,7 +127,10 @@ export class AuthedAdmin {
             discordIdentifier: this.discordIdentifier,
             cfxIdentifier: this.cfxIdentifier,
             locale: this.locale,
+            accent: this.accent,
+            accentColor: this.accentColor,
             csrfToken: this.csrfToken ?? 'not_set',
+            pendingUpdate: isUpdateSetupPending(this.isMaster),
         }
     }
 }

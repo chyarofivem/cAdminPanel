@@ -83,7 +83,7 @@ export default class StatsDao {
 
     /**
      * Returns actions/players stats for the database
-     * NOTE: used by diagnostics and reporting
+     * NOTE: used by runtime reporting
      */
     getDatabaseStats() {
         const actionStats = this.chain.get('actions')

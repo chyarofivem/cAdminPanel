@@ -145,7 +145,7 @@ async function handleSetVariables(ctx) {
         }
 
         //Setting connection string
-        userVars.dbDelete = (userVars.dbDelete === 'true');
+        userVars.dbDelete = userVars.dbDelete === true || userVars.dbDelete === 'true';
         const dbFullHost = (userVars.dbPort === 3306)
             ? userVars.dbHost
             : `${userVars.dbHost}:${userVars.dbPort}`;

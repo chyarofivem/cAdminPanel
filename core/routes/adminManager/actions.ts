@@ -218,6 +218,12 @@ async function handleEdit(ctx: AuthedCtx) {
     const password = ctx.request.body.password ?? '';
     const citizenfxID = ctx.request.body.citizenfxID.trim();
     const discordID = ctx.request.body.discordID.trim();
+    if (password.length) {
+        return ctx.send({
+            type: 'danger',
+            message: 'Administrators must change their own local password in User Settings.',
+        });
+    }
     if (chyaroEmail.length && (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(chyaroEmail) || chyaroEmail.length > 254)) {
         return ctx.send({ type: 'danger', message: 'Enter a valid chyarologin email address.' });
     }
@@ -232,16 +238,6 @@ async function handleEdit(ctx: AuthedCtx) {
             return ctx.send({ type: 'danger', message: 'Could not verify the chyarologin email. No administrator was changed; please try again.' });
         }
     }
-    if (password.trim() !== password) {
-        return ctx.send({ type: 'danger', message: 'The password cannot start or end with a space.' });
-    }
-    if (password.length && (password.length < consts.adminPasswordMinLength || password.length > consts.adminPasswordMaxLength)) {
-        return ctx.send({
-            type: 'danger',
-            message: `Password must be between ${consts.adminPasswordMinLength} and ${consts.adminPasswordMaxLength} characters.`,
-        });
-    }
-
     //Check if editing himself
     if (ctx.admin.name.toLowerCase() === name.toLowerCase()) {
         return ctx.send({ type: 'danger', message: '(ERR0) You cannot edit yourself.' });
@@ -360,8 +356,6 @@ async function handleEdit(ctx: AuthedCtx) {
     if (prevChyaroEmail !== chyaroEmail) {
         changes.push(`Changed chyarologin email from ${prevChyaroEmail || 'unset'} to ${chyaroEmail}.`);
     }
-    if (password.length) changes.push('Reset the local password to a temporary password.');
-
     //Add admin and give output
     try {
         let logMessage = `Editing user '${name}'`;
@@ -370,7 +364,7 @@ async function handleEdit(ctx: AuthedCtx) {
         } else {
             logMessage += '. No changes were made.';
         }
-        await txCore.adminStore.editAdmin(name, citizenfxData, discordData, chyaroEmail, permissions, password || undefined);
+        await txCore.adminStore.editAdmin(name, citizenfxData, discordData, chyaroEmail, permissions);
         ctx.admin.logAction(logMessage);
         return ctx.send({ type: 'success', refresh: true });
     } catch (error) {

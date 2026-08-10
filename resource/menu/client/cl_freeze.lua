@@ -19,7 +19,7 @@ RegisterSecureNuiCallback('togglePlayerFreeze', function(data, cb)
       return sendSnackbarMessage('error', 'nui_menu.player_modal.actions.interaction.notifications.freeze_yourself', true)
   end
 
-  TriggerServerEvent('txsv:req:freezePlayer', targetPlayerId)
+  TriggerServerEvent('txsv:req:freezePlayer', targetPlayerId, data.connectionRef)
   cb({})
 end)
 

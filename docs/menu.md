@@ -78,11 +78,6 @@ Convars configured in the settings page should not be set manually.
 - Default: 150
 - Usage: `setr txAdmin-menuPlayerIdDistance 100`
 
-**txAdmin-menuDrunkDuration**
-- Description: How many seconds the drunk effect (troll action) should last.
-- Default: 30
-- Usage: `setr txAdmin-menuDrunkDuration 120`
-
 **txAdmin-menuAnnounceNotiPos**
 - Description: Determines the location of the txAdmin announcement notification. This **must** use one of the following valid 
 positions, `top-center`, `top-left`, `top-right`, `bottom-center`, `bottom-left`, `bottom-right`.

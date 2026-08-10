@@ -3,7 +3,7 @@ import Router from '@koa/router';
 import KoaRateLimit from 'koa-ratelimit';
 
 import * as routes from '@routes/index';
-import { apiAuthMw, hostAuthMw, intercomAuthMw, webAuthMw } from './middlewares/authMws';
+import { apiAuthMw, hostAuthMw, intercomAuthMw } from './middlewares/authMws';
 
 
 /**
@@ -30,15 +30,6 @@ export default () => {
     router.get('/branding/:kind', routes.branding);
     router.post('/api/link/fivem', authLimiter, routes.cadmin_link);
 
-    //Rendered Pages
-    router.get('/legacy/adminManager', webAuthMw, routes.adminManager_page);
-    router.get('/legacy/cfgEditor', webAuthMw, routes.cfgEditor_page);
-    router.get('/legacy/masterActions', webAuthMw, routes.masterActions_page);
-    router.get('/legacy/resources', webAuthMw, routes.resources);
-    // FIXME:NEXT:UPDATE rename route handler
-    router.get('/legacy/allowlist', webAuthMw, routes.whitelist_page);
-    router.get('/legacy/deployer', webAuthMw, routes.deployer_stepper);
-
     //Authentication
     router.get('/auth/self', apiAuthMw, routes.auth_self);
     router.post('/auth/self/identifiers', apiAuthMw, routes.auth_selfIdentifiers);
@@ -49,10 +40,11 @@ export default () => {
     router.post('/auth/chyaro/setup', authLimiter, routes.auth_chyaroSetup);
     router.get('/auth/chyaro/login', authLimiter, routes.auth_chyaroLogin);
     router.get('/auth/chyaro/callback', authLimiter, routes.auth_chyaroCallback);
+    router.get('/update-setup/data', apiAuthMw, routes.updateSetup_data);
+    router.post('/update-setup/complete', apiAuthMw, routes.updateSetup_complete);
 
     //Admin Manager
     router.get('/adminManager/data', apiAuthMw, routes.adminManager_data);
-    router.post('/adminManager/getModal/:modalType', webAuthMw, routes.adminManager_getModal);
     router.post('/adminManager/:action', apiAuthMw, routes.adminManager_actions);
 
     //Character Management
@@ -78,7 +70,7 @@ export default () => {
     //Settings
     router.get('/setup/data', apiAuthMw, routes.setup_data);
     router.post('/setup/:action', apiAuthMw, routes.setup_post);
-    router.get('/deployer/status', apiAuthMw, routes.deployer_status);
+    router.get('/deployer/data', apiAuthMw, routes.deployer_data);
     router.post('/deployer/recipe/:action', apiAuthMw, routes.deployer_actions);
     router.get('/settings/configs', apiAuthMw, routes.settings_getConfigs);
     router.post('/settings/configs/:card', apiAuthMw, routes.settings_saveConfigs);
@@ -87,13 +79,13 @@ export default () => {
     router.post('/settings/resetServerDataPath', apiAuthMw, routes.settings_resetServerDataPath);
 
     //Master Actions
-    router.get('/masterActions/backupDatabase', webAuthMw, routes.masterActions_getBackup);
+    router.get('/masterActions/backupDatabase', apiAuthMw, routes.masterActions_getBackup);
     router.post('/masterActions/:action', apiAuthMw, routes.masterActions_actions);
 
     //FXServer
     router.post('/fxserver/controls', apiAuthMw, routes.fxserver_controls);
     router.post('/fxserver/commands', apiAuthMw, routes.fxserver_commands);
-    router.get('/fxserver/downloadLog', webAuthMw, routes.fxserver_downloadLog);
+    router.get('/fxserver/downloadLog', apiAuthMw, routes.fxserver_downloadLog);
     router.post('/fxserver/schedule', apiAuthMw, routes.fxserver_schedule);
 
     //CFG Editor
@@ -103,9 +95,6 @@ export default () => {
     //Control routes
     router.post('/intercom/:scope', intercomAuthMw, routes.intercom);
 
-    //Diagnostic routes
-    router.get('/diagnostics/getDiagnostics', apiAuthMw, routes.diagnostics_getDiagnostics);
-    router.post('/diagnostics/sendReport', apiAuthMw, routes.diagnostics_sendReport);
     router.post('/advanced/run', apiAuthMw, routes.advanced_runCommand);
 
     //Data routes

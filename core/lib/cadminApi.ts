@@ -6,6 +6,13 @@ type RequestOptions = {
     body?: unknown;
 };
 
+type CadminPingPayload = {
+    framework?: unknown;
+    schema?: unknown;
+};
+
+export const MAX_CADMIN_ACCOUNT_LICENSES = 16;
+
 /**
  * txAdmin stores the primary license value without its identifier prefix,
  * while FiveM frameworks and the cadminpanel resource store the complete
@@ -19,6 +26,37 @@ export function normalizeCadminLicenseIdentifier(value: unknown): string {
         || consts.validIdentifiers.license2.test(normalized)) return normalized;
     if (consts.validIdentifierParts.license.test(normalized)) return `license:${normalized}`;
     throw new Error('That is not a FiveM license identifier.');
+}
+
+/**
+ * A bare framework database value does not say whether it originated as a
+ * license or license2 identifier. Try both exact txAdmin identifier forms when
+ * reverse-resolving it, while keeping explicitly prefixed values exact.
+ */
+export function cadminLicenseIdentifierAliases(value: unknown): string[] {
+    if (typeof value === 'string') {
+        const normalized = value.trim().toLowerCase();
+        if (consts.validIdentifierParts.license.test(normalized)) {
+            return [`license:${normalized}`, `license2:${normalized}`];
+        }
+    }
+    return [normalizeCadminLicenseIdentifier(value)];
+}
+
+export function collectCadminLicenseIdentifiers(primary: unknown, identifiers: unknown): string[] {
+    const candidates = [primary, ...(Array.isArray(identifiers) ? identifiers : [])];
+    const normalized = new Set<string>();
+    for (const candidate of candidates) {
+        try { normalized.add(normalizeCadminLicenseIdentifier(candidate)); }
+        catch { /* Ignore unrelated txAdmin identifiers such as Discord or Steam. */ }
+    }
+    if (!normalized.size) throw new Error('That is not a FiveM license identifier.');
+    if (normalized.size > MAX_CADMIN_ACCOUNT_LICENSES) {
+        throw new Error(
+            `This txAdmin player record has more than ${MAX_CADMIN_ACCOUNT_LICENSES} FiveM license identifiers. Remove stale identifiers before using Character Management.`,
+        );
+    }
+    return [...normalized];
 }
 
 /**
@@ -45,6 +83,38 @@ export function normalizeCadminBodyIdentifier(body: unknown): Record<string, unk
         ...requestBody,
         identifier: normalizeCadminCharacterIdentifier(requestBody.identifier),
     };
+}
+
+/**
+ * A reachable HTTP handler is only the first half of a useful connection. The
+ * resource deliberately answers /ping while its framework bridge is starting,
+ * so the settings test must also confirm that character requests can run.
+ */
+export function assertCadminReady(payload: unknown): asserts payload is CadminPingPayload {
+    if (!payload || typeof payload !== 'object' || Array.isArray(payload)) {
+        throw new Error('The cadminpanel resource returned an invalid status response.');
+    }
+    const ping = payload as CadminPingPayload;
+    if (ping.framework !== 'esx' && ping.framework !== 'qbox') {
+        throw new Error('cadminpanel is reachable but has not detected ESX or Qbox. Check the FXServer console.');
+    }
+    if (!ping.schema || typeof ping.schema !== 'object' || Array.isArray(ping.schema)) {
+        throw new Error('cadminpanel did not report its database readiness. Update or reinstall the resource.');
+    }
+
+    const schema = ping.schema as Record<string, unknown>;
+    if (schema.checked !== true) {
+        throw new Error('cadminpanel is still preparing its database. Try the connection test again in a moment.');
+    }
+    if (schema.ok !== true) {
+        throw new Error('cadminpanel could not prepare its database tables. Check the FXServer console.');
+    }
+    const missingTables = Array.isArray(schema.missingTables)
+        ? schema.missingTables.filter((entry): entry is string => typeof entry === 'string' && entry.length > 0)
+        : [];
+    if (missingTables.length) {
+        throw new Error(`cadminpanel cannot find the required database tables: ${missingTables.join(', ')}.`);
+    }
 }
 
 export async function cadminRequest<T = unknown>(method: 'GET' | 'POST', endpoint: string, options: RequestOptions = {}) {

@@ -19,10 +19,18 @@ export function hasMasterOnlyConfigMutation(changes: PartialTxConfigs, resetKeys
     ) {
         return true;
     }
+    if (
+        changes.discordBot
+        && Object.prototype.hasOwnProperty.call(changes.discordBot, 'token')
+    ) {
+        return true;
+    }
 
     return resetKeys.some((configPath) => {
         const [scope, key] = configPath.split('.');
-        return scope === 'server' || (scope === 'restarter' && key !== 'schedule');
+        return scope === 'server'
+            || (scope === 'restarter' && key !== 'schedule')
+            || (scope === 'discordBot' && key === 'token');
     });
 }
 
@@ -34,18 +42,18 @@ export function getVisibleSettingsConfig(
     config: PartialTxConfigs,
     access: SettingsAccess,
 ): PartialTxConfigs {
-    const visible = cloneDeep(config);
+    const visible = cloneDeep(config) as any;
 
     if (!access.canWrite) {
         if (visible.server?.startupArgs) {
             visible.server.startupArgs = redactStartupSecrets(visible.server.startupArgs);
         }
-        if (visible.discordBot?.token) {
-            visible.discordBot.token = '[redacted by txAdmin]';
-        }
     }
 
     if (!access.isMaster) {
+        if (visible.discordBot?.token) {
+            visible.discordBot.token = '[redacted by txAdmin]';
+        }
         delete visible.server;
         if (visible.restarter) {
             visible.restarter = visible.restarter.schedule === undefined

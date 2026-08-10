@@ -26,7 +26,6 @@ export type ResolvablePermission =
   | "menu.clear_area"
   | "menu.viewids"
   | "players.spectate"
-  | "players.troll"
   | "players.freeze";
 
 const permissionState = atom<ResolvablePermission[]>({

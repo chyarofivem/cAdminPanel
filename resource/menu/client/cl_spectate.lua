@@ -34,6 +34,14 @@ local storedTargetPed
 local storedTargetPlayerId
 -- Spectated players associated server id
 local storedTargetServerId
+-- Opaque identity for the spectated connection
+local storedTargetConnectionRef
+
+local function spectateTargetMatches(targetServerId, connectionRef)
+    local currentPlayer = LOCAL_PLAYERLIST[tostring(targetServerId)]
+    return type(currentPlayer) == 'table'
+        and currentPlayer.connectionRef == connectionRef
+end
 
 
 --- Helper function to get coords under target
@@ -111,6 +119,7 @@ local function stopSpectating()
     storedTargetPed = nil
     storedTargetPlayerId = nil
     storedTargetServerId = nil
+    storedTargetConnectionRef = nil
     spectatorReturnCoords = nil
 
     -- fading screen back & marking as done
@@ -129,7 +138,15 @@ local function createSpectatorTeleportThread()
     debugPrint('Starting teleport follower thread')
     CreateThread(function()
         local initialTargetServerid = storedTargetServerId
-        while isSpectateEnabled and storedTargetServerId == initialTargetServerid do
+        local initialTargetConnectionRef = storedTargetConnectionRef
+        while isSpectateEnabled
+            and storedTargetServerId == initialTargetServerid
+            and storedTargetConnectionRef == initialTargetConnectionRef do
+            if not spectateTargetMatches(initialTargetServerid, initialTargetConnectionRef) then
+                sendSnackbarMessage('error', 'nui_menu.player_modal.misc.disconnected', true)
+                stopSpectating()
+                break
+            end
             -- If ped doesn't exist anymore try to resolve it again
             if not DoesEntityExist(storedTargetPed) then
                 local newPed = GetPlayerPed(storedTargetPlayerId)
@@ -252,7 +269,7 @@ end
 
 -- Register NUI callback
 RegisterSecureNuiCallback('spectatePlayer', function(data, cb)
-    TriggerServerEvent('txsv:req:spectate:start', tonumber(data.id))
+    TriggerServerEvent('txsv:req:spectate:start', tonumber(data.id), data.connectionRef)
     cb({})
 end)
 
@@ -263,7 +280,11 @@ RegisterNetEvent('txcl:spectate:cycleFailed', function()
 end)
 
 -- Client-side event handler for an authorized spectate request
-RegisterNetEvent('txcl:spectate:start', function(targetServerId, targetCoords)
+RegisterNetEvent('txcl:spectate:start', function(targetServerId, targetCoords, connectionRef)
+    if not spectateTargetMatches(targetServerId, connectionRef) then
+        return sendSnackbarMessage('error', 'nui_menu.player_modal.misc.disconnected', true)
+    end
+
     if IS_REDM then
         redmPromptTitle = CreateVarString(10, 'LITERAL_STRING', 'Spectate')
         redmInstructionGroup = makeRedmInstructionalGroup(keysTable)
@@ -287,6 +308,7 @@ RegisterNetEvent('txcl:spectate:start', function(targetServerId, targetCoords)
     storedTargetPed = nil
     storedTargetPlayerId = nil
     storedTargetServerId = nil
+    storedTargetConnectionRef = nil
 
     -- saving current player coords and preparing ped
     if spectatorReturnCoords == nil then
@@ -309,7 +331,12 @@ RegisterNetEvent('txcl:spectate:start', function(targetServerId, targetCoords)
     local targetResolveAttempts = 0
     local resolvedPlayerId = -1
     local resolvedPed = 0
+    local targetConnectionChanged = false
     while (resolvedPlayerId <= 0 or resolvedPed <= 0) and targetResolveAttempts < 300 do
+        if not spectateTargetMatches(targetServerId, connectionRef) then
+            targetConnectionChanged = true
+            break
+        end
         targetResolveAttempts = targetResolveAttempts + 1
         resolvedPlayerId = GetPlayerFromServerId(targetServerId)
         resolvedPed = GetPlayerPed(resolvedPlayerId)
@@ -317,7 +344,14 @@ RegisterNetEvent('txcl:spectate:start', function(targetServerId, targetCoords)
     end
 
     --If failed to resolve the target
-    if (resolvedPlayerId <= 0 or resolvedPed <= 0) then
+    if not spectateTargetMatches(targetServerId, connectionRef) then
+        targetConnectionChanged = true
+    end
+    if (
+        targetConnectionChanged
+        or resolvedPlayerId <= 0
+        or resolvedPed <= 0
+    ) then
         debugPrint('Failed to resolve target PlayerId or Ped')
         -- reset spectator
         if not pcall(collisionTpCoordTransition, spectatorReturnCoords) then
@@ -330,7 +364,10 @@ RegisterNetEvent('txcl:spectate:start', function(targetServerId, targetCoords)
         -- mark as finished
         isInTransitionState = false
         spectatorReturnCoords = nil
-        return sendSnackbarMessage('error', 'nui_menu.player_modal.actions.interaction.notifications.spectate_failed', true)
+        local errorKey = targetConnectionChanged
+            and 'nui_menu.player_modal.misc.disconnected'
+            or 'nui_menu.player_modal.actions.interaction.notifications.spectate_failed'
+        return sendSnackbarMessage('error', errorKey, true)
     end
 
     -- if player resolved
@@ -338,8 +375,13 @@ RegisterNetEvent('txcl:spectate:start', function(targetServerId, targetCoords)
     storedTargetPed = resolvedPed
     storedTargetPlayerId = resolvedPlayerId
     storedTargetServerId = targetServerId
+    storedTargetConnectionRef = connectionRef
 
     -- start spectating
+    if not spectateTargetMatches(targetServerId, connectionRef) then
+        stopSpectating()
+        return sendSnackbarMessage('error', 'nui_menu.player_modal.misc.disconnected', true)
+    end
     NetworkSetInSpectatorMode(true, resolvedPed)
     if IS_FIVEM then
         SetMinimapInSpectatorMode(true, resolvedPed)

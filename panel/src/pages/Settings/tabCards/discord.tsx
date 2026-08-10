@@ -11,6 +11,7 @@ import SettingsCardShell from "../SettingsCardShell"
 import { Textarea } from "@/components/ui/textarea"
 import { txToast } from "@/components/TxToaster"
 import { t } from "@/lib/i18n"
+import { useAdminPerms } from "@/hooks/auth"
 
 
 //We are not validating the JSON, only that it is a string
@@ -33,6 +34,7 @@ export const pageConfigs = {
 } as const;
 
 export default function ConfigCardDiscord({ cardCtx, pageCtx }: SettingsCardProps) {
+    const { isMaster } = useAdminPerms();
     const [states, dispatch] = useReducer(
         configsReducer<typeof pageConfigs>,
         null,
@@ -67,7 +69,10 @@ export default function ConfigCardDiscord({ cardCtx, pageCtx }: SettingsCardProp
             warningsChannel: emptyToNull(warningsChannelRef.current?.value),
         };
 
-        const res = getConfigDiff(cfg, states, overwrites, false);
+        const editableConfigs = isMaster
+            ? cfg
+            : Object.fromEntries(Object.entries(cfg).filter(([name]) => name !== 'botToken'));
+        const res = getConfigDiff(editableConfigs, states, overwrites, false);
         pageCtx.setCardPendingSave(res.hasChanges ? cardCtx : null);
         return res;
     }
@@ -78,7 +83,10 @@ export default function ConfigCardDiscord({ cardCtx, pageCtx }: SettingsCardProp
         if (!hasChanges) return;
 
         if (localConfigs.discordBot?.enabled) {
-            if (!localConfigs.discordBot?.token) {
+            const hasBotToken = isMaster
+                ? Boolean(localConfigs.discordBot.token)
+                : Boolean(cfg.botToken.initialValue);
+            if (!hasBotToken) {
                 return txToast.error(t('You must provide a Discord Bot Token to enable the bot.'));
             }
             if (!localConfigs.discordBot?.guild) {
@@ -111,7 +119,7 @@ export default function ConfigCardDiscord({ cardCtx, pageCtx }: SettingsCardProp
                     Enable Discord Integration.
                 </SettingItemDesc>
             </SettingItem>
-            <SettingItem label="Token" htmlFor={cfg.botToken.eid} required={states.botEnabled}>
+            {isMaster && <SettingItem label="Token" htmlFor={cfg.botToken.eid} required={states.botEnabled}>
                 <Input
                     id={cfg.botToken.eid}
                     ref={botTokenRef}
@@ -130,7 +138,7 @@ export default function ConfigCardDiscord({ cardCtx, pageCtx }: SettingsCardProp
                     <strong>Note:</strong> Do not reuse the same token for another bot. <br />
                     <strong>Note:</strong> The bot requires the <strong>Server Members</strong> intent, which can be set at the <TxAnchor href="https://discord.com/developers/applications">Discord Developer Portal</TxAnchor>.
                 </SettingItemDesc>
-            </SettingItem>
+            </SettingItem>}
             <SettingItem label="Guild/Server ID" htmlFor={cfg.discordGuild.eid} required={states.botEnabled}>
                 <Input
                     id={cfg.discordGuild.eid}

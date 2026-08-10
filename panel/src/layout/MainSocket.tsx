@@ -4,7 +4,7 @@ import { useExpireAuthData, useSetAuthData } from '@/hooks/auth';
 import { useSetGlobalStatus } from '@/hooks/status';
 import { useSetOfflineWarning } from '@/hooks/useWarningBar';
 import { useProcessPlayerlistEvents } from '@/hooks/playerlist';
-import { LogoutReasonHash } from '@/pages/auth/Login';
+import { LogoutReasonHash } from '@/lib/navigation';
 
 
 /**

@@ -33,8 +33,10 @@ const handleBridgedCommands = (payload: any) => {
             const author = payload.author;
             txCore.logger.admin.write(author, `Sending announcement: ${message}`);
 
-            // Dispatch `txAdmin:events:announcement`
-            txCore.fxRunner.sendEvent('announcement', { message, author });
+            // In-game announcements are delivered by the resource before this trace.
+            if (payload.delivered !== true) {
+                txCore.fxRunner.sendEvent('announcement', { message, author });
+            }
 
             // Sending discord announcement
             const publicAuthor = txCore.adminStore.getAdminPublicName(payload.author, 'message');
@@ -133,6 +135,8 @@ const handleFd3Messages = (mutex: string, trace: StructuredTraceType) => {
             txCore.metrics.svRuntime.logServerNodeMemory(data.payload);
         } else if (data.payload.type === 'txAdminResourceEvent') {
             txCore.fxResources.handleServerEvents(data.payload, mutex);
+        } else if (data.payload.type === 'txAdminResourceReport') {
+            txCore.fxResources.tmpUpdateResourceList(data.payload.resources);
         } else if (data.payload.type === 'txAdminPlayerlistEvent') {
             txCore.fxPlayerlist.handleServerEvents(data.payload, mutex);
         } else if (data.payload.type === 'txAdminCommandBridge') {

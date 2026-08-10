@@ -6,8 +6,8 @@ The permissions are saved in the `txData/admins.json` file and can be edited thr
 ### Available Permissions
 - `all_permissions`: Root permission that allows the user to perform any action. When set, this will remove all other permissions.
 - `manage.admins`: Permission to create, edit, and remove other admin accounts.
-- `settings.view`: View Settings (no tokens).
-- `settings.write`: Change Settings.
+- `settings.view`: View Settings. The Discord bot token remains hidden.
+- `settings.write`: Change Settings. Only the master can view or change the Discord bot token.
 - `console.view`: View Console.
 - `console.write`: Write Console commands.
 - `control.server`: Start/Stop/Restart Server.
@@ -29,5 +29,4 @@ The permissions are saved in the `txData/admins.json` file and can be edited thr
 - `players.playermode`: Toggle NoClip, God Mode, or Superjump.
 - `players.spectate`: Spectate a player.
 - `players.teleport`: Teleport self or a player.
-- `players.troll`: Use the Troll Menu.
 - `players.remove_ids`: Remove IDs/HWIDs of player from the database.

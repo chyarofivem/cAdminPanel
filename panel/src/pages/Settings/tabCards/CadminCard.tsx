@@ -10,6 +10,7 @@ import { useBackendApi } from '@/hooks/fetch';
 import { txToast } from '@/components/TxToaster';
 import { PlugZap, ServerCog } from 'lucide-react';
 import { t } from '@/lib/i18n';
+import { reloadPanel } from '@/lib/navigation';
 
 const pageConfigs = {
     enabled: getPageConfig('cadmin', 'enabled'),
@@ -44,7 +45,7 @@ export default function CadminCard({ cardCtx, pageCtx }: SettingsCardProps) {
             if (!response?.success) throw new Error(response?.error || t('The action failed.'));
             if (action === 'install') {
                 txToast.success(t('Character Management installed. Restarting this page…'));
-                window.setTimeout(() => window.location.reload(), 900);
+                window.setTimeout(reloadPanel, 900);
             } else txToast.success(t('Connected to {name}.', { name: response.data?.framework || 'cadminpanel' }));
         } catch (error) { txToast.error(error instanceof Error ? t(error.message) : t('The action failed.')); }
         finally { setWorking(false); }

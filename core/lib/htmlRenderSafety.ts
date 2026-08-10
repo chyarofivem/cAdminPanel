@@ -125,7 +125,7 @@ export const sanitizeCssVarValue = (value: string) => {
 
 
 //MARK: HTML sanitizers
-//FIXME: Deprecate this whenever ditching EJS & legacy pages
+//This sanitizer remains for the limited HTML accepted by join rejection messages.
 // Whitelist for sanitizeSimpleHtml — only tags actually used by renderMessage callers:
 // <strong> and <code>: resources.js timeout/offline messages
 // <br>: resources.js multi-line messages

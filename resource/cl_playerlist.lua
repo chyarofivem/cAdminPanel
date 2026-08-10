@@ -34,6 +34,7 @@ function sendReactPlayerlist()
         upload[#upload + 1] = {
             id = tonumber(pids),
             name = playerData.name or "unknown",
+            connectionRef = playerData.connectionRef,
             health = playerData.health,
             dist = playerData.dist,
             vType = playerData.vType,
@@ -51,13 +52,14 @@ end
 -- Replaces current playerlist
 RegisterNetEvent('txcl:plist:setInitial', function(payload)
     -- print("========== EVENT setInitialPlayerlist")
-    -- print(json.encode(payload)) -- [[id, name]]
+    -- print(json.encode(payload)) -- [[id, name, connectionRef]]
     -- print("------------------------------------")
     LOCAL_PLAYERLIST = {}
     for _, playerData in pairs(payload) do
         local pids = tostring(playerData[1])
         LOCAL_PLAYERLIST[pids] = {
             name = playerData[2],
+            connectionRef = playerData[3],
             health = 0,
             dist = -1,
             vType = "unknown",
@@ -76,7 +78,7 @@ end)
 --  > try to get the dist from all players (onesync only)
 RegisterNetEvent('txcl:plist:setDetailed', function(players, admins)
     -- print("========== EVENT setDetailedPlayerlist")
-    -- print(json.encode(players)) -- [[id, health, vType, xCoord, yCoord, name]]
+    -- print(json.encode(players)) -- [[id, health, vType, xCoord, yCoord, name, connectionRef]]
     -- print("------------------------------------")
     local myID = GetPlayerServerId(PlayerId())
     local myPed = PlayerPedId()
@@ -86,12 +88,16 @@ RegisterNetEvent('txcl:plist:setDetailed', function(players, admins)
         local pid = playerData[1]
         local pidStr = tostring(playerData[1])
         local localPlayer = LOCAL_PLAYERLIST[pidStr]
+        local incomingConnectionRef = playerData[7]
         -- Set inbound data
-        if localPlayer == nil then
+        if localPlayer == nil or localPlayer.connectionRef ~= incomingConnectionRef then
             debugPrint("Playerlist: received detailed info for player "..pidStr.." not present in local playerlist")
-            requirePlayerNames = true
+            if playerData[6] == nil then
+                requirePlayerNames = true
+            end
             LOCAL_PLAYERLIST[pidStr] = {
-                name = "unknown",
+                name = playerData[6] or "unknown",
+                connectionRef = incomingConnectionRef,
                 health = playerData[2],
                 vType = vTypeMap[tostring(playerData[3])] or "unknown",
                 admin = false
@@ -166,13 +172,18 @@ end)
 -- add/remove specific id to playerlist
 RegisterNetEvent('txcl:plist:updatePlayer', function(id, data)
     local pids = tostring(id)
-    if data == false then
+    local isDropped = data == false or (type(data) == 'table' and data.dropped == true)
+    if isDropped then
         debugPrint("^2txcl:plist:updatePlayer: ^3"..id.."^2 disconnected")
-        LOCAL_PLAYERLIST[pids] = nil
+        local currentPlayer = LOCAL_PLAYERLIST[pids]
+        if data == false or currentPlayer == nil or currentPlayer.connectionRef == data.connectionRef then
+            LOCAL_PLAYERLIST[pids] = nil
+        end
     else
         debugPrint("^2txcl:plist:updatePlayer: ^3"..id.."^2 connected")
         LOCAL_PLAYERLIST[pids] = {
-            name = data,
+            name = type(data) == 'table' and data.name or data,
+            connectionRef = type(data) == 'table' and data.connectionRef or nil,
             health = 0,
             dist = -1,
             vType = "unknown",

@@ -1,63 +1,46 @@
-import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { msToDuration } from "@/lib/dateTime";
-import { useRef, useState } from "react";
-import type { DatabaseActionType } from "../../../../core/modules/Database/databaseTypes";
-import { useOpenPlayerModal } from "@/hooks/playerModal";
-import DateTimeCorrected from "@/components/DateTimeCorrected";
-import { ModalTabInner } from "@/components/modal-tabs";
-
-
-const calcTextAreaLines = (text?: string) => {
-    if (!text) return 3;
-    const lines = text.trim().split('\n').length + 1;
-    return Math.min(Math.max(lines, 3), 16);
-}
-
-function ActionReasonBox({ actionReason }: { actionReason: string }) {
-    const textAreaRef = useRef<HTMLTextAreaElement>(null);
-    const [textAreaLines, setTextAreaLines] = useState(calcTextAreaLines(actionReason));
-
-    return <>
-        <Label htmlFor="actionReason">
-            Reason:
-        </Label>
-        <Textarea
-            ref={textAreaRef}
-            id="actionReason"
-            className="w-full mt-1"
-            readOnly={true}
-            value={actionReason}
-            //1rem of padding + 1.25rem per line
-            style={{ height: `${1 + 1.25 * textAreaLines}rem` }}
-        />
-    </>
-}
-
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { msToDuration } from '@/lib/dateTime';
+import type { DatabaseActionType } from '../../../../core/modules/Database/databaseTypes';
+import { useOpenPlayerModal } from '@/hooks/playerModal';
+import DateTimeCorrected from '@/components/DateTimeCorrected';
+import { CalendarClock, Clock3, ShieldCheck, UserRound, UserRoundCog } from 'lucide-react';
+import { t } from '@/lib/i18n';
 
 type ActionInfoTabProps = {
     action: DatabaseActionType;
     serverTime: number;
     tsFetch: number;
+};
+
+function DetailCard({ label, icon, children }: { label: string; icon: React.ReactNode; children: React.ReactNode }) {
+    return <div className="rounded-xl border border-white/5 bg-white/[0.025] p-4">
+        <div className="flex items-center gap-2 text-[11px] uppercase tracking-widest text-zinc-600">
+            <span className="[&_svg]:size-3.5">{icon}</span>{label}
+        </div>
+        <div className="mt-2 text-sm text-zinc-200">{children}</div>
+    </div>;
 }
 
 export default function ActionInfoTab({ action, serverTime, tsFetch }: ActionInfoTabProps) {
     const openPlayerModal = useOpenPlayerModal();
+    const targetLicenses = [...new Set(action.ids
+        .filter(id => id.startsWith('license:'))
+        .map(id => id.slice('license:'.length)))];
+    const linkedPlayer = targetLicenses.length === 1 ? targetLicenses[0] : null;
 
-    let banExpirationText: React.ReactNode;
+    let expiration: React.ReactNode;
     if (action.type === 'ban') {
         if (action.expiration === false) {
-            banExpirationText = <span className="text-destructive-inline">Never</span>;
+            expiration = <span className="text-red-300">{t('Permanent')}</span>;
         } else if (action.expiration > serverTime) {
-            const distance = msToDuration(
-                (serverTime - action.expiration) * 1000,
-                { units: ['mo', 'w', 'd', 'h', 'm'] }
-            )
-            banExpirationText = <span className="text-warning-inline">In {distance}</span>;
+            const distance = msToDuration((action.expiration - serverTime) * 1000, {
+                units: ['mo', 'w', 'd', 'h', 'm'],
+            });
+            expiration = <span className="text-amber-300">{t('In {duration}', { duration: distance })}</span>;
         } else {
-            banExpirationText = <DateTimeCorrected
-                className="opacity-75 cursor-help"
+            expiration = <DateTimeCorrected
+                className="cursor-help text-zinc-400"
                 serverTime={serverTime}
                 tsObject={action.expiration}
                 tsFetch={tsFetch}
@@ -65,90 +48,63 @@ export default function ActionInfoTab({ action, serverTime, tsFetch }: ActionInf
         }
     }
 
-    let warnAckedText: React.ReactNode;
-    if (action.type === 'warn' && action.acked) {
-        warnAckedText = <span className="opacity-75">Yes</span>;
-    } else {
-        warnAckedText = <span className="text-warning-inline">Not yet</span>;
-    }
-
-    let revokedText: React.ReactNode;
-    if (action.revocation.timestamp) {
-        revokedText = <span className="text-warning-inline">
-            By {action.revocation.author} on <DateTimeCorrected
+    const revoked = action.revocation.timestamp
+        ? <span className="text-amber-300">
+            {t('By {admin} on', { admin: action.revocation.author ?? t('Unknown admin') })}{' '}
+            <DateTimeCorrected
                 isDateOnly
                 className="cursor-help"
                 serverTime={serverTime}
                 tsObject={action.revocation.timestamp}
                 tsFetch={tsFetch}
             />
-        </span>;
-    } else {
-        revokedText = <span className="opacity-75">No</span>;
-    }
+        </span>
+        : <span className="text-emerald-300">{t('Active')}</span>;
 
-    //Player stuff
-    const playerDisplayName = action.playerName !== false
-        ? <span>{action.playerName}</span>
-        : <span className="italic opacity-75">unknown player</span>;
-    const targetLicenses = action.ids.filter(id => id.startsWith('license:'));
-    const linkedPlayer = targetLicenses.length === 1 ? targetLicenses[0].split(':')[1] : false;
-    const handleViewPlayerClick = () => {
-        if (!linkedPlayer) return;
-        openPlayerModal({ license: linkedPlayer });
-    }
+    return <div className="space-y-5">
+        <section className="rounded-2xl border border-white/5 bg-gradient-to-br from-white/[0.04] to-transparent p-5">
+            <div className="flex items-center justify-between gap-3">
+                <p className="text-xs uppercase tracking-widest text-zinc-500">{t('Reason')}</p>
+                <Badge variant="outline" className="border-white/10 bg-black/20 text-[10px] uppercase text-zinc-400">
+                    {action.type === 'ban' ? t('Ban') : t('Warning')}
+                </Badge>
+            </div>
+            <p className="mt-3 whitespace-pre-wrap break-words text-sm leading-6 text-zinc-200">{action.reason}</p>
+        </section>
 
-    return (
-        <ModalTabInner>
-            <dl className="pb-2">
-                <div className="py-0.5 grid grid-cols-3 gap-4 px-0">
-                    <dt className="text-sm font-medium leading-6 text-muted-foreground">Date/Time</dt>
-                    <dd className="text-sm leading-6 col-span-2 mt-0">
-                        <DateTimeCorrected
-                            className="opacity-75 cursor-help"
-                            serverTime={serverTime}
-                            tsObject={action.timestamp}
-                            tsFetch={tsFetch}
-                        />
-                    </dd>
+        <div className="grid gap-3 sm:grid-cols-2">
+            <DetailCard label={t('Issued')} icon={<CalendarClock />}>
+                <DateTimeCorrected
+                    className="cursor-help"
+                    serverTime={serverTime}
+                    tsObject={action.timestamp}
+                    tsFetch={tsFetch}
+                />
+            </DetailCard>
+            <DetailCard label={t('Administrator')} icon={<UserRoundCog />}>{action.author}</DetailCard>
+            {action.type === 'ban' && <DetailCard label={t('Expiration')} icon={<Clock3 />}>{expiration}</DetailCard>}
+            {action.type === 'warn' && <DetailCard label={t('Acknowledgement')} icon={<ShieldCheck />}>
+                {action.acked
+                    ? <span className="text-emerald-300">{t('Accepted')}</span>
+                    : <span className="text-amber-300">{t('Pending')}</span>}
+            </DetailCard>}
+            <DetailCard label={t('Revocation')} icon={<ShieldCheck />}>{revoked}</DetailCard>
+            <DetailCard label={t('Player')} icon={<UserRound />}>
+                <div className="flex items-center justify-between gap-3">
+                    <span className="min-w-0 truncate">{action.playerName || t('Unknown player')}</span>
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-7 shrink-0 px-2.5 text-xs"
+                        disabled={!linkedPlayer}
+                        onClick={() => {
+                            if (linkedPlayer) openPlayerModal({ license: linkedPlayer });
+                        }}
+                    >
+                        {t('View')}
+                    </Button>
                 </div>
-                {action.type === 'ban' && (
-                    <div className="py-0.5 grid grid-cols-3 gap-4 px-0">
-                        <dt className="text-sm font-medium leading-6 text-muted-foreground">Expiration</dt>
-                        <dd className="text-sm leading-6 col-span-2 mt-0">{banExpirationText}</dd>
-                    </div>
-                )}
-                {action.type === 'warn' && (
-                    <div className="py-0.5 grid grid-cols-3 gap-4 px-0">
-                        <dt className="text-sm font-medium leading-6 text-muted-foreground">Player Accepted</dt>
-                        <dd className="text-sm leading-6 col-span-2 mt-0">{warnAckedText}</dd>
-                    </div>
-                )}
-                <div className="py-0.5 grid grid-cols-3 gap-4 px-0">
-                    <dt className="text-sm font-medium leading-6 text-muted-foreground">Revoked</dt>
-                    <dd className="text-sm leading-6 col-span-2 mt-0">{revokedText}</dd>
-                </div>
-
-                <div className="py-0.5 grid grid-cols-3 gap-4 px-0">
-                    <dt className="text-sm font-medium leading-6 text-muted-foreground">Admin</dt>
-                    <dd className="text-sm leading-6 col-span-2 mt-0">{action.author}</dd>
-                </div>
-                <div className="py-0.5 grid grid-cols-3 gap-4 px-0">
-                    <dt className="text-sm font-medium leading-6 text-muted-foreground">Player</dt>
-                    <dd className="text-sm leading-6 col-span-2x mt-0">{playerDisplayName}</dd>
-                    <dd className="text-right">
-                        <Button
-                            variant="outline"
-                            size='inline'
-                            style={{ minWidth: '8.25ch' }}
-                            onClick={handleViewPlayerClick}
-                            disabled={!linkedPlayer}
-                        >View</Button>
-                    </dd>
-                </div>
-            </dl>
-
-            <ActionReasonBox actionReason={action.reason} />
-        </ModalTabInner>
-    );
+            </DetailCard>
+        </div>
+    </div>;
 }

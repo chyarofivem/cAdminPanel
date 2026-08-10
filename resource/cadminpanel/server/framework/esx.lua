@@ -11,15 +11,31 @@ local T = CAdminConfig.tables
 local ESX
 local adapter = { id = 'esx' }
 
+local function bareLicense(identifier)
+    if type(identifier) ~= 'string' then return nil end
+    identifier = string.lower(identifier)
+    return string.match(identifier, '^license2?:(%x+)$')
+        or string.match(identifier, '^(%x+)$')
+end
+
+local function sameLicense(left, right)
+    local leftBare = bareLicense(left)
+    local rightBare = bareLicense(right)
+    return leftBare ~= nil and leftBare == rightBare
+end
+
 local function playerLicenseFor(identifier, source)
+    -- txAdmin keys players by FiveM's `license` identifier. Prefer that live
+    -- value over the framework's character key, which may embed `license2`.
+    -- The character key itself remains untouched in characterId/identifier.
+    if source then
+        local live = GetPlayerIdentifierByType(source, 'license')
+        if live then return string.lower(live) end
+    end
     if util.isLicense(identifier) then return string.lower(identifier) end
     if type(identifier) == 'string' then
         local embedded = string.match(string.lower(identifier), '(license2?:%x+)$')
         if embedded and util.isLicense(embedded) then return embedded end
-    end
-    if source then
-        local live = GetPlayerIdentifierByType(source, 'license')
-        if live then return string.lower(live) end
     end
     return nil
 end
@@ -161,16 +177,23 @@ function adapter.getPlayer(identifier)
     return normalizeOffline(row)
 end
 
---- Returns every ESX character belonging to a FiveM account. Vanilla ESX has
---- one row whose identifier is the license itself; multichar installs commonly
---- suffix their slot key with the complete license (for example
---- `char1:license:...`). Both forms are matched without guessing a character.
+--- Returns every ESX character belonging to a FiveM account. Deployed tables
+--- contain bare, license-prefixed, and license2-prefixed values; multichar
+--- installs commonly prepend a slot key (for example `char1:license:...`).
+--- Match those storage forms while returning each exact identifier unchanged.
 function adapter.getPlayersByLicense(playerLicense)
     resolveColumns()
+    local bare = bareLicense(playerLicense)
+    if not bare then return {} end
+    local license = 'license:' .. bare
+    local license2 = 'license2:' .. bare
     local rows = MySQL.query.await(
-        ('SELECT %s FROM `%s` WHERE identifier = ? OR identifier LIKE ? ORDER BY `identifier` LIMIT 50')
+        ('SELECT %s FROM `%s` '
+            .. 'WHERE identifier IN (?, ?, ?) '
+            .. 'OR identifier LIKE ? OR identifier LIKE ? OR identifier LIKE ? '
+            .. 'ORDER BY `identifier` LIMIT 50')
             :format(userSelect, T.esxUsers),
-        { playerLicense, '%:' .. playerLicense }
+        { license, license2, bare, '%:' .. license, '%:' .. license2, '%:' .. bare }
     ) or {}
 
     local byCharacter = {}
@@ -182,7 +205,9 @@ function adapter.getPlayersByLicense(playerLicense)
         local xPlayer = ESX.GetPlayerFromId(playerId)
         if xPlayer then
             local normalized = normalizeOnline(xPlayer)
-            if normalized.playerLicense == playerLicense then
+            local liveLicense2 = GetPlayerIdentifierByType(xPlayer.source, 'license2')
+            if sameLicense(playerLicense, normalized.playerLicense)
+                or sameLicense(playerLicense, liveLicense2) then
                 byCharacter[normalized.characterId] = normalized
             end
         end

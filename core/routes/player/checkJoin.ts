@@ -35,13 +35,6 @@ const rejectMessageTemplate = (title: string, content: string) => {
         <p style="font-size: 1.25rem; padding: 0px">
             ${content}
         </p>
-        <img src="https://forum-cfx-re.akamaized.net/original/5X/2/d/a/6/2da664a84eecb2609d72cf9bb17466d30b53e717.svg" style="
-            width: 28px;    
-            position: absolute;
-            right: -0.5px;
-            bottom: -1.0px;
-            opacity: 45%;
-        ">
     </div>`.replaceAll(/[\r\n]/g, '');
 }
 

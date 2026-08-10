@@ -27,6 +27,7 @@ export function ServerSidebar({ isSheet }: { isSheet?: boolean }) {
         <div className="mx-3 mb-3 rounded-2xl border border-white/5 bg-white/5 p-3"><ServerControls /></div>
         <div className="border-t border-dashed border-white/5 px-4 py-3 text-xs text-neutral-500">
             <div className="truncate" title={serverName}>{serverName || t('Game server')}</div>
+            <div className="mt-2 leading-5">Powered by cAdminPanel</div>
             <div className="mt-0.5 uppercase tracking-widest">PANEL V{window.txConsts.txaVersion} · FX B{window.txConsts.fxsVersion}</div>
         </div>
     </aside>;

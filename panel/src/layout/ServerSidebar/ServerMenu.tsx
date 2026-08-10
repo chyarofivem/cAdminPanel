@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useLocation } from 'wouter';
 import {
     Activity, ChevronDown, CircleGauge, ClipboardCheck, FileEdit,
-    History, LayoutDashboard, ListChecks, ScrollText, Server, Settings, ShieldCheck,
+    History, LayoutDashboard, ScrollText, Server, Settings, ShieldCheck,
     TerminalSquare, UserRoundCog, Users, Wrench, Zap,
 } from 'lucide-react';
 import MainPageLink from '@/components/MainPageLink';
@@ -54,21 +54,20 @@ export default function ServerMenu() {
         <SidebarLink link={{ label: t('Home'), href: '/', icon: <LayoutDashboard className={iconClass} /> }} />
         <NavGroup label={t('Administration')} icon={<ShieldCheck className={iconClass} />} links={[
             { label: t('Player Management'), href: '/administration/players', icon: <UserRoundCog className="size-4" /> },
+            { label: t('History'), href: '/administration/history', icon: <History className="size-4" /> },
             { label: t('Staff & Permissions'), href: '/admins', icon: <Users className="size-4" />, permission: 'manage.admins' },
             ...(window.txConsts.cadminEnabled ? [{ label: t('Linked Accounts'), href: '/cadmin/users', master: true }] : []),
         ]} />
         <NavGroup label={t('Server')} icon={<Server className={iconClass} />} links={[
             { label: t('Console Log'), href: '/server/console-log', icon: <TerminalSquare className="size-4" />, permission: 'console.view' },
             { label: t('Resources'), href: '/server/resources', icon: <Wrench className="size-4" /> },
-            { label: t('CFG Editor'), href: '/server/cfg-editor', icon: <FileEdit className="size-4" />, master: true },
-            { label: t('History'), href: '/history', icon: <History className="size-4" /> },
+            { label: t('Allowlist'), href: '/server/allowlist', icon: <ClipboardCheck className="size-4" /> },
             { label: t('Player Drops'), href: '/insights/player-drops', icon: <Activity className="size-4" /> },
         ]} />
         <NavGroup label={t('System')} icon={<CircleGauge className={iconClass} />} links={[
-            { label: t('Allowlist'), href: '/system/allowlist', icon: <ClipboardCheck className="size-4" /> },
+            { label: t('CFG Editor'), href: '/system/cfg-editor', icon: <FileEdit className="size-4" />, master: true },
             { label: t('Settings'), href: '/settings', icon: <Settings className="size-4" />, permission: 'settings.view' },
             { label: t('Master Actions'), href: '/system/master-actions', icon: <Zap className="size-4" />, master: true },
-            { label: t('Diagnostics'), href: '/system/diagnostics', icon: <ListChecks className="size-4" /> },
             { label: t('txAdmin Log'), href: '/system/txadmin-log', icon: <ScrollText className="size-4" />, permission: 'txadmin.log.combined' },
         ]} />
         {window.txConsts.showAdvanced && <SidebarLink link={{ label: t('Advanced'), href: '/advanced', icon: <Zap className={iconClass} />, permission: 'all_permissions' }} />}

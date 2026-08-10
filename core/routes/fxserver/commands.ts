@@ -43,12 +43,18 @@ export default async function FXServerCommands(ctx: AuthedCtx) {
     if (action == 'admin_broadcast') {
         if (!ensurePermission(ctx, 'announcement')) return false;
         const message = (parameter ?? '').trim();
+        if (!message.length) {
+            return ctx.send<ApiToastResp>({ type: 'error', msg: 'Announcement cannot be empty.' });
+        }
 
         // Dispatch `txAdmin:events:announcement`
-        txCore.fxRunner.sendEvent('announcement', {
+        const eventSent = txCore.fxRunner.sendEvent('announcement', {
             message,
             author: ctx.admin.name,
         });
+        if (!eventSent) {
+            return ctx.send<ApiToastResp>({ type: 'error', msg: 'Failed to send the announcement to the game server.' });
+        }
         ctx.admin.logAction(`Sending announcement: ${parameter}`);
 
         // Sending discord announcement

@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import useSWR from 'swr';
 import useSWRInfinite from 'swr/infinite';
-import { Car, Database, Search, ShieldCheck, UserRoundCog, UsersRound } from 'lucide-react';
+import { AlertTriangle, Car, Database, Search, ShieldCheck, UserRoundCog, UsersRound } from 'lucide-react';
 import { useLocation } from 'wouter';
 import { PageHeader } from '@/components/page-header';
 import { Button } from '@/components/ui/button';
@@ -16,22 +16,24 @@ import {
     cadminApiPath,
     cadminCharacterIdentifier,
     cadminData,
-    toTxAdminLicense,
     type CadminPlayer,
     type CadminResponse,
 } from '@/pages/CAdmin/api';
 import PlayerActions, { type PlayerActionTarget } from './PlayerActions';
+import { buildPlayerLicenseAliasIndex, resolveFrameworkPlayerLicense } from './playerIdentity';
 
 type TxSearchSuccess = Exclude<PlayersTableSearchResp, { error: string }>;
 type SearchMode = 'playerName' | 'playerIds' | 'playerNotes';
 
 type ManagedPlayer = {
+    identityKey: string;
     license: string;
     txAdmin?: PlayersTablePlayerType;
     characters: CadminPlayer[];
     displayName: string;
     isOnline: boolean;
     isAdmin: boolean;
+    identityError?: string;
 };
 
 const searchModeLabels: Record<SearchMode, string> = {
@@ -110,8 +112,10 @@ export default function PlayerManagementPage() {
     const txPlayers = useMemo(() => txSearch.data?.flatMap(page => page.players) ?? [], [txSearch.data]);
     const managedPlayers = useMemo(() => {
         const byLicense = new Map<string, ManagedPlayer>();
+        const licenseAliases = buildPlayerLicenseAliasIndex(txPlayers);
         for (const player of txPlayers) {
             byLicense.set(player.license, {
+                identityKey: player.license,
                 license: player.license,
                 txAdmin: player,
                 characters: [],
@@ -133,19 +137,30 @@ export default function PlayerManagementPage() {
             return false;
         };
         for (const character of (characterSearch.data ?? []).filter(characterMatchesMode)) {
-            const license = toTxAdminLicense(character.playerLicense ?? character.identifier);
+            const resolvedIdentity = resolveFrameworkPlayerLicense(
+                character.playerLicense ?? character.identifier,
+                licenseAliases,
+            );
+            const license = resolvedIdentity.license;
             if (!license) continue;
-            const current = byLicense.get(license) ?? {
+            const identityKey = resolvedIdentity.ambiguous
+                ? `ambiguous:${license}:${cadminCharacterIdentifier(character)}`
+                : license;
+            const current = byLicense.get(identityKey) ?? {
+                identityKey,
                 license,
                 characters: [],
                 displayName: character.name || t('Unnamed character'),
                 isOnline: false,
                 isAdmin: false,
+                identityError: resolvedIdentity.ambiguous
+                    ? t('This framework identifier matches multiple player records.')
+                    : undefined,
             };
             current.characters.push(character);
             current.isOnline ||= Boolean(character.online);
             if (!current.txAdmin && character.name) current.displayName = character.name;
-            byLicense.set(license, current);
+            byLicense.set(identityKey, current);
         }
 
         return [...byLicense.values()]
@@ -255,9 +270,14 @@ export default function PlayerManagementPage() {
                                 isRegistered: Boolean(player.txAdmin),
                             };
                             return <tr
-                                key={player.license}
-                                className="cursor-pointer transition hover:bg-white/[0.04]"
-                                onClick={() => setLocation(detailUrl)}
+                                key={player.identityKey}
+                                className={cn(
+                                    'transition',
+                                    player.identityError ? 'cursor-default bg-amber-500/[0.025]' : 'cursor-pointer hover:bg-white/[0.04]',
+                                )}
+                                onClick={() => {
+                                    if (!player.identityError) setLocation(detailUrl);
+                                }}
                             >
                                 <td className="px-5 py-4">
                                     <div className="flex items-center gap-3">
@@ -265,6 +285,9 @@ export default function PlayerManagementPage() {
                                         <div className="min-w-0">
                                             <p className="max-w-64 truncate font-medium text-white">{player.displayName}</p>
                                             <p className="max-w-64 truncate font-mono text-[11px] text-zinc-600">license:{player.license}</p>
+                                            {player.identityError && <p className="mt-1 flex max-w-64 items-center gap-1 text-xs text-amber-300">
+                                                <AlertTriangle className="size-3" />{player.identityError}
+                                            </p>}
                                         </div>
                                     </div>
                                 </td>
@@ -275,7 +298,9 @@ export default function PlayerManagementPage() {
                                             {character.job?.label || character.job?.name || t('No job')}
                                             {player.characters.length > 1 ? ` · ${t('{count} characters', { count: player.characters.length })}` : ''}
                                         </p>
-                                    </> : <span className="text-zinc-600">{t('No framework character')}</span>}
+                                    </> : <span className="text-zinc-600">{canViewCharacters && characterSearch.isLoading
+                                        ? t('Loading character...')
+                                        : t('No framework character')}</span>}
                                 </td>
                                 <td className="px-5 py-4">
                                     <div className="flex flex-wrap gap-1.5">
@@ -291,7 +316,9 @@ export default function PlayerManagementPage() {
                                     </> : player.txAdmin ? <p>{t('Play time')}: <span className="font-mono text-zinc-300">{player.txAdmin.playTime.toLocaleString()} min</span></p> : '—'}
                                 </td>
                                 <td className="px-5 py-4">
-                                    <PlayerActions target={target} onChanged={refresh} className="flex justify-end gap-2" />
+                                    {player.identityError
+                                        ? <span className="text-xs text-amber-300">{t('Resolve identifiers first')}</span>
+                                        : <PlayerActions target={target} onChanged={refresh} className="flex justify-end gap-2" />}
                                 </td>
                             </tr>;
                         })}

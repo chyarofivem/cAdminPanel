@@ -108,7 +108,6 @@ export default class WebServer {
                 txDevEnv.ENABLED
                     ? path.join(txDevEnv.SRC_PATH, 'panel/public')
                     : path.join(txEnv.txaPath, 'panel'),
-                path.join(txEnv.txaPath, 'web/public'),
             ],
             onReady: () => {
                 this.isServing = true;
@@ -135,7 +134,7 @@ export default class WebServer {
         this.app.use(txRouter.allowedMethods());
         this.app.use(async (ctx) => {
             if (typeof ctx._matchedRoute === 'undefined') {
-                if (ctx.path.startsWith('/legacy')) {
+                if (ctx.path.startsWith('/legacy') || ctx.path === '/web' || ctx.path.startsWith('/web/')) {
                     ctx.status = 404;
                     console.verbose.warn(`Request 404 error: ${ctx.path}`);
                     return ctx.send('Not found.');

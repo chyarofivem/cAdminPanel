@@ -77,6 +77,63 @@ export const useAuthedFetcher = () => {
 
 
 /**
+ * Downloads a file through the authenticated API without navigating away from the panel.
+ */
+export const useAuthedFileDownload = () => {
+    const csrfToken = useCsrfToken();
+    const expireSess = useExpireAuthData();
+
+    return async (fetchUrl: string) => {
+        if (!csrfToken) throw new Error('CSRF token not set');
+        if (fetchUrl[0] !== '/' || fetchUrl[1] === '/') {
+            throw new Error(`[useAuthedFileDownload] fetchUrl MUST start with a single '/', got '${fetchUrl}'.`);
+        }
+        if (!window.txConsts.isWebInterface) {
+            fetchUrl = WEBPIPE_PATH + fetchUrl;
+        }
+
+        const response = await fetch(fetchUrl, {
+            method: 'GET',
+            headers: {
+                'Accept': 'application/octet-stream, application/json',
+                'User-Agent': headeruserAgent,
+                'X-TxAdmin-CsrfToken': csrfToken,
+            },
+        });
+        const contentType = response.headers.get('content-type') ?? '';
+        if (contentType.includes('application/json')) {
+            const data = await response.json();
+            if (data?.logout) {
+                expireSess('useAuthedFileDownload', data?.reason ?? 'unknown');
+                throw new Error('Session expired');
+            }
+            throw new Error(data?.message ?? data?.error ?? 'The download failed.');
+        }
+        if (!response.ok) {
+            throw new Error((await response.text()) || `The download failed with status ${response.status}.`);
+        }
+
+        const disposition = response.headers.get('content-disposition') ?? '';
+        const encodedName = disposition.match(/filename\*=UTF-8''([^;]+)/i)?.[1];
+        const quotedName = disposition.match(/filename="([^"]+)"/i)?.[1];
+        const plainName = disposition.match(/filename=([^;]+)/i)?.[1]?.trim();
+        const fileName = encodedName
+            ? decodeURIComponent(encodedName)
+            : quotedName ?? plainName ?? 'download';
+        const objectUrl = URL.createObjectURL(await response.blob());
+        const anchor = document.createElement('a');
+        anchor.href = objectUrl;
+        anchor.download = fileName;
+        document.body.appendChild(anchor);
+        anchor.click();
+        anchor.remove();
+        setTimeout(() => URL.revokeObjectURL(objectUrl), 1_000);
+        return fileName;
+    };
+}
+
+
+/**
  * Simple unauthed fetch with timeout
  */
 type SimpleFetchOpts<Req = any> = FetcherOpts & {

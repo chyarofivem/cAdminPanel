@@ -9,7 +9,7 @@ if not TX_MENU_ENABLED then return end
 --  "Player Modal"
 -- =============================================
 
-RegisterNetEvent('txsv:req:tpToPlayer', function(tgtId)
+RegisterNetEvent('txsv:req:tpToPlayer', function(tgtId, connectionRef)
   local src = source
 
   if type(tgtId) ~= 'number' then
@@ -17,6 +17,7 @@ RegisterNetEvent('txsv:req:tpToPlayer', function(tgtId)
   end
 
   local allow = PlayerHasTxPermission(src, 'players.teleport')
+    and TX_VALIDATE_PLAYER_CONNECTION(tgtId, connectionRef, src)
   local data = { x = nil, y = nil, z = nil, target = tgtId }
 
   -- More OneSync dependent code
@@ -45,18 +46,25 @@ RegisterNetEvent('txsv:req:tpToPlayer', function(tgtId)
   TriggerEvent('txsv:logger:menuEvent', src, 'teleportPlayer', allow, data)
 end)
 
-RegisterNetEvent('txsv:req:bringPlayer', function(id)
+RegisterNetEvent('txsv:req:bringPlayer', function(id, connectionRef)
   local src = source
   if type(id) ~= 'number' then
     return
   end
   local allow = PlayerHasTxPermission(src, 'players.teleport')
+    and TX_VALIDATE_PLAYER_CONNECTION(id, connectionRef, src)
   if allow then
     -- ensure the target player ped exists
     local ped = GetPlayerPed(id)
     if ped then
       local coords = GetEntityCoords(GetPlayerPed(src))
       TriggerClientEvent('txcl:tpToCoords', id, coords[1], coords[2], coords[3])
+      TriggerClientEvent(
+        'txcl:playerActionResult',
+        src,
+        true,
+        'nui_menu.player_modal.actions.interaction.notifications.bring_player'
+      )
     end
   end
   TriggerEvent('txsv:logger:menuEvent', src, 'summonPlayer', allow, id)

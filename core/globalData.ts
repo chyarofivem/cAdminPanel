@@ -519,7 +519,7 @@ export const txEnv = Object.freeze({
     isWindows,
     setConsoleTitle,
 
-    //TODO: remove, used only in diagnostics (HB Data + page)
+    //Used by encrypted runtime heartbeat data.
     isPterodactyl,
     isZapHosting, //NOTE: This one is also used in authLogic to disable src check
 

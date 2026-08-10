@@ -25,12 +25,13 @@ export default async function CFGEditorData(ctx: AuthedCtx) {
     if (!ctx.admin.testPermission('master', modulename)) {
         return sendTyped({ success: false, error: 'permission_denied' });
     }
-    if (!txCore.fxRunner.isConfigured) {
+    const serverDataPath = txConfig.server.dataPath;
+    if (!txCore.fxRunner.isConfigured || !serverDataPath) {
         return sendTyped({ success: false, error: 'not_configured' });
     }
 
     try {
-        const cfgFilePath = resolveCFGFilePath(txConfig.server.cfgPath, txConfig.server.dataPath);
+        const cfgFilePath = resolveCFGFilePath(txConfig.server.cfgPath, serverDataPath);
         return sendTyped({
             success: true,
             data: {

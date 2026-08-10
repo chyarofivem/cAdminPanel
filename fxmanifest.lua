@@ -34,7 +34,6 @@ server_scripts {
     'resource/menu/server/sv_main_page.lua',
     'resource/menu/server/sv_vehicle.lua',
     'resource/menu/server/sv_freeze_player.lua',
-    'resource/menu/server/sv_trollactions.lua',
     'resource/menu/server/sv_player_modal.lua',
     'resource/menu/server/sv_spectate.lua',
     'resource/menu/server/sv_player_mode.lua'
@@ -54,7 +53,6 @@ client_scripts {
     'resource/menu/client/cl_ptfx.lua', --must run before cl_player_mode
     'resource/menu/client/cl_player_mode.lua',
     'resource/menu/client/cl_spectate.lua',
-    'resource/menu/client/cl_trollactions.lua',
     'resource/menu/client/cl_freeze.lua',
     'resource/menu/vendor/freecam/utils.lua',
     'resource/menu/vendor/freecam/config.lua',
@@ -69,5 +67,4 @@ files {
 
     -- WebPipe optimization:
     'panel/**/*',
-    'web/public/**/*',
 }

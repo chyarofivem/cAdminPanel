@@ -13,9 +13,9 @@ const initialAtomValue = availableCustomThemes.find((name) => root.classList.con
     ?? defaultThemes.find((name) => root.classList.contains(name))
     ?? window.txConsts.defaultTheme;
 const accentIds = window.txConsts.accents.map(accent => accent.id);
-const storedAccent = localStorage.getItem('panel:user-accent');
-const initialAccent = storedAccent && accentIds.includes(storedAccent)
-    ? storedAccent
+const accountAccent = window.txConsts.preAuth && window.txConsts.preAuth.accent;
+const initialAccent = accountAccent && accentIds.includes(accountAccent)
+    ? accountAccent
     : accentIds.includes(window.txConsts.accent) ? window.txConsts.accent : 'blue';
 
 
@@ -93,16 +93,6 @@ const applyNewTheme = (oldTheme: string, newTheme: string) => {
         root.classList.add(customClass);
     }
 
-    //Changing iframe theme
-    const iframeBody = (document.getElementById('legacyPageIframe') as HTMLObjectElement)?.contentDocument?.body;
-    if (iframeBody) {
-        if (isDarkScheme) {
-            iframeBody.classList.add('theme--dark');
-        } else {
-            iframeBody.classList.remove('theme--dark');
-        }
-    }
-
     setThemeCookieValue(newTheme);
     console.log(`Changed theme from '${oldTheme}' to '${newTheme}'.`);
 }
@@ -167,7 +157,6 @@ export const useAccent = () => {
         accent,
         accents: window.txConsts.accents,
         setAccent: (newAccent: string) => {
-            if (newAccent === accent) return;
             applyAccent(newAccent);
             setAccentAtom(newAccent);
         },

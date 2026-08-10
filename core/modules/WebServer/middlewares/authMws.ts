@@ -6,38 +6,6 @@ import { InitializedCtx } from '../ctxTypes';
 import { txHostConfig } from '@core/globalData';
 const console = consoleFactory(modulename);
 
-const webLogoutPage = `<style>
-body {
-    margin: 0;
-}
-.notice {
-    font-family: sans-serif;
-    font-size: 1.5em;
-    text-align: center;
-    background-color: #222326;
-    color: #F7F7F8;
-    padding: 2em;
-    border: 1px solid #333539;
-    border-radius: 0.5em;
-}
-.notice a {
-    color: #F00A53;
-}
-</style>
-    <p class="notice">
-        User logged out. <br>
-        Redirecting to <a href="/login#expired" target="_parent">login page</a>...
-    </p>
-<script>
-    // Notify parent window that auth failed
-    window.parent.postMessage({ type: 'logoutNotice' });
-    // If parent redirect didn't work, redirect here
-    setTimeout(function() {
-        window.parent.location.href = '/login#expired';
-    }, 2000);
-</script>`;
-
-
 /**
  * For the hosting provider routes
  */
@@ -107,30 +75,6 @@ export const intercomAuthMw = async (ctx: InitializedCtx, next: Function) => {
         return ctx.send({ error: 'invalid token' });
     }
 
-    await next();
-};
-
-/**
- * Used for the legacy web interface.
- */
-export const webAuthMw = async (ctx: InitializedCtx, next: Function) => {
-    //Check auth
-    const authResult = checkRequestAuth(
-        ctx.request.headers,
-        ctx.ip,
-        ctx.txVars.isLocalRequest,
-        ctx.sessTools
-    );
-    if (!authResult.success) {
-        ctx.sessTools.destroy();
-        if (authResult.rejectReason) {
-            console.verbose.warn(`Invalid session auth: ${authResult.rejectReason}`);
-        }
-        return ctx.send(webLogoutPage);
-    }
-
-    //Adding the admin to the context
-    ctx.admin = authResult.admin;
     await next();
 };
 

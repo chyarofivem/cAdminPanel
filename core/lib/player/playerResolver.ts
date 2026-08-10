@@ -24,19 +24,19 @@ export default (mutex: any, netid: any, license: any) => {
     }
 
     //If mutex+netid provided
-    if (typeof mutex === 'string' && typeof netid === 'number' && !isNaN(parsedNetid)) {
+    if (typeof mutex === 'string' && Number.isInteger(parsedNetid) && parsedNetid >= 0) {
         hasMutex = true;
         if (mutex && mutex === txCore.fxRunner.child?.mutex) {
             //If the mutex is from the server currently online
-            const player = txCore.fxPlayerlist.getPlayerById(netid);
-            if (player instanceof ServerPlayer) {
+            const player = txCore.fxPlayerlist.getPlayerById(parsedNetid);
+            if (player instanceof ServerPlayer && player.isConnected) {
                 return player;
             } else {
                 throw new Error(`player not found in current server playerlist`);
             }
         } else {
             // If mutex is from previous server, overwrite any given license
-            const searchRef = `${mutex}#${netid}`;
+            const searchRef = `${mutex}#${parsedNetid}`;
             const found = txCore.fxPlayerlist.licenseCache.find(c => c[0] === searchRef);
             if (found) searchLicense = found[1];
         }

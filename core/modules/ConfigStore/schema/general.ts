@@ -17,7 +17,7 @@ const language = typeDefinedConfig({
     name: 'Language',
     default: 'en',
     validator: z.string().min(2).refine(
-        (value) => localeMap[value] !== undefined,
+        (value) => Object.prototype.hasOwnProperty.call(localeMap, value),
         (value) => ({ message: `Invalid language code \`${value ?? '??'}\`.` }),
     ),
     fixer: SYM_FIXER_DEFAULT,

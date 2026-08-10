@@ -1,8 +1,8 @@
-import { KickAllIcon } from '@/components/KickIcons';
-import { fxRunnerStateAtom, txConfigStateAtom } from '@/hooks/status';
+import { txToast } from '@/components/TxToaster';
+import { fxRunnerStateAtom, txConfigStateAtom, useGlobalStatus } from '@/hooks/status';
 import { cn } from '@/lib/utils';
 import { useAtomValue } from 'jotai';
-import { MegaphoneIcon, PowerIcon, PowerOffIcon, RotateCcwIcon } from 'lucide-react';
+import { Clock3Icon, MegaphoneIcon, PlayCircleIcon, PowerIcon, PowerOffIcon, RotateCcwIcon, XCircleIcon } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useOpenConfirmDialog, useOpenPromptDialog } from '@/hooks/dialogs';
 import { ApiTimeout, useBackendApi } from '@/hooks/fetch';
@@ -11,6 +11,8 @@ import { useAdminPerms } from '@/hooks/auth';
 import { TxConfigState } from '@shared/enums';
 import { t } from '@/lib/i18n';
 import { Button } from '@/components/ui/button';
+import { restartSchedulePromptProps } from './restartScheduleUtils';
+import { validateRestartSchedule } from './restartScheduleValidation';
 
 
 const controlButtonClass = 'h-9 w-full gap-2 px-2 text-xs shadow-none';
@@ -18,6 +20,7 @@ const controlButtonClass = 'h-9 w-full gap-2 px-2 text-xs shadow-none';
 export default function ServerControls() {
     const txConfigState = useAtomValue(txConfigStateAtom);
     const fxRunnerState = useAtomValue(fxRunnerStateAtom);
+    const globalStatus = useGlobalStatus();
     const openConfirmDialog = useOpenConfirmDialog();
     const openPromptDialog = useOpenPromptDialog();
     const closeAllSheets = useCloseAllSheets();
@@ -29,6 +32,10 @@ export default function ServerControls() {
     const fxsCommandsApi = useBackendApi({
         method: 'POST',
         path: '/fxserver/commands'
+    });
+    const schedulerApi = useBackendApi({
+        method: 'POST',
+        path: '/fxserver/schedule'
     });
 
     const handleServerControl = (action: 'start' | 'stop' | 'restart') => {
@@ -85,22 +92,61 @@ export default function ServerControls() {
         });
     }
 
-    const handleKickAll = () => {
-        if (!fxRunnerState.isChildAlive) return;
-        openPromptDialog({
-            title: t('Kick All Players'),
-            message: t('Type the kick reason or leave it blank (press enter)'),
-            placeholder: t('kick reason'),
-            submitLabel: t('Send'),
-            onSubmit: (input) => {
-                closeAllSheets();
-                fxsCommandsApi({
-                    data: { action: 'kick_all', parameter: input },
-                    toastLoadingMessage: t('Kicking players...'),
-                });
-            }
+    const scheduler = globalStatus?.scheduler;
+    const hasScheduledRestart = typeof scheduler?.nextRelativeMs === 'number';
+    const scheduledRestartIsSkipped = hasScheduledRestart && scheduler?.nextSkip === true;
+
+    const submitRestartSchedule = (input: string) => {
+        const normalized = input.trim();
+        if (normalized.includes(',')) {
+            txToast.error({
+                title: t('Invalid scheduled restart time.'),
+                msg: t('Multiple restart times can only be configured in Settings. This field schedules only the next temporary restart.'),
+            }, { duration: 10000 });
+            return;
+        }
+        if (!validateRestartSchedule(normalized)) {
+            txToast.error(t('Invalid schedule time: {input}', { input: normalized }));
+            return;
+        }
+        closeAllSheets();
+        schedulerApi({
+            data: { action: 'setNextTempSchedule', parameter: normalized },
+            toastLoadingMessage: t('Scheduling server restart...'),
         });
-    }
+    };
+
+    const handleRestartSchedule = () => {
+        if (scheduledRestartIsSkipped) {
+            closeAllSheets();
+            schedulerApi({
+                data: { action: 'setNextSkip', parameter: false },
+                toastLoadingMessage: t('Enabling next server restart...'),
+            });
+            return;
+        }
+        if (hasScheduledRestart) {
+            openConfirmDialog({
+                title: t('Cancel Restart'),
+                message: t('Are you sure you want to cancel the next scheduled restart?'),
+                actionLabel: t('Cancel Restart'),
+                confirmBtnVariant: 'destructive',
+                onConfirm: () => {
+                    closeAllSheets();
+                    schedulerApi({
+                        data: { action: 'setNextSkip', parameter: true },
+                        toastLoadingMessage: t('Cancelling next server restart...'),
+                    });
+                },
+            });
+            return;
+        }
+        openPromptDialog({
+            ...restartSchedulePromptProps(),
+            submitLabel: t('Schedule'),
+            onSubmit: submitRestartSchedule,
+        });
+    };
 
     const hasControlPerms = hasPerm('control.server');
     const hasAnnouncementPerm = hasPerm('announcement');
@@ -169,18 +215,30 @@ export default function ServerControls() {
             <Tooltip>
                 <TooltipTrigger asChild>
                     <Button
-                        onClick={handleKickAll}
-                        variant="outline"
+                        onClick={handleRestartSchedule}
+                        variant={hasScheduledRestart && !scheduledRestartIsSkipped ? 'outline-destructive' : 'outline'}
                         className={controlButtonClass}
-                        disabled={!hasControlPerms || !fxRunnerState.isChildAlive}
+                        disabled={!hasControlPerms}
                     >
-                        <KickAllIcon style={{ height: '1.25rem', width: '1.5rem', fill: 'currentcolor' }} />
-                        {t('Kick All')}
+                        {scheduledRestartIsSkipped
+                            ? <PlayCircleIcon className='size-4' />
+                            : hasScheduledRestart
+                                ? <XCircleIcon className='size-4' />
+                                : <Clock3Icon className='size-4' />}
+                        {scheduledRestartIsSkipped
+                            ? t('Enable')
+                            : hasScheduledRestart
+                                ? t('Cancel')
+                                : t('Schedule')}
                     </Button>
                 </TooltipTrigger>
                 <TooltipContent className={cn(!hasControlPerms && 'text-destructive-inline text-center')}>
                     {hasControlPerms ? (
-                        <p>{t('Kick All Players')}</p>
+                        <p>{scheduledRestartIsSkipped
+                            ? t('Enable the next scheduled restart')
+                            : hasScheduledRestart
+                                ? t('Cancel the next scheduled restart')
+                                : t('Schedule the next server restart')}</p>
                     ) : (
                         <p>{t('You do not have permission to control the server.')}</p>
                     )}

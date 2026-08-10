@@ -1,4 +1,13 @@
-import { LogoutReasonHash } from "@/pages/auth/Login";
+import consts from '@shared/consts';
+
+export enum LogoutReasonHash {
+    NONE = '',
+    LOGOUT = '#logout',
+    EXPIRED = '#expired',
+    UPDATED = '#updated',
+    MASTER_ALREADY_SET = '#master_already_set',
+    SHUTDOWN = '#shutdown',
+}
 
 
 /**
@@ -8,8 +17,64 @@ import { LogoutReasonHash } from "@/pages/auth/Login";
  */
 export function isValidRedirectPath(location: unknown): location is string {
     if (typeof location !== 'string' || !location) return false;
-    const url = new URL(location, window.location.href);
-    return location.startsWith('/') && !location.startsWith('//') && url.hostname === window.location.hostname;
+    if (!location.startsWith('/') || location.startsWith('//')) return false;
+
+    try {
+        const currentUrl = new URL(window.location.href);
+        const redirectUrl = new URL(location, currentUrl);
+        return redirectUrl.origin === currentUrl.origin;
+    } catch {
+        return false;
+    }
+}
+
+
+/** Resolves an internal panel route through WebPipe when running inside NUI. */
+export function getPanelLocation(location: string) {
+    if (!isValidRedirectPath(location)) throw new Error('Invalid internal panel location.');
+
+    const currentUrl = new URL(window.location.href);
+    const internalUrl = new URL(location, currentUrl);
+    const normalizedLocation = `${internalUrl.pathname}${internalUrl.search}${internalUrl.hash}`;
+    if (window.txConsts.isWebInterface) return normalizedLocation;
+
+    const webpipeBase = new URL(consts.nuiWebpipePath);
+    const webpipeUrl = new URL(normalizedLocation.slice(1), webpipeBase);
+    const webpipePath = webpipeBase.pathname.endsWith('/')
+        ? webpipeBase.pathname
+        : `${webpipeBase.pathname}/`;
+    if (webpipeUrl.origin !== webpipeBase.origin || !webpipeUrl.pathname.startsWith(webpipePath)) {
+        throw new Error('Invalid internal panel location.');
+    }
+    return webpipeUrl.toString();
+}
+
+
+/** Performs a full internal navigation without escaping the NUI WebPipe. */
+export function navigatePanel(location: string) {
+    window.location.assign(getPanelLocation(location));
+}
+
+
+/** Reloads the current route through the correct web or NUI entry point. */
+export function reloadPanel() {
+    if (window.txConsts.isWebInterface) {
+        window.location.reload();
+        return;
+    }
+
+    const currentUrl = new URL(window.location.href);
+    const webpipeBase = new URL(consts.nuiWebpipePath);
+    const webpipeRoot = webpipeBase.pathname.replace(/\/$/, '');
+    let panelPath = currentUrl.pathname;
+    if (currentUrl.origin === webpipeBase.origin) {
+        if (currentUrl.pathname === webpipeRoot) {
+            panelPath = '/';
+        } else if (currentUrl.pathname.startsWith(`${webpipeRoot}/`)) {
+            panelPath = currentUrl.pathname.slice(webpipeRoot.length);
+        }
+    }
+    navigatePanel(panelPath + currentUrl.search + currentUrl.hash);
 }
 
 

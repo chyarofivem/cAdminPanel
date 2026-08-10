@@ -8,6 +8,7 @@ import { createHash, timingSafeEqual } from 'node:crypto';
 import consoleFactory from '@lib/console';
 import fatalError from '@lib/fatalError';
 import { chalkInversePad } from '@lib/misc';
+import { ACCENTS } from '@lib/theme';
 const console = consoleFactory(modulename);
 
 //NOTE: The way I'm doing versioning right now is horrible but for now it's the best I can do
@@ -87,7 +88,6 @@ export default class AdminStore {
             'players.playermode': 'NoClip / God Mode', //self playermode, and also the player spectate option
             'players.spectate': 'Spectate', //self playermode, and also the player spectate option
             'players.teleport': 'Teleport', //self teleport, and the bring/go to on player modal
-            'players.troll': 'Troll Actions', //all the troll options in the player modal
         };
         //FIXME: pode remover, hardcode na cron function
         this.hardConfigs = {
@@ -539,9 +539,8 @@ export default class AdminStore {
      * @param {object|false} [discordData] or false
      * @param {string} [chyaroEmail]
      * @param {string[]} [permissions]
-     * @param {string|undefined} [password] optional temporary local password
      */
-    async editAdmin(name, citizenfxData, discordData, chyaroEmail, permissions, password) {
+    async editAdmin(name, citizenfxData, discordData, chyaroEmail, permissions) {
         if (this.admins == false) throw new Error('Admins not set');
 
         //Find admin index
@@ -627,13 +626,8 @@ export default class AdminStore {
             }
         }
         if (typeof permissions !== 'undefined') this.admins[adminIndex].permissions = permissions;
-        if (typeof password === 'string' && password.length) {
-            this.admins[adminIndex].password_hash = GetPasswordHash(password);
-            this.admins[adminIndex].password_temporary = true;
-        }
 
-        //Prevent race condition, will allow the session to be updated before refreshing socket.io
-        //sessions which will cause reauth and closing of the temp password modal on first access
+        //Defer the socket authentication refresh until the administrator edit can finish.
         setTimeout(() => {
             this.refreshOnlineAdmins().catch((e) => { });
         }, 250);
@@ -776,6 +770,12 @@ export default class AdminStore {
 
             }
 
+            // Remove the retired game menu permission from existing accounts.
+            if (admin.permissions.includes('players.troll')) {
+                admin.permissions = admin.permissions.filter((perm) => perm !== 'players.troll');
+                hasMigration = true;
+            }
+
             // The combined log exposes both administrator actions and server
             // events. Only preserve access automatically when the account was
             // explicitly allowed to see both old channels; narrower grants must
@@ -874,7 +874,16 @@ export default class AdminStore {
         if (!admin) throw new Error('Admin not found');
         admin.preferences = { ...(admin.preferences || {}), ...preferences };
         await this.writeAdminsFile();
-        await this.refreshOnlineAdmins();
+        const accent = typeof admin.preferences.accent === 'string'
+            && Object.prototype.hasOwnProperty.call(ACCENTS, admin.preferences.accent)
+            ? admin.preferences.accent
+            : undefined;
+        txCore.fxRunner.sendEvent('adminPreferencesUpdated', {
+            username: admin.name,
+            locale: typeof admin.preferences.locale === 'string' ? admin.preferences.locale : null,
+            accent: accent || null,
+            accentColor: accent ? ACCENTS[accent].hex : null,
+        });
     }
 
 

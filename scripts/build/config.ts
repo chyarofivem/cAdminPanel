@@ -8,6 +8,5 @@ export default {
         'fxmanifest.lua',
         'entrypoint.js',
         'resource/',
-        'web/',
     ],
 }

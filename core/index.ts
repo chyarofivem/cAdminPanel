@@ -9,6 +9,7 @@ import fatalError from '@lib/fatalError';
 import { ensureProfileStructure, setupProfile } from './boot/setup';
 import setupProcessHandlers from './boot/setupProcessHandlers';
 import bootTxAdmin from './txAdmin';
+import { initializeUpdateState } from '@lib/updateSetup';
 const console = consoleFactory();
 
 
@@ -53,6 +54,7 @@ try {
 if (isNewProfile && txEnv.profileName !== 'default') {
     console.log(`Profile path: ${txEnv.profilePath}`);
 }
+initializeUpdateState(isNewProfile);
 
 
 //Start txAdmin (have fun 😀)

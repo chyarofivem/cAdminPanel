@@ -58,12 +58,12 @@ end)
 
 
 RegisterSecureNuiCallback('tpToPlayer', function(data, cb)
-    TriggerServerEvent('txsv:req:tpToPlayer', tonumber(data.id))
+    TriggerServerEvent('txsv:req:tpToPlayer', tonumber(data.id), data.connectionRef)
     cb({})
 end)
 
 RegisterSecureNuiCallback('summonPlayer', function(data, cb)
-    TriggerServerEvent('txsv:req:bringPlayer', tonumber(data.id))
+    TriggerServerEvent('txsv:req:bringPlayer', tonumber(data.id), data.connectionRef)
     cb({})
 end)
 
@@ -99,8 +99,12 @@ RegisterSecureNuiCallback('spawnWeapon', function(weapon, cb)
 end)
 
 RegisterSecureNuiCallback('healPlayer', function(data, cb)
-    TriggerServerEvent('txsv:req:healPlayer', tonumber(data.id))
+    TriggerServerEvent('txsv:req:healPlayer', tonumber(data.id), data.connectionRef)
     cb({})
+end)
+
+RegisterNetEvent('txcl:playerActionResult', function(success, localeKey)
+    sendSnackbarMessage(success and 'success' or 'error', localeKey, true)
 end)
 
 local healSelfMessage = 0

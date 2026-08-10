@@ -1,230 +1,399 @@
+import React, { useEffect, useMemo, useState } from "react";
 import {
+  alpha,
+  Avatar,
   Box,
+  Button,
+  Chip,
   CircularProgress,
-  DialogTitle,
   IconButton,
-  List,
-  ListItemButton,
-  ListItemIcon,
-  ListItemText,
+  Tab,
+  Tabs,
+  Tooltip,
+  Typography,
 } from "@mui/material";
-import { styled } from "@mui/material/styles";
 import {
-  Block,
-  Close,
-  FlashOn,
-  FormatListBulleted,
-  MenuBook,
-  Person,
+  BadgeRounded,
+  BlockRounded,
+  CloseRounded,
+  ErrorOutlineRounded,
+  FlashOnRounded,
+  FormatListBulletedRounded,
+  HistoryRounded,
+  PersonRounded,
+  RefreshRounded,
 } from "@mui/icons-material";
-import {
-  useAssociatedPlayerValue,
-  usePlayerDetailsValue,
-} from "../../state/playerDetails.state";
 import { useTranslate } from "react-polyglot";
-import { DialogBaseView } from "./Tabs/DialogBaseView";
-import { PlayerModalErrorBoundary } from "./ErrorHandling/PlayerModalErrorBoundary";
-import { usePermissionsValue } from "../../state/permissions.state";
-import { userHasPerm } from "../../utils/miscUtils";
-import React from "react";
-import {
-  PlayerModalTabs,
-  usePlayerModalTabValue,
-  useSetPlayerModalTab,
-  useSetPlayerModalVisibility,
-} from "@nui/src/state/playerModal.state";
-
-const classes = {
-  listItem: `PlayerModal-listItem`,
-  listItemBan: `PlayerModal-listItemBan`,
-};
-
-const StyledList = styled(List)(({ theme }) => ({
-  padding: 0,
-  display: "flex",
-  flexDirection: "column",
-  gap: 6,
-  [`& .${classes.listItem}`]: {
-    minHeight: 46,
-    borderRadius: 10,
-    "&.Mui-selected:hover": {
-      backgroundColor: "rgba(255, 255, 255, 0.08)",
-    },
-  },
-
-  [`& .${classes.listItemBan}`]: {
-    borderRadius: 8,
-    "&:hover, &.Mui-selected": {
-      background: theme.palette.error.main,
-    },
-    "&.Mui-selected:hover": {
-      backgroundColor: "rgba(194,13,37, 0.8)",
-    },
-  },
-}));
-
-const LoadingModal: React.FC = () => (
-  <Box
-    display="flex"
-    flexGrow={1}
-    width="100%"
-    justifyContent="center"
-    alignItems="center"
-  >
-    <CircularProgress />
-  </Box>
-);
-
-const StyledCloseButton = styled(IconButton)(({ theme }) => ({
-  position: "absolute",
-  top: theme.spacing(1),
-  right: theme.spacing(2),
-}));
-
-const ModalHeader = styled(DialogTitle)(({ theme }) => ({
-  position: "relative",
-  padding: "20px 64px 18px 24px",
-  borderBottom: "1px solid rgba(255,255,255,0.1)",
-  fontSize: 19,
-  fontWeight: 600,
-  lineHeight: 1.3,
-  background: "rgba(255,255,255,0.025)",
-  "& small": { display: "block", marginTop: 4, color: theme.palette.text.secondary, fontSize: 12, fontWeight: 500 },
-}));
+import { useAssociatedPlayerValue } from "@nui/src/state/playerDetails.state";
+import { usePermissionsValue } from "@nui/src/state/permissions.state";
+import { usePlayersState } from "@nui/src/state/players.state";
+import { userHasPerm } from "@nui/src/utils/miscUtils";
+import { nuiTokens } from "@nui/src/styles/nuiTokens";
+import type { PlayerModalTab } from "./PlayerModal.types";
+import { usePlayerModalData } from "./usePlayerModalData";
+import { PlayerActions } from "./views/PlayerActions";
+import { PlayerOverview } from "./views/PlayerOverview";
+import { PlayerIdentifiers } from "./views/PlayerIdentifiers";
+import { PlayerHistory } from "./views/PlayerHistory";
+import { PlayerBan } from "./views/PlayerBan";
 
 type PlayerModalProps = {
-  onClose: () => void
-};
-const PlayerModal: React.FC<PlayerModalProps> = ({onClose}) => {
-  const setModalOpen = useSetPlayerModalVisibility();
-  const playerDetails = usePlayerDetailsValue();
-  const assocPlayer = useAssociatedPlayerValue();
-
-  if (!assocPlayer) return null;
-
-  const error = playerDetails && 'error' in playerDetails ? playerDetails.error : undefined;
-  const loadedPlayer = playerDetails && 'player' in playerDetails ? playerDetails.player : undefined;
-
-  return (
-    <>
-      <ModalHeader>
-        {playerDetails?.player?.displayName ?? assocPlayer.displayName}
-        <small>Player ID {assocPlayer.id}</small>
-        <StyledCloseButton onClick={onClose} size="large">
-          <Close />
-        </StyledCloseButton>
-      </ModalHeader>
-      <Box display="flex" p={3} gap={3} flexGrow={1} overflow="hidden">
-        <PlayerModalErrorBoundary>
-          {error ? (
-            <>
-              <h2
-                style={{
-                  marginLeft: "auto",
-                  marginRight: "auto",
-                  textAlign: "center",
-                  fontWeight: "500",
-                  maxWidth: "70%",
-                  paddingTop: "2em",
-                }}
-              >
-                {error}
-              </h2>
-            </>
-          ) : (
-            <>
-              <Box
-                minWidth={220}
-                pr={3}
-                borderRight="1px solid rgba(255,255,255,0.1)"
-              >
-                <DialogList />
-              </Box>
-              <React.Suspense fallback={<LoadingModal />}>
-                <DialogBaseView />
-              </React.Suspense>
-            </>
-          )}
-        </PlayerModalErrorBoundary>
-      </Box>
-    </>
-  );
+  onClose: () => void;
 };
 
-interface DialogTabProps {
+type StatusViewProps = {
+  message: string;
   title: string;
-  tab: PlayerModalTabs;
-  curTab: PlayerModalTabs;
-  icon: JSX.Element;
-  isDisabled?: boolean;
-}
+  error?: boolean;
+  onClose?: () => void;
+  onRetry?: () => void;
+};
 
-const DialogTab: React.FC<DialogTabProps> = ({
-  isDisabled,
-  curTab,
-  tab,
-  icon,
+const StatusView: React.FC<StatusViewProps> = ({
+  error,
+  message,
+  onClose,
+  onRetry,
   title,
 }) => {
-  const setTab = useSetPlayerModalTab();
-
-  const stylingClass =
-    tab === PlayerModalTabs.BAN ? classes.listItemBan : classes.listItem;
-
-  const isSelected = curTab === tab;
+  const t = useTranslate();
 
   return (
-    <ListItemButton
-      className={stylingClass}
-      selected={isSelected}
-      onClick={() => setTab(tab)}
-      disabled={isDisabled}
+    <Box
+      role={error ? "alert" : "status"}
+      sx={{
+        display: "flex",
+        flex: 1,
+        minHeight: 0,
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        px: 4,
+        py: 6,
+        textAlign: "center",
+      }}
     >
-      <ListItemIcon>{icon}</ListItemIcon>
-      <ListItemText primary={title} />
-    </ListItemButton>
+      <Box
+        aria-hidden="true"
+        sx={(theme) => ({
+          display: "grid",
+          width: 58,
+          height: 58,
+          mb: 2,
+          placeItems: "center",
+          borderRadius: 2.5,
+          color: error ? theme.palette.error.light : theme.palette.primary.main,
+          backgroundColor: alpha(
+            error ? theme.palette.error.main : theme.palette.primary.main,
+            0.12
+          ),
+          boxShadow: `inset 0 0 0 1px ${alpha(
+            error ? theme.palette.error.main : theme.palette.primary.main,
+            0.28
+          )}`,
+        })}
+      >
+        {error ? <ErrorOutlineRounded /> : <CircularProgress size={28} />}
+      </Box>
+      <Typography variant="h6" sx={{ fontWeight: 750 }}>
+        {title}
+      </Typography>
+      <Typography
+        color="text.secondary"
+        sx={{ mt: 0.75, maxWidth: 520, lineHeight: 1.55, overflowWrap: "anywhere" }}
+      >
+        {message}
+      </Typography>
+      {(onRetry || onClose) && (
+        <Box sx={{ display: "flex", gap: 1, mt: 2.5 }}>
+          {onClose && (
+            <Button color="secondary" variant="text" onClick={onClose}>
+              {t("nui_menu.player_modal.misc.close")}
+            </Button>
+          )}
+          {onRetry && (
+            <Button
+              variant="contained"
+              startIcon={<RefreshRounded />}
+              onClick={onRetry}
+            >
+              {t("nui_menu.player_modal.misc.retry")}
+            </Button>
+          )}
+        </Box>
+      )}
+    </Box>
   );
 };
 
-const DialogList: React.FC = () => {
-  const curTab = usePlayerModalTabValue();
+const PlayerModal: React.FC<PlayerModalProps> = ({ onClose }) => {
   const t = useTranslate();
-  const playerPerms = usePermissionsValue();
+  const target = useAssociatedPlayerValue();
+  const players = usePlayersState();
+  const permissions = usePermissionsValue();
+  const liveTarget = target
+    ? players.find((player) => player.id === target.id)
+    : undefined;
+  const targetIsCurrent = Boolean(
+    target && liveTarget?.connectionRef === target.connectionRef
+  );
+  const { state, reload } = usePlayerModalData(targetIsCurrent ? target : null);
+  const [tab, setTab] = useState<PlayerModalTab>("actions");
+  const canBan = userHasPerm("players.ban", permissions);
+
+  useEffect(() => {
+    setTab("actions");
+  }, [target?.connectionRef, target?.id]);
+
+  useEffect(() => {
+    if (tab === "ban" && !canBan) setTab("actions");
+  }, [canBan, tab]);
+
+  const readyState =
+    targetIsCurrent
+    && target
+    && state.status === "ready"
+    && state.targetId === target.id
+    && state.targetConnectionRef === target.connectionRef
+      ? state
+      : null;
+  const displayName = readyState?.details.player.displayName ?? target?.displayName;
+  const playerInitial = useMemo(
+    () => displayName?.trim().charAt(0).toLocaleUpperCase() || "?",
+    [displayName]
+  );
+
+  const tabs = [
+    {
+      value: "actions" as const,
+      label: t("nui_menu.player_modal.tabs.actions"),
+      Icon: FlashOnRounded,
+    },
+    {
+      value: "info" as const,
+      label: t("nui_menu.player_modal.tabs.info"),
+      Icon: PersonRounded,
+    },
+    {
+      value: "identifiers" as const,
+      label: t("nui_menu.player_modal.tabs.ids"),
+      Icon: FormatListBulletedRounded,
+    },
+    {
+      value: "history" as const,
+      label: t("nui_menu.player_modal.tabs.history"),
+      Icon: HistoryRounded,
+    },
+    {
+      value: "ban" as const,
+      label: t("nui_menu.player_modal.tabs.ban"),
+      Icon: BlockRounded,
+      disabled: !canBan,
+    },
+  ];
+
+  const renderContent = () => {
+    if (!target) {
+      return (
+        <StatusView
+          error
+          title={t("nui_menu.player_modal.misc.unavailable")}
+          message={t("nui_menu.player_modal.misc.no_target")}
+          onClose={onClose}
+        />
+      );
+    }
+
+    if (!targetIsCurrent) {
+      return (
+        <StatusView
+          error
+          title={t("nui_menu.player_modal.misc.unavailable")}
+          message={t("nui_menu.player_modal.misc.disconnected")}
+          onClose={onClose}
+        />
+      );
+    }
+
+    if (
+      state.status === "idle"
+      || state.status === "loading"
+      || state.targetId !== target.id
+      || state.targetConnectionRef !== target.connectionRef
+    ) {
+      return (
+        <StatusView
+          title={t("nui_menu.player_modal.misc.loading_title")}
+          message={t("nui_menu.player_modal.misc.loading_message")}
+        />
+      );
+    }
+
+    if (state.status === "error") {
+      return (
+        <StatusView
+          error
+          title={t("nui_menu.player_modal.misc.load_failed")}
+          message={state.message}
+          onClose={onClose}
+          onRetry={reload}
+        />
+      );
+    }
+
+    if (state.status !== "ready") return null;
+    const viewProps = { details: state.details, target, reload };
+
+    switch (tab) {
+      case "info":
+        return (
+          <PlayerOverview
+            {...viewProps}
+            onShowHistory={() => setTab("history")}
+          />
+        );
+      case "identifiers":
+        return <PlayerIdentifiers {...viewProps} />;
+      case "history":
+        return <PlayerHistory {...viewProps} />;
+      case "ban":
+        return canBan ? <PlayerBan {...viewProps} /> : <PlayerActions {...viewProps} />;
+      default:
+        return <PlayerActions {...viewProps} />;
+    }
+  };
 
   return (
-    <StyledList>
-      <DialogTab
-        title={t("nui_menu.player_modal.tabs.actions")}
-        tab={PlayerModalTabs.ACTIONS}
-        curTab={curTab}
-        icon={<FlashOn />}
-      />
-      <DialogTab
-        title={t("nui_menu.player_modal.tabs.info")}
-        tab={PlayerModalTabs.INFO}
-        curTab={curTab}
-        icon={<Person />}
-      />
-      <DialogTab
-        title={t("nui_menu.player_modal.tabs.ids")}
-        tab={PlayerModalTabs.IDENTIFIERS}
-        curTab={curTab}
-        icon={<FormatListBulleted />}
-      />
-      <DialogTab
-        title={t("nui_menu.player_modal.tabs.history")}
-        tab={PlayerModalTabs.HISTORY}
-        curTab={curTab}
-        icon={<MenuBook />}
-      />
-      <DialogTab
-        title={t("nui_menu.player_modal.tabs.ban")}
-        tab={PlayerModalTabs.BAN}
-        curTab={curTab}
-        icon={<Block />}
-        isDisabled={!userHasPerm("players.ban", playerPerms)}
-      />
-    </StyledList>
+    <Box sx={{ display: "flex", height: "100%", minHeight: 0, flexDirection: "column" }}>
+      <Box
+        component="header"
+        sx={{
+          display: "flex",
+          alignItems: "center",
+          gap: 1.5,
+          px: 2.5,
+          py: 2,
+          borderBottom: `1px solid ${nuiTokens.ring}`,
+          background: "rgba(255,255,255,0.025)",
+        }}
+      >
+        <Avatar
+          aria-hidden="true"
+          sx={(theme) => ({
+            width: 44,
+            height: 44,
+            color: theme.palette.primary.main,
+            bgcolor: alpha(theme.palette.primary.main, 0.14),
+            boxShadow: `inset 0 0 0 1px ${alpha(theme.palette.primary.main, 0.3)}`,
+            fontSize: 17,
+            fontWeight: 800,
+          })}
+        >
+          {playerInitial}
+        </Avatar>
+
+        <Box minWidth={0} flex={1}>
+          <Typography
+            id="player-modal-title"
+            noWrap
+            title={displayName}
+            sx={{ fontSize: 18, fontWeight: 780, lineHeight: 1.25 }}
+          >
+            {displayName ?? t("nui_menu.player_modal.misc.unavailable")}
+          </Typography>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, mt: 0.5 }}>
+            {target && (
+              <Chip
+                size="small"
+                icon={<BadgeRounded />}
+                label={t("nui_menu.player_modal.misc.player_id", { id: target.id })}
+                sx={{ height: 23, fontSize: 11.5 }}
+              />
+            )}
+            {readyState && (
+              <Chip
+                size="small"
+                label={
+                  readyState.details.player.isRegistered
+                    ? t("nui_menu.player_modal.misc.registered")
+                    : t("nui_menu.player_modal.misc.unregistered")
+                }
+                color={readyState.details.player.isRegistered ? "primary" : "default"}
+                variant="outlined"
+                sx={{ height: 23, fontSize: 11.5 }}
+              />
+            )}
+          </Box>
+        </Box>
+
+        {target && (
+          <Tooltip title={t("nui_menu.player_modal.misc.refresh")} arrow>
+            <span>
+              <IconButton
+                aria-label={t("nui_menu.player_modal.misc.refresh")}
+                disabled={!targetIsCurrent || state.status === "loading"}
+                onClick={reload}
+              >
+                {state.status === "loading" ? (
+                  <CircularProgress size={20} />
+                ) : (
+                  <RefreshRounded />
+                )}
+              </IconButton>
+            </span>
+          </Tooltip>
+        )}
+        <IconButton
+          aria-label={t("nui_menu.player_modal.misc.close")}
+          onClick={onClose}
+        >
+          <CloseRounded />
+        </IconButton>
+      </Box>
+
+      <Tabs
+        value={tab}
+        onChange={(_event, value: PlayerModalTab) => setTab(value)}
+        variant="scrollable"
+        scrollButtons="auto"
+        aria-label={t("nui_menu.player_modal.misc.navigation")}
+        sx={{
+          flexShrink: 0,
+          minHeight: 50,
+          px: 1.5,
+          borderBottom: `1px solid ${nuiTokens.ring}`,
+          "& .MuiTab-root": {
+            minHeight: 50,
+            minWidth: 112,
+            textTransform: "none",
+            fontWeight: 720,
+          },
+        }}
+      >
+        {tabs.map(({ disabled, Icon, label, value }) => (
+          <Tab
+            key={value}
+            value={value}
+            label={label}
+            icon={<Icon fontSize="small" />}
+            iconPosition="start"
+            disabled={disabled || !readyState}
+            sx={
+              value === "ban"
+                ? {
+                    color: "error.light",
+                    "&.Mui-selected": { color: "error.light" },
+                  }
+                : undefined
+            }
+          />
+        ))}
+      </Tabs>
+
+      <Box component="main" sx={{ display: "flex", flex: 1, minHeight: 0, overflow: "hidden" }}>
+        {renderContent()}
+      </Box>
+    </Box>
   );
 };
 

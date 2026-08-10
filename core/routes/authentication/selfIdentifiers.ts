@@ -83,7 +83,7 @@ export default async function AuthSelfIdentifiers(ctx: AuthedCtx) {
     //Do not let an administrator claim an identifier already attached to a
     //different local account.
     for (const providerData of [citizenfxData, discordData]) {
-        if (!providerData) continue;
+        if (!providerData || typeof providerData !== 'object') continue;
         const existing = txCore.adminStore.getAdminByIdentifiers([providerData.identifier]);
         if (existing && existing.name.toLowerCase() !== ctx.admin.name.toLowerCase()) {
             return ctx.send<ApiSelfIdentifiersResp>({

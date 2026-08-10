@@ -82,23 +82,24 @@ function configuredFilename(kind: BrandingKind) {
     return txConfig.general[kindConfigKeys[kind]];
 }
 
-export function brandingUrl(kind: BrandingKind, forceDefault = false) {
+export function brandingUrl(kind: BrandingKind, forceDefault = false, basePath = '/') {
     const filename = forceDefault ? '' : configuredFilename(kind);
     const fallbackVersion = crypto.createHash('sha256')
         .update(`${resolveAccent(txConfig.general.accent)}:${panelDisplayName()}`)
         .digest('hex')
         .slice(0, 12);
     const version = filename || fallbackVersion;
-    return `/branding/${kind}?v=${encodeURIComponent(version)}${forceDefault ? '&default=1' : ''}`;
+    const normalizedBasePath = basePath.endsWith('/') ? basePath : `${basePath}/`;
+    return `${normalizedBasePath}branding/${kind}?v=${encodeURIComponent(version)}${forceDefault ? '&default=1' : ''}`;
 }
 
-export function brandingViewLocals() {
+export function brandingViewLocals(basePath = '/') {
     return {
         panelName: panelDisplayName(),
         accent: resolveAccent(txConfig.general.accent),
-        logoUrl: brandingUrl('logo'),
-        faviconUrl: brandingUrl('favicon'),
-        bannerUrl: brandingUrl('banner'),
+        logoUrl: brandingUrl('logo', false, basePath),
+        faviconUrl: brandingUrl('favicon', false, basePath),
+        bannerUrl: brandingUrl('banner', false, basePath),
     };
 }
 
@@ -113,7 +114,7 @@ function defaultMark(kind: BrandingKind) {
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&apos;');
     return Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} 128" role="img" aria-label="${label}">
-<defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop stop-color="oklch(${vars['brand-500']})"/><stop offset="1" stop-color="oklch(${vars['brand-700']})"/></linearGradient></defs>
+<defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop stop-color="rgb(${vars['brand-500']})"/><stop offset="1" stop-color="rgb(${vars['brand-700']})"/></linearGradient></defs>
 <rect width="${width}" height="128" rx="24" fill="url(#g)"/><path d="M31 35h66v18H55v11h36v17H55v12h42v18H31z" fill="white"/>
 ${wide ? `<text x="118" y="79" fill="white" font-family="system-ui,sans-serif" font-size="31" font-weight="700">${label}</text>` : ''}</svg>`);
 }
@@ -132,11 +133,6 @@ export async function readBrandingAsset(kind: BrandingKind, forceDefault = false
         }
     }
     return { body: defaultMark(kind), mime: 'image/svg+xml', isFallback: true };
-}
-
-export async function readBrandingDataUrl(kind: BrandingKind) {
-    const asset = await readBrandingAsset(kind);
-    return `data:${asset.mime};base64,${asset.body.toString('base64')}`;
 }
 
 export async function pruneUnusedBrandingFiles() {

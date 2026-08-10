@@ -75,6 +75,28 @@ local function sourceNumber(source)
     return value and value > 0 and value or nil
 end
 
+local function bareLicense(identifier)
+    if type(identifier) ~= 'string' then return nil end
+    identifier = string.lower(identifier)
+    return string.match(identifier, '^license2?:(%x+)$')
+        or string.match(identifier, '^(%x+)$')
+end
+
+local function sameLicense(left, right)
+    local leftBare = bareLicense(left)
+    local rightBare = bareLicense(right)
+    return leftBare ~= nil and leftBare == rightBare
+end
+
+local function txAdminLicenseForSource(source, fallback)
+    source = sourceNumber(source)
+    if not source then return fallback end
+    -- txAdmin uses the `license` identifier as its player key even when Qbox
+    -- persists the preferred `license2` identifier in players. Keep this
+    -- account metadata aligned while leaving the citizenid unchanged.
+    return GetPlayerIdentifierByType(source, 'license') or fallback
+end
+
 local function invalidateReapply(source)
     source = sourceNumber(source)
     if not source then return nil end
@@ -206,7 +228,7 @@ local function normalizeOnline(player)
             (((data.charinfo or {}).firstname or '') .. ' ' .. ((data.charinfo or {}).lastname or '')),
         identifier = data.citizenid,
         characterId = data.citizenid,
-        playerLicense = data.license,
+        playerLicense = txAdminLicenseForSource(data.source, data.license),
         citizenid = data.citizenid,
         job = {
             name = job.name,
@@ -314,12 +336,16 @@ end
 
 --- Account lookup is deliberately plural. A license may own several Qbox
 --- characters and choosing one here would recreate the old LIMIT 1 bug.
+--- Qbox deployments store license, license2, and bare values in this column.
 function adapter.getPlayersByLicense(playerLicense)
     resolveColumns()
-    local bareLicense = string.gsub(string.gsub(playerLicense, '^license:', ''), '^license2:', '')
+    local bare = bareLicense(playerLicense)
+    if not bare then return {} end
+    local license = 'license:' .. bare
+    local license2 = 'license2:' .. bare
     local rows = MySQL.query.await(
         ('SELECT %s FROM `%s` WHERE license IN (?, ?, ?) ORDER BY `citizenid` LIMIT 50'):format(playerSelect, T.qbPlayers),
-        { playerLicense, 'license:' .. bareLicense, bareLicense }
+        { license, license2, bare }
     ) or {}
 
     local byCharacter = {}
@@ -329,8 +355,13 @@ function adapter.getPlayersByLicense(playerLicense)
     end
     for _, playerId in ipairs(GetPlayers()) do
         local player = core:GetPlayer(tonumber(playerId))
-        local liveLicense = player and tostring(player.PlayerData.license or '') or ''
-        if player and (liveLicense == playerLicense or liveLicense == bareLicense or liveLicense == 'license:' .. bareLicense) then
+        local source = player and player.PlayerData.source or nil
+        local storedLicense = player and player.PlayerData.license or nil
+        local liveLicense = source and GetPlayerIdentifierByType(source, 'license') or nil
+        local liveLicense2 = source and GetPlayerIdentifierByType(source, 'license2') or nil
+        if player and (sameLicense(playerLicense, storedLicense)
+            or sameLicense(playerLicense, liveLicense)
+            or sameLicense(playerLicense, liveLicense2)) then
             local normalized = normalizeOnline(player)
             byCharacter[normalized.characterId] = normalized
         end

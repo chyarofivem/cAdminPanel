@@ -11,7 +11,7 @@ const console = consoleFactory(modulename);
 export default async function FXServerDownloadLog(ctx) {
     //Check permissions
     if (!ctx.admin.testPermission('console.view', modulename)) {
-        return ctx.utils.renderMessage('You don\'t have permission to download this log.');
+        return ctx.utils.error(403, 'You do not have permission to download this log.');
     }
 
     let readFile;
@@ -21,6 +21,7 @@ export default async function FXServerDownloadLog(ctx) {
         readFile = fs.readFileSync(txCore.logger.fxserver.activeFilePath);
     } catch (error) {
         console.error(`Could not read log file ${txCore.logger.fxserver.activeFilePath}.`);
+        return ctx.utils.error(500, 'The active console log could not be read.');
     }
     const now = (new Date() / 1000).toFixed();
     ctx.attachment(`fxserver_${now}.log`);

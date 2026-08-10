@@ -20,7 +20,6 @@ import {
     type CadminResponse,
 } from '@/pages/CAdmin/api';
 import { t } from '@/lib/i18n';
-import consts from '@shared/consts';
 
 type StaffMember = {
     name: string;
@@ -50,11 +49,10 @@ type StaffDraft = {
     email: string;
     citizenfxID: string;
     discordID: string;
-    password: string;
     permissions: string[];
 };
 
-const emptyDraft: StaffDraft = { name: '', email: '', citizenfxID: '', discordID: '', password: '', permissions: [] };
+const emptyDraft: StaffDraft = { name: '', email: '', citizenfxID: '', discordID: '', permissions: [] };
 const sectionOrder: Permission['section'][] = ['Panel & Server', 'Character Management', 'In-game Menu'];
 
 const permissionSummary = (member: StaffMember) => {
@@ -127,7 +125,6 @@ export default function AdminsPage() {
             email: member.email,
             citizenfxID: member.citizenfxId,
             discordID: member.discordId,
-            password: '',
             permissions: member.permissions,
         });
         setEditing(member);
@@ -140,13 +137,6 @@ export default function AdminsPage() {
     }));
     const save = async () => {
         if (!draft.name.trim()) return txToast.error(t('Enter a username.'));
-        if (draft.password.trim() !== draft.password) return txToast.error(t('The password cannot start or end with a space.'));
-        if (draft.password.length && (draft.password.length < consts.adminPasswordMinLength || draft.password.length > consts.adminPasswordMaxLength)) {
-            return txToast.error(t('Password must be between {min} and {max} characters.', {
-                min: consts.adminPasswordMinLength,
-                max: consts.adminPasswordMaxLength,
-            }));
-        }
         setSaving(true);
         try {
             const action = editing === 'new' ? 'add' : 'edit';
@@ -157,7 +147,6 @@ export default function AdminsPage() {
                     chyaroEmail: draft.email.trim(),
                     citizenfxID: draft.citizenfxID.trim(),
                     discordID: draft.email.trim() ? '' : draft.discordID.trim(),
-                    password: draft.password,
                     permissions: draft.permissions,
                 },
             });
@@ -231,7 +220,6 @@ export default function AdminsPage() {
                         <div className="grid gap-4 md:grid-cols-2">
                             <div className="space-y-2"><Label htmlFor="staff-name">{t('Username')}</Label><Input id="staff-name" value={draft.name} readOnly={editing !== 'new'} onChange={event => setDraft({ ...draft, name: event.target.value })} placeholder={t('panel username')} /></div>
                             <div className="space-y-2"><Label htmlFor="staff-email">{t('chyarologin email (optional)')}</Label><Input id="staff-email" type="email" value={draft.email} onChange={event => setDraft({ ...draft, email: event.target.value })} placeholder="verified@example.com" /><p className="text-xs text-zinc-600">{t('Used only to match an optional verified login to this local account.')}</p></div>
-                            {editing !== 'new' && <div className="space-y-2"><Label htmlFor="staff-password">{t('New password (optional)')}</Label><Input id="staff-password" type="password" value={draft.password} minLength={consts.adminPasswordMinLength} maxLength={consts.adminPasswordMaxLength} autoComplete="new-password" onChange={event => setDraft({ ...draft, password: event.target.value })} placeholder={t('leave blank to keep current')} /><p className="text-xs text-zinc-600">{t('Setting this resets their local password and marks it temporary.')}</p></div>}
                             <div className="space-y-2"><Label htmlFor="staff-fivem">{t('Cfx.re username or fivem ID')}</Label><Input id="staff-fivem" value={draft.citizenfxID} onChange={event => setDraft({ ...draft, citizenfxID: event.target.value })} placeholder={t('optional')} /></div>
                             <div className="space-y-2"><Label htmlFor="staff-discord">{t('Discord user ID')}</Label><Input id="staff-discord" value={draft.discordID} disabled={!!draft.email.trim()} onChange={event => setDraft({ ...draft, discordID: event.target.value })} placeholder={t('optional')} /><p className="text-xs text-zinc-600">{draft.email.trim() ? t('Discord must be connected through chyarologin for this account.') : t('Used for in-game administrator matching.')}</p></div>
                         </div>

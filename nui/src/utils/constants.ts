@@ -317,6 +317,7 @@ export const MockedPlayerDetails: PlayerModalSuccess = {
             }
         ],
         "netid": 53,
+        "sessionRef": "00000000-0000-4000-8000-000000000053",
         "sessionTime": 53,
         "tsJoined": 1590812869,
         "playTime": 4706,

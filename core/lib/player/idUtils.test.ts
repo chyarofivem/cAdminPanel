@@ -15,7 +15,7 @@ test('parsePlayerId', () => {
 });
 
 test('parsePlayerIds', () => {
-    const result = idUtils.parsePlayerIds(['fivem:555555', 'fivem:xxxxx']);
+    const result = idUtils.parsePlayerIds(['FIVEM:555555', 'fivem:555555', 'fivem:xxxxx']);
     expect(result.validIdsArray).toEqual(['fivem:555555']);
     expect(result.invalidIdsArray).toEqual(['fivem:xxxxx']);
     expect(result.validIdsObject?.fivem).toBe('555555');

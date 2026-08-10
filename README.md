@@ -29,7 +29,6 @@
     - Show player IDs
     - Player search/sort by distance, ID, name
     - Player interactions: Go To, Bring, Spectate, Freeze
-    - Player troll: make drunk, set fire, wild attack
     - Player ban/warn/dm
 - Access control:
     - Login via Cfx.re or password

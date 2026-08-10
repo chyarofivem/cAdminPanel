@@ -11,11 +11,12 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { useEffect } from "react";
 import { LocalStorageKey } from "@/lib/localStorage";
 import { t } from '@/lib/i18n';
+import { reloadPanel } from '@/lib/navigation';
 
 //Used for global errors
 export function AppErrorFallback({ error }: FallbackProps) {
     const refreshPage = () => {
-        window.location.reload();
+        reloadPanel();
     }
     return (
         <div className="w-screen h-screen flex flex-col items-center justify-center bg-gradient-to-b from-background to-destructive/5 p-4">
@@ -63,7 +64,7 @@ export function GenericErrorBoundaryCard(props: GenericErrorBoundaryCardProps) {
                 const lastReload = lastReloadRaw ? parseInt(lastReloadRaw) : 0;
                 if (now - lastReload > 30_000) {
                     localStorage.setItem(LocalStorageKey.ErrorFallbackLastReload, now.toString());
-                    setTimeout(() => window.location.reload(), 500);
+                    setTimeout(reloadPanel, 500);
                 }
             }
         }, [props.error]);

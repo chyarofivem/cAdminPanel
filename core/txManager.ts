@@ -1,4 +1,4 @@
-import { getHostData } from "@lib/diagnostics";
+import { initializeHostStaticData } from '@lib/host/getHostStaticData';
 import { isProxy } from "util/types";
 import { startReadyWatcher } from "./boot/startReadyWatcher";
 import { Deployer } from "./deployer";
@@ -71,7 +71,7 @@ export default class TxManager {
 
         //Pre-calculate static data
         setTimeout(() => {
-            getHostData().catch((e) => { });
+            initializeHostStaticData().catch(() => { });
         }, 10_000);
     }
 

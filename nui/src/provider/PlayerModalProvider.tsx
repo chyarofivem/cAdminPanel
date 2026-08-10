@@ -10,11 +10,8 @@ import { useSetDisableTab, useSetListenForExit } from "../state/keys.state";
 import { useIsMenuVisible } from "../state/visibility.state";
 import { fetchNui } from "../utils/fetchNui";
 import { useSnackbar } from "notistack";
-import { Box, CircularProgress, Dialog, useTheme } from "@mui/material";
-import {
-  usePlayerModalVisibility,
-  useSetPlayerModalTab,
-} from "@nui/src/state/playerModal.state";
+import { Dialog } from "@mui/material";
+import { usePlayerModalVisibility } from "@nui/src/state/playerModal.state";
 import { txAdminMenuPage, usePageValue } from "../state/page.state";
 
 const PlayerContext = createContext<PlayerProviderCtx>({} as PlayerProviderCtx);
@@ -28,18 +25,6 @@ interface PlayerModalProviderProps {
   children: ReactNode;
 }
 
-const LoadingModal: React.FC = () => (
-  <Box
-    display="flex"
-    flexGrow={1}
-    width="100%"
-    justifyContent="center"
-    alignItems="center"
-  >
-    <CircularProgress />
-  </Box>
-);
-
 export const PlayerModalProvider: React.FC<PlayerModalProviderProps> = ({
   children,
 }) => {
@@ -48,44 +33,39 @@ export const PlayerModalProvider: React.FC<PlayerModalProviderProps> = ({
   const setListenForExit = useSetListenForExit();
   const { enqueueSnackbar } = useSnackbar();
   const [menuVisible, setMenuVisible] = useIsMenuVisible();
-  const setTab = useSetPlayerModalTab();
-  const theme = useTheme();
   const curPage = usePageValue();
 
   useEffect(() => {
     setDisableTabNav(modalOpen);
     setListenForExit(!modalOpen);
-    setTimeout(() => {
-      if (!modalOpen) setTab(0);
-    }, 500);
-  }, [modalOpen]);
+  }, [modalOpen, setDisableTabNav, setListenForExit]);
 
   // In case the modal is open when menu visibility is toggled
   // we need to close the modal as a result
   useEffect(() => {
     if (!menuVisible && modalOpen) setModalOpen(false);
-  }, [menuVisible]);
+  }, [menuVisible, modalOpen, setModalOpen]);
 
   // Will close both the modal and set the menu to invisible
   const closeMenu = useCallback(() => {
     setModalOpen(false);
     setMenuVisible(false);
-    fetchNui("closeMenu");
-  }, []);
+    fetchNui("closeMenu").catch(() => {});
+  }, [setMenuVisible, setModalOpen]);
 
   const showNoPerms = useCallback((opt: string) => {
     enqueueSnackbar(`You do not have permissions for "${opt}"`, {
       variant: "error",
     });
-  }, []);
+  }, [enqueueSnackbar]);
 
-  const handleClose = () => {
+  const handleClose = useCallback(() => {
     if (curPage === txAdminMenuPage.PlayerModalOnly) {
       closeMenu();
     } else {
       setModalOpen(false);
     }
-  }
+  }, [closeMenu, curPage, setModalOpen]);
 
   return (
     <PlayerContext.Provider
@@ -98,20 +78,23 @@ export const PlayerModalProvider: React.FC<PlayerModalProviderProps> = ({
         open={modalOpen}
         fullWidth
         onClose={handleClose}
-        maxWidth="md"
+        maxWidth="lg"
         PaperProps={{
-          style: {
-            backgroundColor: theme.palette.background.default,
-            minHeight: 455,
-            maxHeight: 650,
-            borderRadius: 15,
+          sx: {
+            width: "min(980px, calc(100vw - 48px))",
+            height: "min(680px, calc(100vh - 48px))",
+            maxHeight: "calc(100vh - 48px)",
+            overflow: "hidden",
+            borderRadius: 3,
+            border: "1px solid rgba(255,255,255,0.12)",
+            backgroundColor: "background.default",
+            backgroundImage: "none",
+            boxShadow: "0 30px 90px rgba(0,0,0,0.58)",
           },
           id: "player-modal-container",
         }}
       >
-        <React.Suspense fallback={<LoadingModal />}>
-          <PlayerModal onClose={handleClose} />
-        </React.Suspense>
+        <PlayerModal onClose={handleClose} />
       </Dialog>
       {children}
     </PlayerContext.Provider>

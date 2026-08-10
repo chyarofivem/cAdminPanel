@@ -1,7 +1,7 @@
 import { useState } from "react";
 import useSWR from "swr";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { setUrlHash as setUrlHashOriginal } from "@/lib/navigation";
+import { reloadPanel, setUrlHash as setUrlHashOriginal } from "@/lib/navigation";
 import { Settings2Icon } from "lucide-react";
 
 import { ApiTimeout, useBackendApi } from "@/hooks/fetch";
@@ -185,12 +185,20 @@ export default function SettingsPage({ embeddedAllowlist = false }: { embeddedAl
                 changelog: saveResp.changelog,
             }, false);
             setCardPendingSave(null);
-            if (
+            const shouldReloadForLanguage = (
                 source.cardId === 'general'
                 && typeof changes.general?.language === 'string'
                 && changes.general.language !== window.txConsts.uiLocale
-            ) {
-                window.location.reload();
+            );
+            const effectiveCadminEnabled = saveResp.stored.cadmin?.enabled
+                ?? swr.data.defaultConfigs.cadmin.enabled;
+            const shouldReloadForCadmin = (
+                source.cardId === 'cadmin'
+                && effectiveCadminEnabled !== window.txConsts.cadminEnabled
+            );
+            const shouldReloadForAppearance = source.cardId === 'appearance';
+            if (shouldReloadForLanguage || shouldReloadForCadmin || shouldReloadForAppearance) {
+                reloadPanel();
             }
         } catch (error) {
             txToast.error({

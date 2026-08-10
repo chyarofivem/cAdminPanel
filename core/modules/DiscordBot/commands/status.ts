@@ -1,13 +1,8 @@
-const modulename = 'DiscordBot:cmd:status';
-import humanizeDuration from 'humanize-duration';
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, ChannelType, ChatInputCommandInteraction, ColorResolvable, EmbedBuilder } from 'discord.js';
-import { txEnv } from '@core/globalData';
 import { cloneDeep } from 'lodash-es';
 import { embedder, ensurePermission, isValidButtonEmoji, isValidEmbedUrl, logDiscordAdminAction } from '../discordHelpers';
-import consoleFactory from '@lib/console';
 import { msToShortishDuration } from '@lib/misc';
 import { FxMonitorHealth } from '@shared/enums';
-const console = consoleFactory(modulename);
 
 
 const isValidButtonConfig = (btn: any) => {
@@ -151,12 +146,7 @@ export const generateStatusMessage = (
     try {
         embed = new EmbedBuilder(processedEmbedData);
         embed.setColor(placeholders.statusColor as ColorResolvable);
-        embed.setTimestamp();
-        embed.setFooter({
-            iconURL: 'https://cdn.discordapp.com/emojis/1062339910654246964.webp?size=96&quality=lossless',
-            text: `txAdmin ${txEnv.txaVersion} • Updated every minute`,
-
-        });
+        embed.setFooter(null);
     } catch (error) {
         throw new Error(`**Embed Class Error:** ${(error as Error).message}`);
     }

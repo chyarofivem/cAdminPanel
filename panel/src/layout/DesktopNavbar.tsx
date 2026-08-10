@@ -95,7 +95,7 @@ export default function DesktopNavbar() {
                     <HeaderMenuItem href="/administration/players">
                         {t('Player Management')}
                     </HeaderMenuItem>
-                    <HeaderMenuItem href="/history">
+                    <HeaderMenuItem href="/administration/history">
                         {t('History')}
                     </HeaderMenuItem>
                     <HeaderMenuItem href="/insights/player-drops">
@@ -127,7 +127,7 @@ export default function DesktopNavbar() {
                         <NavigationMenuContent className="flex flex-col gap-2 p-4 list-none">
                             <HeaderMenuLink
                                 className="w-36 justify-start"
-                                href="/system/allowlist"
+                                href="/server/allowlist"
                             >
                                 {t('Allowlist')}
                             </HeaderMenuLink>
@@ -139,9 +139,10 @@ export default function DesktopNavbar() {
                             </HeaderMenuLink>
                             <HeaderMenuLink
                                 className="w-36 justify-start"
-                                href="/system/diagnostics"
+                                href="/system/cfg-editor"
+                                disabled={!hasPerm('master')}
                             >
-                                {t('Diagnostics')}
+                                {t('CFG Editor')}
                             </HeaderMenuLink>
                             <HeaderMenuLink
                                 className="w-36 justify-start"

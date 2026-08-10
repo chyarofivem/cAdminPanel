@@ -3,7 +3,7 @@ import dateFormat from 'dateformat';
 import playerResolver from '@lib/player/playerResolver';
 import { PlayerHistoryItem, PlayerModalResp, PlayerModalPlayerData } from '@shared/playerApiTypes';
 import { DatabaseActionType } from '@modules/Database/databaseTypes';
-import { ServerPlayer } from '@lib/player/playerClasses';
+import { isMatchingPlayerConnection, ServerPlayer } from '@lib/player/playerClasses';
 import consoleFactory from '@lib/console';
 import { AuthedCtx } from '@modules/WebServer/ctxTypes';
 import { now } from '@lib/misc';
@@ -41,7 +41,7 @@ export default async function PlayerModal(ctx: AuthedCtx) {
     if (typeof ctx.query === 'undefined') {
         return ctx.utils.error(400, 'Invalid Request');
     }
-    const { mutex, netid, license } = ctx.query;
+    const { mutex, netid, license, connectionRef } = ctx.query;
     const sendTypedResp = (data: PlayerModalResp) => ctx.send(data);
 
     //Finding the player
@@ -51,6 +51,12 @@ export default async function PlayerModal(ctx: AuthedCtx) {
         player = playerResolver(refMutex, parseInt((netid as string)), license);
     } catch (error) {
         return sendTypedResp({ error: (error as Error).message });
+    }
+
+    if (connectionRef !== undefined) {
+        if (!isMatchingPlayerConnection(player, connectionRef)) {
+            return sendTypedResp({ error: 'This player connection changed. Close this view and open the player again.' });
+        }
     }
 
     //Prepping player data
@@ -69,6 +75,7 @@ export default async function PlayerModal(ctx: AuthedCtx) {
 
     if (player instanceof ServerPlayer) {
         playerData.netid = player.netid;
+        playerData.sessionRef = player.sessionRef;
         playerData.sessionTime = Math.ceil((now() - player.tsConnected) / 60);
     }
 

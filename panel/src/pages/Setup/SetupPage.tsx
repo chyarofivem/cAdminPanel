@@ -11,6 +11,7 @@ import { Label } from '@/components/ui/label';
 import { ApiTimeout, useBackendApi } from '@/hooks/fetch';
 import { cn } from '@/lib/utils';
 import { t } from '@/lib/i18n';
+import { reloadPanel } from '@/lib/navigation';
 import SetupShell, { SetupSpinner, StepActions, StepHeading } from './SetupShell';
 import {
     buildDeployName, emptySetupState, tagColorClass,
@@ -118,7 +119,7 @@ export default function SetupPage() {
                 <AlertTriangle className="size-8 text-destructive-inline" />
                 <h3 className="text-lg font-semibold">{t('Could not open the setup wizard')}</h3>
                 <p className="max-w-lg text-sm text-neutral-400">{loadError}</p>
-                <Button variant="outline" onClick={() => window.location.reload()}>{t('Try again')}</Button>
+                <Button variant="outline" onClick={reloadPanel}>{t('Try again')}</Button>
             </div>
         </SetupShell>;
     }
@@ -149,7 +150,7 @@ export default function SetupPage() {
     };
     const handleRefresh = (resp: ValidationResp) => {
         if (!resp.refresh) return false;
-        window.location.reload();
+        reloadPanel();
         return true;
     };
 

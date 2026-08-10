@@ -7,7 +7,6 @@ import { contentRefreshKeyAtom, pageErrorStatusAtom, useSetPageTitle } from "@/h
 import { navigate as setLocation } from 'wouter/use-browser-location';
 import { useAdminPerms } from "@/hooks/auth";
 
-import Iframe from "@/pages/Iframe";
 import NotFound from "@/pages/NotFound";
 import TestingPage from "@/pages/TestingPage/TestingPage";
 import LiveConsolePage from "@/pages/LiveConsole/LiveConsolePage";
@@ -18,7 +17,6 @@ import DashboardPage from "@/pages/Dashboard/DashboardPage";
 import PlayerDropsPage from "@/pages/PlayerDropsPage/PlayerDropsPage";
 import SettingsPage from "@/pages/Settings/SettingsPage";
 import UnauthorizedPage from "@/pages/UnauthorizedPage";
-import DiagnosticsPage from "@/pages/Diagnostics/DiagnosticsPage";
 import AdvancedPage from "@/pages/AdvancedPage";
 import CadminUsersPage from '@/pages/CAdmin/UsersPage';
 import AdminsPage from '@/pages/Admins/AdminsPage';
@@ -32,6 +30,7 @@ import SetupPage from '@/pages/Setup/SetupPage';
 import { t } from '@/lib/i18n';
 import UserSettingsPage from '@/pages/UserSettingsPage';
 import MasterActionsPage from '@/pages/MasterActions/MasterActionsPage';
+import DeployerPage from '@/pages/Deployer/DeployerPage';
 
 
 type RouteType = {
@@ -55,14 +54,9 @@ const allRoutes: RouteType[] = [
         Page: <PlayerDetailPage />,
     },
     {
-        path: '/history',
+        path: '/administration/history',
         title: 'History',
         Page: <HistoryPage />
-    },
-    {
-        path: '/allowlist',
-        title: 'Allowlist',
-        Page: <LegacyRedirect to="/system/allowlist" />,
     },
     {
         path: '/players',
@@ -97,7 +91,7 @@ const allRoutes: RouteType[] = [
         Page: <PlayerDropsPage />
     },
     {
-        path: '/system/allowlist',
+        path: '/server/allowlist',
         title: 'Allowlist',
         Page: <AllowlistPage />,
     },
@@ -125,11 +119,6 @@ const allRoutes: RouteType[] = [
         Page: <MasterActionsPage />
     },
     {
-        path: '/system/diagnostics',
-        title: 'Diagnostics',
-        Page: <DiagnosticsPage />
-    },
-    {
         path: '/system/txadmin-log',
         title: 'txAdmin Log',
         permission: 'txadmin.log.combined',
@@ -154,7 +143,7 @@ const allRoutes: RouteType[] = [
         Page: <ResourcesPage />,
     },
     {
-        path: '/server/cfg-editor',
+        path: '/system/cfg-editor',
         title: 'CFG Editor',
         permission: 'master',
         Page: <CfgEditorPage />,
@@ -169,7 +158,7 @@ const allRoutes: RouteType[] = [
         path: '/server/deployer',
         title: 'Setup Wizard',
         permission: 'master', //FIXME: eithger change to all_permissions or create a new Setup/Deploy permission
-        Page: <Iframe legacyUrl="deployer" />
+        Page: <DeployerPage />
     },
     {
         path: '/advanced',

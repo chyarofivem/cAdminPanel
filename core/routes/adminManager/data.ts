@@ -13,7 +13,7 @@ export default async function AdminManagerData(ctx: AuthedCtx) {
         return ctx.send({ success: false, error: 'You do not have permission to manage staff.' });
     }
 
-    const admins = txCore.adminStore.getAdminsList().map((admin) => {
+    const admins = txCore.adminStore.getAdminsList().map((admin: any) => {
         const isSelf = ctx.admin.name.toLowerCase() === admin.name.toLowerCase();
         return {
             name: admin.name,

@@ -12,7 +12,7 @@ export const useLocale = () => {
     ) {
       return serverCtx.localeData;
     } else {
-      if (localeMap[serverCtx.locale]) {
+      if (Object.prototype.hasOwnProperty.call(localeMap, serverCtx.locale)) {
         return localeMap[serverCtx.locale];
       } else {
         console.log(`Unable to find a locale with code ${serverCtx.locale} in cache, using English`);

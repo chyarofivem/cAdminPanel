@@ -6,11 +6,13 @@ import { atomWithReset } from 'jotai/utils';
 /**
  * Player Modal Stuff
  */
-export type PlayerModalRefType = {
+export type PlayerModalRefType = ({
     mutex: string;
     netid: number;
 } | {
     license: string;
+}) & {
+    sessionRef?: string;
 };
 export const playerModalOpenAtom = atomWithReset(false);
 export const playerModalRefAtom = atomWithReset<PlayerModalRefType | undefined>(undefined);

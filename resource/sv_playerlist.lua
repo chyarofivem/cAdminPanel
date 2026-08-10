@@ -23,6 +23,10 @@ local pairs = pairs
 
 
 -- Variables & Consts
+local connectionRefEpoch = ('%d:%d'):format(os.time(), GetGameTimer())
+local connectionRefCounter = 0
+local connectionRefStateKey = 'txAdminConnectionRef'
+local reportedConnectionRefs = {}
 -- https://www.desmos.com/calculator/dx9f5ko2ge
 local refreshMinDelay = 1500
 local refreshMaxDelay = 5000
@@ -40,6 +44,48 @@ local vTypeMap = {
     ["trailer"] = 7,
     ["train"] = 8,
 }
+
+
+-- Returns an opaque reference that changes whenever a server ID gets a new connection.
+local function createConnectionRef(serverID)
+    connectionRefCounter = connectionRefCounter + 1
+    return ('%s:%d:%s'):format(connectionRefEpoch, connectionRefCounter, tostring(serverID))
+end
+
+-- Player state survives a monitor resource restart and is discarded with the connection.
+local function getConnectionRef(serverID)
+    local playerState = Player(tonumber(serverID)).state
+    local storedRef = playerState[connectionRefStateKey]
+    if type(storedRef) == 'string' and storedRef ~= '' then
+        return storedRef
+    end
+
+    local connectionRef = createConnectionRef(serverID)
+    playerState:set(connectionRefStateKey, connectionRef, false)
+    return connectionRef
+end
+
+function TX_GET_PLAYER_CONNECTION_REF(serverID)
+    local playerData = TX_PLAYERLIST[tostring(serverID)]
+    if type(playerData) ~= 'table' or type(GetPlayerName(tonumber(serverID))) ~= 'string' then
+        return nil
+    end
+    return playerData.connectionRef
+end
+
+function TX_VALIDATE_PLAYER_CONNECTION(serverID, expectedConnectionRef, adminSource)
+    if type(expectedConnectionRef) ~= 'string' or expectedConnectionRef == '' then
+        if adminSource then
+            TriggerClientEvent('txcl:playerActionResult', adminSource, false, 'nui_menu.player_modal.misc.disconnected')
+        end
+        return false
+    end
+    local matches = TX_GET_PLAYER_CONNECTION_REF(serverID) == expectedConnectionRef
+    if not matches and adminSource then
+        TriggerClientEvent('txcl:playerActionResult', adminSource, false, 'nui_menu.player_modal.misc.disconnected')
+    end
+    return matches
+end
 
 
 --[[ Wrapper to refresh player list data ]]
@@ -72,12 +118,16 @@ local function refreshPlayerList()
         if type(TX_PLAYERLIST[serverID]) ~= 'table' then
             TX_PLAYERLIST[serverID] = {
                 name = sub(GetPlayerName(serverID) or "unknown", 1, 75),
+                connectionRef = getConnectionRef(serverID),
                 health = health,
                 vType = vType,
                 xCoord = xCoord,
                 yCoord = yCoord,
             }
         else
+            if type(TX_PLAYERLIST[serverID].connectionRef) ~= 'string' then
+                TX_PLAYERLIST[serverID].connectionRef = getConnectionRef(serverID)
+            end
             TX_PLAYERLIST[serverID].health = health
             TX_PLAYERLIST[serverID].vType = vType
             TX_PLAYERLIST[serverID].xCoord = xCoord
@@ -105,6 +155,33 @@ local function refreshPlayerList()
         end
     end
     return playersOnline
+end
+
+
+-- Reports one live connection to the backend player mirror.
+local function reportPlayerConnection(serverID, connectionRef, isResync)
+    if reportedConnectionRefs[connectionRef] then return end
+
+    local numericServerID = tonumber(serverID)
+    local playerDetectedName = GetPlayerName(numericServerID)
+    if type(playerDetectedName) ~= 'string' then return end
+
+    local tracePayload = {
+        type = 'txAdminPlayerlistEvent',
+        event = 'playerJoining',
+        id = numericServerID,
+        player = {
+            name = sub(playerDetectedName, 1, 128),
+            ids = GetPlayerIdentifiers(numericServerID),
+            hwids = GetPlayerTokens(numericServerID),
+            connectionRef = connectionRef,
+        },
+    }
+    if isResync then tracePayload.resync = true end
+
+    PrintStructuredTrace(json.encode(tracePayload))
+    reportedConnectionRefs[connectionRef] = true
+    return tracePayload.player
 end
 
 
@@ -149,21 +226,44 @@ AddEventHandler('playerJoining', function(srcString, _oldID)
         return
     end
 
-    local playerData = {
-        name = sub(playerDetectedName or "unknown", 1, 128),
-        ids = GetPlayerIdentifiers(source),
-        hwids = GetPlayerTokens(source),
+    local sourceKey = tostring(source)
+    local connectionRef = getConnectionRef(sourceKey)
+    local previousData = TX_PLAYERLIST[sourceKey]
+    TX_PLAYERLIST[sourceKey] = {
+        name = sub(playerDetectedName, 1, 75),
+        connectionRef = connectionRef,
+        health = type(previousData) == 'table' and previousData.health or -1,
+        vType = type(previousData) == 'table' and previousData.vType or -1,
+        xCoord = type(previousData) == 'table' and previousData.xCoord or nil,
+        yCoord = type(previousData) == 'table' and previousData.yCoord or nil,
+        foundLastCheck = true,
     }
-    PrintStructuredTrace(json.encode({
-        type = 'txAdminPlayerlistEvent',
-        event = 'playerJoining',
-        id = source,
-        player = playerData
-    }))
+
+    local playerData = reportPlayerConnection(source, connectionRef, false)
+    if not playerData then return end
 
     -- relaying this info to all admins
     for adminID, _ in pairs(TX_ADMINS) do
-        TriggerClientEvent('txcl:plist:updatePlayer', adminID, source, playerData.name)
+        TriggerClientEvent('txcl:plist:updatePlayer', adminID, source, {
+            name = playerData.name,
+            connectionRef = connectionRef,
+        })
+    end
+end)
+
+
+-- Restore the backend mirror for players who were already connected when monitor started.
+CreateThread(function()
+    Wait(1000)
+    local callSuccess = pcall(refreshPlayerList)
+    if not callSuccess then
+        return logError('failed to resync playerlist')
+    end
+
+    for serverID, playerData in pairs(TX_PLAYERLIST) do
+        if type(playerData) == 'table' and type(playerData.connectionRef) == 'string' then
+            reportPlayerConnection(serverID, playerData.connectionRef, true)
+        end
     end
 end)
 
@@ -178,10 +278,16 @@ AddEventHandler('playerDropped', function(reason, resource, category)
         reason = 'server_shutting_down'
     end
 
+    local sourceKey = tostring(source)
+    local currentPlayerData = TX_PLAYERLIST[sourceKey]
+    local connectionRef = type(currentPlayerData) == 'table' and currentPlayerData.connectionRef or nil
+    if connectionRef then reportedConnectionRefs[connectionRef] = nil end
+
     PrintStructuredTrace(json.encode({
         type = 'txAdminPlayerlistEvent',
         event = 'playerDropped',
         id = source,
+        connectionRef = connectionRef,
         reason = reason,
         resource = resource,
         category = category,
@@ -189,8 +295,12 @@ AddEventHandler('playerDropped', function(reason, resource, category)
 
     -- relaying this info to all admins
     for adminID, _ in pairs(TX_ADMINS) do
-        TriggerClientEvent('txcl:plist:updatePlayer', adminID, source, false)
+        TriggerClientEvent('txcl:plist:updatePlayer', adminID, source, {
+            dropped = true,
+            connectionRef = connectionRef,
+        })
     end
+    TX_PLAYERLIST[sourceKey] = nil
 end)
 
 
@@ -229,6 +339,7 @@ RegisterNetEvent('txsv:req:plist:getDetailed', function(getPlayerNames)
         if getPlayerNames then
             players[#players][6] = playerData.name
         end
+        players[#players][7] = playerData.connectionRef
     end
     local admins = {}
     for adminID, _ in pairs(TX_ADMINS) do
@@ -245,7 +356,7 @@ function sendInitialPlayerlist(adminID)
     local payload = {}
     --DEBUG replace TX_PLAYERLIST with fake_playerlist
     for playerID, playerData in pairs(TX_PLAYERLIST) do
-        payload[#payload + 1] = { tonumber(playerID), playerData.name }
+        payload[#payload + 1] = { tonumber(playerID), playerData.name, playerData.connectionRef }
     end
     --DEBUG
     -- debugPrint("====================================")

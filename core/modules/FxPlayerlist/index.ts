@@ -12,6 +12,7 @@ export type PlayerDropEvent = {
     type: 'txAdminPlayerlistEvent',
     event: 'playerDropped',
     id: number,
+    connectionRef?: string,
     reason: string, //need to check if this is always a string
     resource?: string,
     category?: number,
@@ -209,16 +210,25 @@ export default class FxPlayerlist {
         if (payload.event === 'playerJoining') {
             try {
                 if (typeof payload.id !== 'number') throw new Error(`invalid player id`);
-                if (this.#playerlist[payload.id] !== undefined) throw new Error(`duplicated player id`);
+                const previousPlayer = this.#playerlist[payload.id];
+                const incomingConnectionRef = payload.player?.connectionRef;
+                if (previousPlayer?.isConnected) {
+                    if (previousPlayer.connectionRef === incomingConnectionRef) {
+                        return;
+                    }
+                    previousPlayer.disconnect();
+                }
                 const svPlayer = new ServerPlayer(payload.id, payload.player, this);
                 this.#playerlist[payload.id] = svPlayer;
-                this.joinLeaveLog.push([currTs, true]);
-                txCore.logger.server.write([{
-                    type: 'playerJoining',
-                    src: payload.id,
-                    ts: currTs,
-                    data: { ids: svPlayer.idsOnline }
-                }], mutex);
+                if (payload.resync !== true) {
+                    this.joinLeaveLog.push([currTs, true]);
+                    txCore.logger.server.write([{
+                        type: 'playerJoining',
+                        src: payload.id,
+                        ts: currTs,
+                        data: { ids: svPlayer.idsOnline }
+                    }], mutex);
+                }
                 txCore.webServer.webSocket.buffer<PlayerJoiningEventType>('playerlist', {
                     mutex,
                     type: 'playerJoining',
@@ -234,8 +244,17 @@ export default class FxPlayerlist {
         } else if (payload.event === 'playerDropped') {
             try {
                 if (typeof payload.id !== 'number') throw new Error(`invalid player id`);
-                if (!(this.#playerlist[payload.id] instanceof ServerPlayer)) throw new Error(`player id not found`);
-                this.#playerlist[payload.id]!.disconnect();
+                const currentPlayer = this.#playerlist[payload.id];
+                if (!(currentPlayer instanceof ServerPlayer)) throw new Error(`player id not found`);
+                const hasDropConnectionRef = typeof payload.connectionRef === 'string'
+                    && payload.connectionRef.length > 0;
+                if (
+                    (currentPlayer.hasResourceConnectionRef && !hasDropConnectionRef)
+                    || (hasDropConnectionRef && currentPlayer.connectionRef !== payload.connectionRef)
+                ) {
+                    throw new Error(`stale playerDropped event`);
+                }
+                currentPlayer.disconnect();
                 this.joinLeaveLog.push([currTs, false]);
                 const reasonCategory = txCore.metrics.playerDrop.handlePlayerDrop(payload);
                 if (reasonCategory !== false) {
@@ -249,7 +268,7 @@ export default class FxPlayerlist {
                 txCore.webServer.webSocket.buffer<PlayerDroppedEventType>('playerlist', {
                     mutex,
                     type: 'playerDropped',
-                    netid: this.#playerlist[payload.id]!.netid,
+                    netid: currentPlayer.netid,
                     reasonCategory: reasonCategory ? reasonCategory : undefined,
                 });
             } catch (error) {

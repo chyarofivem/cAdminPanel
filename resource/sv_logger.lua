@@ -188,16 +188,6 @@ AddEventHandler('txsv:logger:menuEvent', function(source, action, allowed, data)
     elseif action == 'summonPlayer' then
         message = "summoned player " .. getLogPlayerName(data)
 
-    --TROLL modal options
-    elseif action == 'drunkEffect' then
-        message = "triggered drunk effect on " .. getLogPlayerName(data)
-
-    elseif action == 'setOnFire' then
-        message = "set ".. getLogPlayerName(data) .." on fire" 
-
-    elseif action == 'wildAttack' then
-        message = "triggered wild attack on " .. getLogPlayerName(data)
-
     elseif action == 'showPlayerIDs' then
         if type(data) ~= 'boolean' then return end
         if data then

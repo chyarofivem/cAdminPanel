@@ -70,10 +70,10 @@ module.exports = {
       },
       colors: {
         brand: {
-          300: "oklch(var(--brand-300) / <alpha-value>)",
-          500: "oklch(var(--brand-500) / <alpha-value>)",
-          600: "oklch(var(--brand-600) / <alpha-value>)",
-          700: "oklch(var(--brand-700) / <alpha-value>)",
+          300: "rgb(var(--brand-300) / <alpha-value>)",
+          500: "rgb(var(--brand-500) / <alpha-value>)",
+          600: "rgb(var(--brand-600) / <alpha-value>)",
+          700: "rgb(var(--brand-700) / <alpha-value>)",
         },
         discord: {
           DEFAULT: "#5865F2",
@@ -121,7 +121,7 @@ module.exports = {
           foreground: "hsl(var(--muted-foreground))",
         },
         accent: {
-          DEFAULT: "oklch(var(--brand-600) / <alpha-value>)",
+          DEFAULT: "rgb(var(--brand-600) / <alpha-value>)",
           foreground: "hsl(var(--accent-foreground))",
         },
         popover: {

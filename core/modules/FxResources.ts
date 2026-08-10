@@ -55,6 +55,7 @@ export default class FxResources {
         }
         this.resBootLog = [];
         this.resBooting = null;
+        this.resourceReport = undefined;
     }
 
 
@@ -121,10 +122,12 @@ export default class FxResources {
      * NOTE: replace this when we start tracking resource states internally
      */
     tmpUpdateResourceList(resources: any[]) {
+        if (!Array.isArray(resources)) return false;
         this.resourceReport = {
             ts: new Date(),
             resources,
         }
+        return true;
     }
 };
 

@@ -24,19 +24,26 @@ end)
 
 RegisterNetEvent('txsv:req:sendAnnouncement', function(message)
   local src = source
-  if type(message) ~= 'string' then
-    return
-  end
+  if type(message) ~= 'string' or message:match('^%s*$') then return end
+  message = message:match('^%s*(.-)%s*$')
   local allow = PlayerHasTxPermission(src, 'announcement')
   TriggerEvent('txsv:logger:menuEvent', src, 'announcement', allow, message)
   if allow then
+    local eventData = {
+      author = TX_ADMINS[tostring(src)].username,
+      message = message,
+    }
+    TriggerEvent('txAdmin:events:announcement', eventData)
+    TX_EVENT_HANDLERS.announcement(eventData)
     PrintStructuredTrace(json.encode({
       type = 'txAdminCommandBridge',
       command = 'announcement',
-      author = TX_ADMINS[tostring(src)].username,
+      author = eventData.author,
       message = message,
+      delivered = true,
     }))
   end
+  TriggerClientEvent('txcl:announcementResult', src, allow)
 end)
 
 RegisterNetEvent('txsv:req:clearArea', function(radius)
@@ -80,13 +87,14 @@ RegisterNetEvent('txsv:req:healMyself', function()
   end
 end)
 
-RegisterNetEvent('txsv:req:healPlayer', function(id)
+RegisterNetEvent('txsv:req:healPlayer', function(id, connectionRef)
   local src = source
   if type(id) ~= 'string' and type(id) ~= 'number' then
     return
   end
   id = tonumber(id)
   local allow = PlayerHasTxPermission(src, 'players.heal')
+    and TX_VALIDATE_PLAYER_CONNECTION(id, connectionRef, src)
   if allow then
     local ped = GetPlayerPed(id)
     if ped then
@@ -98,6 +106,12 @@ RegisterNetEvent('txsv:req:healPlayer', function(id)
         target = id,
         author = TX_ADMINS[tostring(src)].username,
       })
+      TriggerClientEvent(
+        'txcl:playerActionResult',
+        src,
+        true,
+        'nui_menu.player_modal.actions.interaction.notifications.heal_player'
+      )
     end
   end
   TriggerEvent('txsv:logger:menuEvent', src, 'healPlayer', allow, id)

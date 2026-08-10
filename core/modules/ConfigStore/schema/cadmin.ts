@@ -4,7 +4,7 @@ import { SYM_FIXER_DEFAULT } from '@lib/symbols';
 
 const item = <T>(name: string, defaultValue: T, validator: z.ZodType<T>) => typeDefinedConfig({
     name,
-    default: defaultValue,
+    default: defaultValue as T extends null ? never : T,
     validator,
     fixer: SYM_FIXER_DEFAULT,
 });

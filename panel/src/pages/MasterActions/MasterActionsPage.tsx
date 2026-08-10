@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { DatabaseBackup, ShieldAlert, Trash2, UserX } from 'lucide-react';
 import { PageHeader } from '@/components/page-header';
 import { Button } from '@/components/ui/button';
-import { useBackendApi } from '@/hooks/fetch';
+import { useAuthedFileDownload, useBackendApi } from '@/hooks/fetch';
 import { txToast } from '@/components/TxToaster';
 import { t } from '@/lib/i18n';
 
@@ -12,9 +12,22 @@ const selectClass = 'h-10 w-full rounded-lg border border-white/10 bg-[#0f1116] 
 
 export default function MasterActionsPage() {
     const [working, setWorking] = useState(false);
+    const [downloading, setDownloading] = useState(false);
     const [cleanup, setCleanup] = useState({ players: '60d', bans: 'revoked', warns: '30d', hwids: 'none' });
     const [allowlistFilter, setAllowlistFilter] = useState('30d');
     const actionApi = useBackendApi<ActionResponse, Record<string, string>>({ method: 'POST', path: '/masterActions/:action' });
+    const downloadFile = useAuthedFileDownload();
+
+    const downloadBackup = async () => {
+        setDownloading(true);
+        try {
+            await downloadFile('/masterActions/backupDatabase');
+        } catch (error) {
+            txToast.error(error instanceof Error ? error.message : t('The download failed.'));
+        } finally {
+            setDownloading(false);
+        }
+    };
 
     const run = async (action: 'cleanDatabase' | 'revokeWhitelists', data: Record<string, string>) => {
         if (!window.confirm(t('This action changes stored player data. Continue?'))) return;
@@ -38,7 +51,7 @@ export default function MasterActionsPage() {
         <div className="grid gap-5 xl:grid-cols-2">
             <section className="rounded-2xl border border-white/10 bg-white/[0.035] p-6">
                 <div className="flex items-start gap-3"><DatabaseBackup className="mt-1 size-5 text-brand-500" /><div><h2 className="text-lg font-semibold">{t('Database backup')}</h2><p className="mt-1 text-sm text-zinc-400">{t('Download players, actions, and allowlist requests before maintenance.')}</p></div></div>
-                <Button className="mt-6" variant="outline" onClick={() => { window.location.href = '/masterActions/backupDatabase'; }}><DatabaseBackup className="mr-2 size-4" />{t('Download backup')}</Button>
+                <Button className="mt-6" variant="outline" disabled={downloading} onClick={downloadBackup}><DatabaseBackup className="mr-2 size-4" />{downloading ? t('Downloading...') : t('Download backup')}</Button>
             </section>
             <section className="rounded-2xl border border-red-500/20 bg-red-500/[0.035] p-6">
                 <div className="flex items-start gap-3"><UserX className="mt-1 size-5 text-red-400" /><div><h2 className="text-lg font-semibold">{t('Allowlist maintenance')}</h2><p className="mt-1 text-sm text-zinc-400">{t('Revoke license allowlist entries by last connection time.')}</p></div></div>

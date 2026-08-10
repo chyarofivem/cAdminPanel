@@ -26,8 +26,9 @@ export const parsePlayerId = (idString: string) => {
  * Get valid, invalid and license identifier from array of ids
  */
 export const parsePlayerIds = (ids: string[]) => {
-    let invalidIdsArray: string[] = [];
-    let validIdsArray: string[] = [];
+    const invalidIdsArray: string[] = [];
+    const validIdsArray: string[] = [];
+    const seenValidIds = new Set<string>();
     const validIdsObject: PlayerIdsObjectType = {
         discord: null,
         fivem: null,
@@ -40,9 +41,12 @@ export const parsePlayerIds = (ids: string[]) => {
 
     for (const idString of ids) {
         if (typeof idString !== 'string') continue;
-        const { isIdValid, idType, idValue } = parsePlayerId(idString);
-        if (isIdValid) {
-            validIdsArray.push(idString);
+        const { isIdValid, idType, idValue, idlowerCased } = parsePlayerId(idString);
+        if (isIdValid && idlowerCased && idType && idValue) {
+            if (!seenValidIds.has(idlowerCased)) {
+                seenValidIds.add(idlowerCased);
+                validIdsArray.push(idlowerCased);
+            }
             validIdsObject[idType as keyof PlayerIdsObjectType] = idValue;
         } else {
             invalidIdsArray.push(idString);

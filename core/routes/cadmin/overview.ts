@@ -51,7 +51,7 @@ export default async function CadminOverview(ctx: AuthedCtx) {
     }
     if (ctx.admin.hasPermission('txadmin.log.combined')) {
         const raw = await txCore.logger.admin.getRecentBuffer();
-        result.recent = (raw || '').split(/\r?\n/).filter(line => line.toLowerCase().includes('cadmin:')).slice(-8).reverse();
+        result.recent = (raw || '').split(/\r?\n/).filter((line: string) => line.toLowerCase().includes('cadmin:')).slice(-8).reverse();
     }
     return ctx.send({ success: true, data: result });
 }

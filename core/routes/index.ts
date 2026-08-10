@@ -1,7 +1,4 @@
-export { default as diagnostics_sendReport } from './diagnostics/sendReport';
-export { default as diagnostics_getDiagnostics } from './diagnostics/getDiagnostics';
 export { default as intercom } from './intercom.js';
-export { default as resources } from './resources.js';
 export { default as resources_data } from './resources/data';
 export { default as perfChart } from './perfChart';
 export { default as playerDrops } from './playerDrops';
@@ -30,18 +27,16 @@ export { default as auth_self } from './authentication/self';
 export { default as auth_selfIdentifiers } from './authentication/selfIdentifiers';
 export { default as auth_selfPreferences } from './authentication/selfPreferences';
 export { default as auth_logout } from './authentication/logout';
+export { default as updateSetup_data } from './updateSetup/data';
+export { default as updateSetup_complete } from './updateSetup/complete';
 
-export { default as adminManager_page } from './adminManager/page.js';
 export { default as adminManager_data } from './adminManager/data';
-export { default as adminManager_getModal } from './adminManager/getModal';
 export { default as adminManager_actions } from './adminManager/actions';
 
-export { default as cfgEditor_page } from './cfgEditor/get';
 export { default as cfgEditor_data } from './cfgEditor/data';
 export { default as cfgEditor_save } from './cfgEditor/save';
 
-export { default as deployer_stepper } from './deployer/stepper';
-export { default as deployer_status } from './deployer/status';
+export { default as deployer_data } from './deployer/data';
 export { default as deployer_actions } from './deployer/actions';
 
 //FIXME join bantemplates with settings
@@ -51,7 +46,6 @@ export { default as settings_getBanTemplates } from './banTemplates/getBanTempla
 export { default as settings_saveBanTemplates } from './banTemplates/saveBanTemplates';
 export { default as settings_resetServerDataPath } from './settings/resetServerDataPath';
 
-export { default as masterActions_page } from './masterActions/page';
 export { default as masterActions_getBackup } from './masterActions/getBackup';
 export { default as masterActions_actions } from './masterActions/actions';
 
@@ -74,7 +68,6 @@ export { default as player_modal } from './player/modal';
 export { default as player_actions } from './player/actions';
 export { default as player_checkJoin } from './player/checkJoin';
 
-export { default as whitelist_page } from './whitelist/page';
 export { default as whitelist_list } from './whitelist/list';
 export { default as whitelist_actions } from './whitelist/actions';
 

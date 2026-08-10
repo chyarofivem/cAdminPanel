@@ -1,4 +1,3 @@
-import InlineCode from '@/components/InlineCode';
 import { txToast } from '@/components/TxToaster';
 import { Button } from '@/components/ui/button';
 import { useOpenPromptDialog } from '@/hooks/dialogs';
@@ -10,58 +9,8 @@ import { msToDuration } from '@/lib/dateTime';
 import { PenLineIcon, PlayCircleIcon, PlusCircleIcon, XCircleIcon } from 'lucide-react';
 import { useAdminPerms } from '@/hooks/auth';
 import { t } from '@/lib/i18n';
-
-//Prompt props
-const browserTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-const timezoneDiffMessage = (
-    <p className='text-destructive'>
-        {t("Server's timezone")}: <b>{window.txConsts.serverTimezone}</b> <br />
-        {t('Your timezone')}: <b>{browserTimezone}</b> <br />
-        {t('Use relative time or schedule against the server timezone.')}
-    </p>
-)
-const promptCommonProps = {
-    suggestions: ['+5', '+10', '+15', '+30'],
-    title: t('When should the server restart?'),
-    message: (<>
-        <p>
-            {t('Possible formats')}: <br />
-            <ul className='list-disc ml-4'>
-                <li>
-                    <InlineCode>+MM</InlineCode> {t('relative time in minutes')}
-                    {' '}({t('example')}: <InlineCode>+15</InlineCode> {t('for 15 minutes from now')}).
-                </li>
-                <li>
-                    <InlineCode>HH:MM</InlineCode> {t('absolute 24-hour time')}
-                    {' '}({t('example')}: <InlineCode>23:30</InlineCode> {t('for 11:30 PM')}).
-                </li>
-            </ul>
-        </p>
-        {browserTimezone !== window.txConsts.serverTimezone && timezoneDiffMessage}
-    </>),
-    placeholder: '+15',
-    required: true,
-    isWide: true,
-};
-
-//Validate schedule time input for 24h format or relative time
-const validateSchedule = (input: string) => {
-    if (input.startsWith('+')) {
-        const minutes = parseInt(input.substring(1));
-        if (isNaN(minutes) || minutes < 1 || minutes >= 1440) {
-            return false;
-        }
-    } else {
-        const [hours, minutes] = input.split(':', 2).map(x => parseInt(x));
-        if (
-            typeof hours === 'undefined' || isNaN(hours) || hours < 0 || hours > 23
-            || typeof minutes === 'undefined' || isNaN(minutes) || minutes < 0 || minutes > 59
-        ) {
-            return false;
-        }
-    }
-    return true;
-}
+import { restartSchedulePromptProps } from './restartScheduleUtils';
+import { validateRestartSchedule } from './restartScheduleValidation';
 
 
 export default function ServerSchedule() {
@@ -126,7 +75,7 @@ export default function ServerSchedule() {
             }, { duration: 10000 });
             return;
         }
-        if (!validateSchedule(input)) {
+        if (!validateRestartSchedule(input)) {
             txToast.error(t('Invalid schedule time: {input}', { input }));
             return;
         }
@@ -137,14 +86,14 @@ export default function ServerSchedule() {
     }
     const handleEdit = () => {
         openPromptDialog({
-            ...promptCommonProps,
+            ...restartSchedulePromptProps(),
             onSubmit: onScheduleSubmit,
             submitLabel: t('Edit'),
         });
     }
     const handleAddSchedule = () => {
         openPromptDialog({
-            ...promptCommonProps,
+            ...restartSchedulePromptProps(),
             onSubmit: onScheduleSubmit,
             submitLabel: t('Schedule'),
         });

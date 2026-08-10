@@ -161,6 +161,12 @@ export default async function PlayerSearch(ctx: AuthedCtx) {
     const processedPlayers: PlayersTablePlayerType[] = players.slice(0, DEFAULT_LIMIT).map((p) => {
         return {
             license: p.license,
+            licenseIdentifiers: [...new Set([
+                `license:${p.license}`.toLowerCase(),
+                ...p.ids
+                    .filter(id => /^license2?:/i.test(id))
+                    .map(id => id.toLowerCase()),
+            ])],
             displayName: p.displayName,
             playTime: p.playTime,
             tsJoined: p.tsJoined,

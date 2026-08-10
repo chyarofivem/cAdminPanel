@@ -6,6 +6,7 @@ import { MainPageList } from "@nui/src/components/MainPage/MainPageList";
 import { useServerCtxValue } from "@nui/src/state/server.state";
 import { useDebounce } from "@nui/src/hooks/useDebouce";
 import { microLabel, nuiTokens } from "@nui/src/styles/nuiTokens";
+import { useIsMenuVisibleValue } from "@nui/src/state/visibility.state";
 
 const StyledRoot = styled(Box)(({ theme }) => ({
   height: "fit-content",
@@ -61,6 +62,7 @@ export const MenuRootContent: React.FC = React.memo(() => {
   const theme = useTheme();
   const serverCtx = useServerCtxValue();
   const curPage = usePageValue();
+  const isMenuVisible = useIsMenuVisibleValue();
 
   // Hack to prevent collapse transition from breaking
   // In some cases, i.e, when setting target player from playerModal
@@ -75,7 +77,7 @@ export const MenuRootContent: React.FC = React.memo(() => {
       <HeaderRow>
         <LogoSlot>
           <img
-            src={serverCtx.logoUrl || fallbackLogo}
+            src={isMenuVisible ? serverCtx.logoUrl || fallbackLogo : fallbackLogo}
             alt={serverCtx.panelName}
             style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }}
           />

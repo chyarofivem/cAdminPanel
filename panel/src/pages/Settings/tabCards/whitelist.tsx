@@ -191,7 +191,7 @@ export default function ConfigCardWhitelist({ cardCtx, pageCtx }: SettingsCardPr
                         value="approvedLicense"
                         title="Approved License"
                         desc={(<>
-                            The player <InlineCode>license:</InlineCode> identifier must be allowlisted by a txAdmin administrator. This can be done through the <TxAnchor href="/allowlist">Allowlist page</TxAnchor>, or the <InlineCode>/allowlist</InlineCode> Discord bot command.
+                            The player <InlineCode>license:</InlineCode> identifier must be allowlisted by a txAdmin administrator. This can be done through the <TxAnchor href="/server/allowlist">Allowlist page</TxAnchor>, or the <InlineCode>/allowlist</InlineCode> Discord bot command.
                         </>)}
                     />
                     <BigRadioItem

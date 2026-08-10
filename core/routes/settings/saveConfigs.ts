@@ -5,7 +5,7 @@ import path from 'node:path';
 import slash from 'slash';
 import type { AuthedCtx } from '@modules/WebServer/ctxTypes';
 import type { ApiToastResp } from '@shared/genericApiTypes';
-import type { PartialTxConfigs, PartialTxConfigsToSave } from '@modules/ConfigStore/schema';
+import type { PartialTxConfigs, PartialTxConfigsToSave, TxConfigs } from '@modules/ConfigStore/schema';
 import type { ConfigChangelogEntry } from '@shared/otherTypes';
 import { z } from 'zod';
 import { fromError } from 'zod-validation-error';
@@ -19,6 +19,7 @@ import { getSchemaChainError } from '@modules/ConfigStore/schema/utils';
 import { confx } from '@modules/ConfigStore/utils';
 import { SYM_RESET_CONFIG } from '@lib/symbols';
 import { isStoredBrandingFilename, pruneUnusedBrandingFiles, storeBrandingDataUrl } from '@lib/branding';
+import { getVisibleSettingsConfig, hasMasterOnlyConfigMutation } from './configAccess';
 const console = consoleFactory(modulename);
 
 
@@ -39,7 +40,8 @@ type CardHandlerSuccessResp = {
 }
 type CardHandler = (
     inputConfig: PartialTxConfigsToSave,
-    sendTypedResp: SendTypedResp
+    sendTypedResp: SendTypedResp,
+    preservedDiscordToken?: TxConfigs['discordBot']['token'],
 ) => Promise<CardHandlerSuccessResp | void>;
 
 //Known cards
@@ -110,6 +112,12 @@ export default async function SaveSettingsConfigs(ctx: AuthedCtx) {
         ? 'cadmin'
         : paramsSchemaRes.data.card;
     const { resetKeys, changes: inputConfig } = bodySchemaRes.data;
+    if (
+        !ctx.admin.isMaster
+        && hasMasterOnlyConfigMutation(inputConfig as PartialTxConfigs, resetKeys)
+    ) {
+        return sendTypedResp({ type: 'error', msg: 'Only the master can change this setting.' });
+    }
     if (cardId === 'appearance' && resetKeys.some(key => {
         const [scope, configKey] = key.split('.');
         return scope !== 'general' || !configKey || !appearanceConfigKeys.has(configKey);
@@ -136,7 +144,11 @@ export default async function SaveSettingsConfigs(ctx: AuthedCtx) {
         } else if (cardId === 'fxserver') {
             handlerResp = await handleFxserverCard(inputConfig, sendTypedResp);
         } else if (cardId === 'discord') {
-            handlerResp = await handleDiscordCard(inputConfig, sendTypedResp);
+            handlerResp = await handleDiscordCard(
+                inputConfig,
+                sendTypedResp,
+                ctx.admin.isMaster ? undefined : txConfig.discordBot.token,
+            );
         }
     } catch (error) {
         return sendTypedResp({
@@ -180,7 +192,10 @@ export default async function SaveSettingsConfigs(ctx: AuthedCtx) {
             type: 'success',
             msg: `${displayCardName} Settings saved!`,
             ...(handlerResp?.successToast ?? {}),
-            stored: txCore.configStore.getStoredConfig(),
+            stored: getVisibleSettingsConfig(txCore.configStore.getStoredConfig(), {
+                isMaster: ctx.admin.isMaster,
+                canWrite: ctx.admin.hasPermission('settings.write'),
+            }),
             changelog: txCore.configStore.getChangelog(),
         });
     } catch (error) {
@@ -353,8 +368,15 @@ const handleFxserverCard: CardHandler = async (inputConfig, sendTypedResp) => {
 /**
  * Discord card handler
  */
-const handleDiscordCard: CardHandler = async (inputConfig, sendTypedResp) => {
+export const handleDiscordCard: CardHandler = async (
+    inputConfig,
+    sendTypedResp,
+    preservedDiscordToken,
+) => {
     if (!inputConfig.discordBot) throw new Error(`Unexpected data for the 'discord' card.`);
+    const effectiveDiscordConfig = preservedDiscordToken === undefined
+        ? inputConfig.discordBot
+        : { ...inputConfig.discordBot, token: preservedDiscordToken };
 
     //Validating embed JSONs
     //NOTE: need this before checking if enabled, or while disabled one could save invalid JSON
@@ -375,7 +397,7 @@ const handleDiscordCard: CardHandler = async (inputConfig, sendTypedResp) => {
     }
 
     //If bot disabled, kill the bot and don't validate anything
-    if (!inputConfig.discordBot?.enabled) {
+    if (!effectiveDiscordConfig.enabled) {
         await txCore.discordBot.attemptBotReset(false);
         return { processedConfig: inputConfig };
     }
@@ -388,10 +410,10 @@ const handleDiscordCard: CardHandler = async (inputConfig, sendTypedResp) => {
     } as const;
     const schemas = ConfigStore.Schema.discordBot;
     const validationError = getSchemaChainError([
-        [schemas.enabled, inputConfig.discordBot.enabled],
-        [schemas.token, inputConfig.discordBot.token],
-        [schemas.guild, inputConfig.discordBot.guild],
-        [schemas.warningsChannel, inputConfig.discordBot.warningsChannel],
+        [schemas.enabled, effectiveDiscordConfig.enabled],
+        [schemas.token, effectiveDiscordConfig.token],
+        [schemas.guild, effectiveDiscordConfig.guild],
+        [schemas.warningsChannel, effectiveDiscordConfig.warningsChannel],
     ]);
     if (validationError) {
         return sendTypedResp({
@@ -402,8 +424,8 @@ const handleDiscordCard: CardHandler = async (inputConfig, sendTypedResp) => {
 
     //Checking if required fields are present (frontend should have done this already)
     if (
-        !inputConfig.discordBot.token
-        || !inputConfig.discordBot.guild
+        !effectiveDiscordConfig.token
+        || !effectiveDiscordConfig.guild
     ) {
         return sendTypedResp({
             ...baseError,
@@ -417,9 +439,9 @@ const handleDiscordCard: CardHandler = async (inputConfig, sendTypedResp) => {
         successMsg = await txCore.discordBot.attemptBotReset({
             enabled: true,
             //They have been validated, so this is fine
-            token: inputConfig.discordBot.token as any,
-            guild: inputConfig.discordBot.guild as any,
-            warningsChannel: inputConfig.discordBot.warningsChannel as any,
+            token: effectiveDiscordConfig.token as any,
+            guild: effectiveDiscordConfig.guild as any,
+            warningsChannel: effectiveDiscordConfig.warningsChannel as any,
         });
     } catch (error) {
         const errorCode = (error as any).code;

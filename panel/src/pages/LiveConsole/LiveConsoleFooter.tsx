@@ -1,7 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
-import { openExternalLink } from '@/lib/navigation';
+import { useAuthedFileDownload } from '@/hooks/fetch';
+import { txToast } from '@/components/TxToaster';
 import { BookMarkedIcon, FileDownIcon, SearchIcon, Trash2Icon } from "lucide-react";
 import { useAdminPerms } from '@/hooks/auth';
 import { useLiveConsoleHistory } from '@/pages/LiveConsole/liveConsoleHooks';
@@ -52,6 +53,19 @@ export default function LiveConsoleFooter(props: LiveConsoleFooterProps) {
     const { hasPerm } = useAdminPerms();
     const hasWritePerm = hasPerm('console.write');
     const fxRunnerState = useAtomValue(fxRunnerStateAtom);
+    const downloadFile = useAuthedFileDownload();
+    const [isDownloading, setIsDownloading] = useState(false);
+
+    const downloadLog = async () => {
+        setIsDownloading(true);
+        try {
+            await downloadFile('/fxserver/downloadLog');
+        } catch (error) {
+            txToast.error(error instanceof Error ? error.message : t('The download failed.'));
+        } finally {
+            setIsDownloading(false);
+        }
+    };
 
     //autofocus on input when connected
     useEffect(() => {
@@ -161,10 +175,8 @@ export default function LiveConsoleFooter(props: LiveConsoleFooterProps) {
                 <ConsoleFooterButton
                     icon={FileDownIcon}
                     title={t('Download console log')}
-                    disabled={!props.isConnected}
-                    onClick={() => {
-                        openExternalLink('/fxserver/downloadLog');
-                    }} />
+                    disabled={!props.isConnected || isDownloading}
+                    onClick={downloadLog} />
             </div>
         </footer>
     );

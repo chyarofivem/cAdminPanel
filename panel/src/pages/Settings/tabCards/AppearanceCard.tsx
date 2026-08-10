@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useReducer } from 'react';
+import { useEffect, useMemo, useReducer, useRef } from 'react';
 import { ImageIcon, PaletteIcon, Trash2Icon, UploadIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { SettingItem, SettingItemDesc } from '../settingsItems';
@@ -15,6 +15,7 @@ import { useAccent } from '@/hooks/theme';
 import { txToast } from '@/components/TxToaster';
 import { cn } from '@/lib/utils';
 import { t } from '@/lib/i18n';
+import { useAuth } from '@/hooks/auth';
 
 const MAX_UPLOAD_BYTES = 128 * 1024;
 
@@ -56,6 +57,12 @@ export default function AppearanceCard({ cardCtx, pageCtx }: SettingsCardProps) 
         [pageCtx.apiData, dispatch],
     );
     const { accents, setAccent } = useAccent();
+    const { authData } = useAuth();
+    const personalAccentRef = useRef(authData ? authData.accent : undefined);
+
+    useEffect(() => {
+        personalAccentRef.current = authData ? authData.accent : undefined;
+    }, [authData]);
 
     const updatePageState = () => {
         const result = getConfigDiff(cfg, states, {}, false);
@@ -67,6 +74,10 @@ export default function AppearanceCard({ cardCtx, pageCtx }: SettingsCardProps) 
         updatePageState();
         if (states.accent) setAccent(states.accent);
     }, [states]);
+
+    useEffect(() => () => {
+        setAccent(personalAccentRef.current || window.txConsts.accent);
+    }, []);
 
     const readUpload = (key: AssetKey, file?: File) => {
         if (!file) return;
@@ -85,8 +96,12 @@ export default function AppearanceCard({ cardCtx, pageCtx }: SettingsCardProps) 
     const previewUrl = (key: AssetKey) => {
         const value = states[key];
         if (typeof value === 'string' && value.startsWith('data:')) return value;
-        if (value === '') return `/branding/${assetKinds[key]}?default=1&v=${states.accent ?? 'blue'}`;
-        return window.txConsts[key];
+        if (typeof value !== 'string') return window.txConsts[key];
+        const url = new URL(window.txConsts[key], window.location.href);
+        url.search = '';
+        url.searchParams.set('v', value || states.accent || 'blue');
+        if (value === '') url.searchParams.set('default', '1');
+        return url.toString();
     };
 
     const handleSave = () => {
@@ -112,7 +127,7 @@ export default function AppearanceCard({ cardCtx, pageCtx }: SettingsCardProps) 
                         >
                             <span
                                 className="size-7 rounded-full border border-white/20 shadow-sm"
-                                style={{ backgroundColor: `oklch(${option.vars['brand-600']})` }}
+                                style={{ backgroundColor: `rgb(${option.vars['brand-600']})` }}
                             />
                             {t(option.label)}
                         </button>

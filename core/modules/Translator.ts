@@ -82,7 +82,7 @@ export default class Translator {
      * Loads a language file or throws Error.
      */
     getLanguagePhrases(lang: string) {
-        if (localeMap[lang]?.$meta) {
+        if (Object.prototype.hasOwnProperty.call(localeMap, lang) && localeMap[lang]?.$meta) {
             //If its a known language
             return localeMap[lang];
 

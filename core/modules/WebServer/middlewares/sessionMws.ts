@@ -163,9 +163,8 @@ export const koaSessMw = (cookieName: string, store: SessionMemoryStorage) => {
  * Middleware factory to add sessTools to the socket context.
  * 
  * NOTE: The set() and destroy() functions are NO-OPs because we cannot set cookies in socket.io,
- *  but that's fine since socket pages are always acompanied by a web page
- *  the authLogic only needs to get the cookie, and the webAuthMw only destroys it
- *  and webSocket.handleConnection() just drops if authLogic fails.
+ *  but that's fine since socket pages are always accompanied by a web page,
+ *  and webSocket.handleConnection() drops the connection if authLogic fails.
  */
 export const socketioSessMw = (cookieName: string, store: SessionMemoryStorage) => {
     return async (socket: Socket & { sessTools?: SessToolsType }, next: Function) => {

@@ -3,7 +3,7 @@ import * as jose from 'jose';
 import consoleFactory from '@lib/console';
 import { MultipleCounter, QuantileArray } from '../statsUtils';
 import { txEnv, txHostConfig } from '@core/globalData';
-import { getHostStaticData } from '@lib/diagnostics';
+import { getHostStaticData } from '@lib/host/getHostStaticData';
 import fatalError from '@lib/fatalError';
 const console = consoleFactory(modulename);
 

@@ -87,4 +87,26 @@ describe('administrator authentication methods', () => {
         expect(admin.chyaroLinked).toBe(true);
         expect(admin.discordIdentifier).toBeUndefined();
     });
+
+    test('exposes a validated account accent to web and game sessions', () => {
+        vi.stubGlobal('txCore', { cacheStore: { get: vi.fn() } });
+        const admin = new AuthedAdmin(vaultAdmin({ preferences: { accent: 'rose' } }));
+
+        expect(admin.getAuthData()).toMatchObject({ accent: 'rose', accentColor: '#e11d48' });
+    });
+
+    test('ignores an unknown stored account accent', () => {
+        vi.stubGlobal('txCore', { cacheStore: { get: vi.fn() } });
+        const admin = new AuthedAdmin(vaultAdmin({ preferences: { accent: '__proto__' } }));
+
+        expect(admin.getAuthData().accent).toBeUndefined();
+        expect(admin.getAuthData().accentColor).toBeUndefined();
+    });
+
+    test('ignores inherited object keys stored as an account language', () => {
+        vi.stubGlobal('txCore', { cacheStore: { get: vi.fn() } });
+        const admin = new AuthedAdmin(vaultAdmin({ preferences: { locale: 'toString' } }));
+
+        expect(admin.getAuthData().locale).toBeUndefined();
+    });
 });

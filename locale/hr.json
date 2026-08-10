@@ -252,7 +252,21 @@
         "player_modal": {
             "misc": {
                 "error": "Dogodila se pogreška pri dohvaćanju podataka o igraču. Pojedinosti su prikazane u nastavku:",
-                "target_not_found": "Nije pronađen igrač na serveru s ID-om ili imenom %{target}."
+                "target_not_found": "Nije pronađen igrač na serveru s ID-om ili imenom %{target}.",
+                "disconnected": "Igrač više nije povezan sa serverom.",
+                "unavailable": "Igrač nije dostupan",
+                "no_target": "Odabrani igrač nije pronađen. Zatvorite ovaj prikaz i ponovno odaberite igrača.",
+                "loading_title": "Učitavanje igrača",
+                "loading_message": "Dohvaćanje najnovijih podataka i dopuštenja igrača.",
+                "load_failed": "Podaci o igraču nisu učitani",
+                "close": "Zatvori",
+                "retry": "Pokušaj ponovno",
+                "player_id": "ID igrača %{id}",
+                "registered": "Registriran",
+                "unregistered": "Neregistriran",
+                "refresh": "Osvježi podatke o igraču",
+                "navigation": "Odjeljci upravljanja igračem",
+                "no_value": "Nije dostupno"
             },
             "tabs": {
                 "actions": "Akcije",
@@ -309,14 +323,6 @@
                         "freeze_yourself": "Ne možete zamrznuti sami sebe.",
                         "spectate_cycle_failed": "Nema dostupnih igrača za promatranje."
                     }
-                },
-                "troll": {
-                    "title": "Troll",
-                    "options": {
-                        "drunk": "Napravi pijanog",
-                        "fire": "Zapali",
-                        "wild_attack": "Napad čudovišta"
-                    }
                 }
             },
             "info": {
@@ -334,8 +340,12 @@
                 "log_ban_count": "%{smart_count} zabrana |||| %{smart_count} zabrane |||| %{smart_count} zabrana",
                 "log_warn_count": "%{smart_count} upozorenje |||| %{smart_count} upozorenja |||| %{smart_count} upozorenja",
                 "log_btn": "DETALJI",
+                "notes_title": "Bilješke osoblja",
                 "notes_changed": "Bilješka promijenjena.",
-                "notes_placeholder": "Bilješke o igraču..."
+                "notes_placeholder": "Bilješke o igraču...",
+                "save_note": "Spremi bilješku",
+                "allowlist_active": "Igrač se može pridružiti dok je popis dopuštenih uključen.",
+                "allowlist_inactive": "Igrač nije dodan na popis dopuštenih."
             },
             "history": {
                 "title": "Povezana povijest",
@@ -345,11 +355,13 @@
                 "warned_by": "Upozorenje izdao %{author}",
                 "revoked_by": "Opozvao %{author}.",
                 "expired_at": "Isteklo %{date}.",
-                "expires_at": "Ističe u %{date}."
+                "expires_at": "Ističe u %{date}.",
+                "empty": "Za ovog igrača nema povijesti moderacije."
             },
             "ban": {
                 "title": "Zabrani ulazak igraču",
                 "reason_placeholder": "Razlog",
+                "duration_required": "Unesite trajanje veće od nule.",
                 "duration_placeholder": "Duljina",
                 "hours": "sati",
                 "days": "dana",
@@ -365,7 +377,12 @@
             "ids": {
                 "current_ids": "Trenutni profili",
                 "previous_ids": "Prethodni identifikatori igrača",
-                "all_hwids": "Svi HWID-ovi"
+                "all_hwids": "Svi HWID-ovi",
+                "copy_identifier": "Kopiraj identifikator",
+                "copy_all": "Kopiraj sve",
+                "none_current": "Nema identifikatora za trenutačnu sesiju.",
+                "none_previous": "Nema spremljenih identifikatora.",
+                "none_hwids": "Nema dostupnih hardverskih ID-ova."
             }
         }
     }

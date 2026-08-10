@@ -20,7 +20,9 @@ const restructureOldConfig = (old: any) => {
     }
 
     //Remap the old config to the new structure
-    const remapped: TxConfigs = {
+    //Legacy files are intentionally partial. The current parser fills every
+    //new setting from its schema default after this remap.
+    const remapped: any = {
         general: { //NOTE:renamed
             serverName: old?.global?.serverName,
             language: old?.global?.language,

@@ -21,6 +21,10 @@ export interface PlayerData {
    **/
   id: number;
   /**
+   * Opaque identity for this specific connection. Changes when a server ID is reused.
+   **/
+  connectionRef: string;
+  /**
    * Player's display name
    **/
   displayName: string;
@@ -67,6 +71,7 @@ export const usePlayerListListener = () => {
       }
       return {
         id: player.id,
+        connectionRef: player.connectionRef,
         displayName,
         pureName,
         vType: player.vType,

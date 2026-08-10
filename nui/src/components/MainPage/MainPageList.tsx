@@ -245,10 +245,7 @@ export const MainPageList: React.FC = () => {
       isMultiline: true,
       composerTone: "announcement",
       onSubmit: (message: string) => {
-        enqueueSnackbar(t("nui_menu.page_main.announcement.dialog_success"), {
-          variant: "success",
-        });
-        fetchNui("sendAnnouncement", { message });
+        void fetchNui("sendAnnouncement", { message });
       },
     });
   };

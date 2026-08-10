@@ -29,6 +29,9 @@ export default async function FXServerSchedule(ctx: AuthedCtx) {
     }
 
     if (action === 'setNextTempSchedule') {
+        if (typeof parameter !== 'string') {
+            return ctx.send<ApiToastResp>({ type: 'error', msg: 'Invalid restart schedule.' });
+        }
         try {
             txCore.fxScheduler.setNextTempSchedule(parameter);
             ctx.admin.logAction(`Scheduling server restart at ${parameter}`);
@@ -44,13 +47,16 @@ export default async function FXServerSchedule(ctx: AuthedCtx) {
         }
 
     } else if (action === 'setNextSkip') {
+        if (typeof parameter !== 'boolean') {
+            return ctx.send<ApiToastResp>({ type: 'error', msg: 'Invalid restart cancellation state.' });
+        }
         try {
             txCore.fxScheduler.setNextSkip(parameter, ctx.admin.name);
             const logAct = parameter ? 'Cancelling' : 'Re-enabling';
             ctx.admin.logAction(`${logAct} next scheduled restart.`);
             return ctx.send<ApiToastResp>({
                 type: 'success',
-                msg: 'Schedule changed.',
+                msg: parameter ? 'Next restart cancelled.' : 'Next restart enabled.',
             });
         } catch (error) {
             return ctx.send<ApiToastResp>({

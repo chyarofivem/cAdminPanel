@@ -15,12 +15,9 @@ export default function AuthShell() {
                         </Route>
                     </Switch>
                 </Card>
-                <footer className="mt-4 text-center text-[11px] text-zinc-700">
-                    <span>&copy; {t('chyarogroup')} 2026</span>
-                    <span className="mx-2">·</span>
-                    <span>txAdmin v{window.txConsts.txaVersion}</span>
-                    <span className="mx-2">·</span>
-                    <span>FXServer b{window.txConsts.fxsVersion}</span>
+                <footer className="mt-4 text-center text-[11px] leading-5 text-zinc-700">
+                    <div>Powered by cAdminPanel</div>
+                    <div>cAdminPanel v{window.txConsts.txaVersion} / FXServer b{window.txConsts.fxsVersion}</div>
                 </footer>
             </div>
         </div>

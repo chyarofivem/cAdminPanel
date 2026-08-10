@@ -21,6 +21,7 @@ import type {
 import { getUrlSearchParam, setUrlSearchParam } from "@/lib/navigation";
 import { useBackendApi } from "@/hooks/fetch";
 import { t } from "@/lib/i18n";
+import { isSensitiveAdvancedCommand } from "./advancedUtils";
 
 
 function HelpPopover({ onCommandClick }: { onCommandClick: (c: string) => void }) {
@@ -119,6 +120,10 @@ export default function AdvancedPage() {
         if (!inputRef.current) return;
         const autofill = getUrlSearchParam('cmd');
         if (autofill) {
+            if (isSensitiveAdvancedCommand(autofill)) {
+                setUrlSearchParam('cmd', undefined);
+                return;
+            }
             inputRef.current.value = autofill;
             inputRef.current.focus();
         }
@@ -133,7 +138,7 @@ export default function AdvancedPage() {
             return;
         }
 
-        setUrlSearchParam('cmd', cmd);
+        setUrlSearchParam('cmd', isSensitiveAdvancedCommand(cmd) ? undefined : cmd);
         setIsLoading(true);
         runCommandApi({
             data: { cmd },

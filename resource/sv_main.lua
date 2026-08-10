@@ -125,6 +125,10 @@ local function txaReportResources(source, args)
         resources = resources
     }
     txPrint('Sending resources list to txAdmin.')
+    PrintStructuredTrace(json.encode({
+        type = 'txAdminResourceReport',
+        resources = resources,
+    }))
     PerformHttpRequest(url, function(httpCode, data, resultHeaders)
         local resp = tostring(data)
         if httpCode ~= 200 then
@@ -169,6 +173,7 @@ local cvHideScheduledRestartWarning = GetConvarBool('txAdmin-hideDefaultSchedule
 -- Adding all known events to the list so txaEvent can do whitelist checking
 TX_EVENT_HANDLERS = {
     -- Handled by another file
+    adminPreferencesUpdated = false, -- sv_admins.lua
     adminsUpdated = false, -- sv_admins.lua
     configChanged = false, -- sv_ctx.lua
 
@@ -210,6 +215,19 @@ end
 --- Handler for player DM event
 --- Sends a direct message from an admin to a player
 TX_EVENT_HANDLERS.playerDirectMessage = function(eventData)
+    if
+        type(eventData.target) ~= 'number'
+        or type(eventData.message) ~= 'string'
+    then
+        return txPrintError('[playerDirectMessage] invalid eventData', eventData)
+    end
+    if
+        type(eventData.targetConnectionRef) == 'string'
+        and eventData.targetConnectionRef ~= ''
+        and TX_GET_PLAYER_CONNECTION_REF(eventData.target) ~= eventData.targetConnectionRef
+    then
+        return txPrint('[playerDirectMessage] ignored stale player connection #'..eventData.target)
+    end
     local authorName = cvHideAdminInMessages and txServerName or eventData.author or 'anonym'
     if not cvHideDirectMessage then
         TriggerClientEvent('txcl:showDirectMessage', eventData.target, eventData.message, authorName)
@@ -238,6 +256,13 @@ TX_EVENT_HANDLERS.playerKicked = function(eventData)
             DropPlayer(pid, '[txAdmin] ' .. eventData.dropMessage)
         end
     else
+        if
+            type(eventData.targetConnectionRef) == 'string'
+            and eventData.targetConnectionRef ~= ''
+            and TX_GET_PLAYER_CONNECTION_REF(eventData.target) ~= eventData.targetConnectionRef
+        then
+            return txPrint('[playerKicked] ignored stale player connection #'..eventData.target)
+        end
         txPrint("Kicking: #"..eventData.target..": "..eventData.reason)
         DropPlayer(eventData.target, '[txAdmin] ' .. eventData.dropMessage)
     end
@@ -312,21 +337,43 @@ end)
 TX_EVENT_HANDLERS.playerBanned = function(eventData)
     Wait(0) -- give other resources a chance to read player data
     local kickCount = 0
+    local kickedPlayers = {}
+    local targetIds = {}
+
+    for _, identifier in pairs(eventData.targetIds or {}) do
+        if type(identifier) == 'string' then
+            targetIds[string.lower(identifier)] = true
+        end
+    end
+
+    local function kickPlayer(playerID)
+        local playerKey = tostring(playerID)
+        if kickedPlayers[playerKey] then return end
+        txPrint('[handleBanEvent] Kicking #'..playerKey..': '..eventData.reason)
+        kickedPlayers[playerKey] = true
+        kickCount = kickCount + 1
+        DropPlayer(playerID, '[txAdmin] ' .. eventData.kickMessage)
+    end
+
+    local directTarget = tonumber(eventData.targetNetId)
+    if directTarget and DoesPlayerExist(directTarget) then
+        local expectedRef = eventData.targetConnectionRef
+        if
+            type(expectedRef) ~= 'string'
+            or expectedRef == ''
+            or TX_GET_PLAYER_CONNECTION_REF(directTarget) == expectedRef
+        then
+            kickPlayer(directTarget)
+        end
+    end
+
     for _, playerID in pairs(GetPlayers()) do
         local identifiers = GetPlayerIdentifiers(playerID)
         if identifiers ~= nil then
-            local found = false
-            for _, searchIdentifier in pairs(eventData.targetIds) do
-                if found then break end
-
-                for _, playerIdentifier in pairs(identifiers) do
-                    if searchIdentifier == playerIdentifier then
-                        txPrint("[handleBanEvent] Kicking #"..playerID..": "..eventData.reason)
-                        kickCount = kickCount + 1
-                        DropPlayer(playerID, '[txAdmin] ' .. eventData.kickMessage)
-                        found = true
-                        break
-                    end
+            for _, playerIdentifier in pairs(identifiers) do
+                if type(playerIdentifier) == 'string' and targetIds[string.lower(playerIdentifier)] then
+                    kickPlayer(playerID)
+                    break
                 end
             end
         end
@@ -479,6 +526,11 @@ RegisterCommand("txaReportResources", txaReportResources, true)
 RegisterCommand("txaSetDebugMode", txaSetDebugMode, true)
 AddEventHandler('playerConnecting', handleConnections)
 SetHttpHandler(handleHttp)
+
+CreateThread(function()
+    Wait(1500)
+    txaReportResources(0, {})
+end)
 
 -- HeartBeat functions are separated in case one hangs
 CreateThread(function()

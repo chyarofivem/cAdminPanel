@@ -96,7 +96,7 @@ export default async function getReactIndex(ctx: CtxWithVars | AuthedCtx) {
 
     //Preparing vars
     const basePath = (ctx.txVars.isWebInterface) ? '/' : consts.nuiWebpipePath;
-    const branding = brandingViewLocals();
+    const branding = brandingViewLocals(basePath);
     const injectedConsts: InjectedTxConsts = {
         //env
         fxsVersion: txEnv.fxsVersionTag,

@@ -5,7 +5,8 @@ if not TX_MENU_ENABLED then return end
 
 --- Logic for starting to spectate + authorization + routing buckets
 --- @param targetId number The player id to spectate.
-local function handleSpectatePlayer(targetId)
+--- @param connectionRef string The expected connection identity.
+local function handleSpectatePlayer(targetId, connectionRef)
   local src = source
   -- Sanity as this is still converted tonumber on client side
   if type(targetId) ~= 'string' and type(targetId) ~= 'number' then
@@ -14,6 +15,7 @@ local function handleSpectatePlayer(targetId)
   targetId = tonumber(targetId)
 
   local allow = PlayerHasTxPermission(src, 'players.spectate')
+    and TX_VALIDATE_PLAYER_CONNECTION(targetId, connectionRef, src)
 
   if allow then
     local targetPed = GetPlayerPed(targetId)
@@ -34,7 +36,7 @@ local function handleSpectatePlayer(targetId)
       SetPlayerRoutingBucket(src, targetBucket)
     end
 
-    TriggerClientEvent('txcl:spectate:start', src, targetId, GetEntityCoords(targetPed))
+    TriggerClientEvent('txcl:spectate:start', src, targetId, GetEntityCoords(targetPed), connectionRef)
   end
   TriggerEvent('txsv:logger:menuEvent', src, 'spectatePlayer', allow, targetId)
 end
@@ -80,7 +82,7 @@ RegisterNetEvent('txsv:req:spectate:cycle', function(currentTargetId, isNextPlay
     currentTargetId,
     nextTargetId
   ))
-  handleSpectatePlayer(nextTargetId)
+  handleSpectatePlayer(nextTargetId, TX_GET_PLAYER_CONNECTION_REF(nextTargetId))
 end)
 
 RegisterNetEvent('txsv:req:spectate:end', function()

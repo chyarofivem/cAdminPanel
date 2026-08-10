@@ -3,7 +3,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { ServerSidebar } from "./ServerSidebar/ServerSidebar";
 import { useGlobalMenuSheet, usePlayerlistSheet, useServerSheet } from "@/hooks/sheets";
 import { MenuNavLink, NavLink } from "@/components/MainPageLink";
-import { ClipboardCheckIcon, DoorOpenIcon, ListIcon, PieChartIcon, ScrollIcon, SettingsIcon, UserSquare2Icon, UsersIcon, ZapIcon } from 'lucide-react';
+import { ClipboardCheckIcon, DoorOpenIcon, FileEditIcon, ListIcon, ScrollIcon, SettingsIcon, UserSquare2Icon, UsersIcon, ZapIcon } from 'lucide-react';
 import { PlayerlistSidebar } from "./PlayerlistSidebar/PlayerlistSidebar";
 import { useAdminPerms } from "@/hooks/auth";
 import PanelBrand from "@/components/PanelBrand";
@@ -38,13 +38,13 @@ export function GlobalMenuSheet() {
                             <MenuNavLink href="/administration/players">
                                 <UsersIcon className="mr-2 h-4 w-4" />{t('Player Management')}
                             </MenuNavLink>
-                            <MenuNavLink href="/history">
+                            <MenuNavLink href="/administration/history">
                                 <ScrollIcon className="mr-2 h-4 w-4" />{t('History')}
                             </MenuNavLink>
                             <MenuNavLink href="/insights/player-drops">
                                 <DoorOpenIcon className="mr-2 h-4 w-4" />{t('Player Drops')}
                             </MenuNavLink>
-                            <MenuNavLink href="/allowlist">
+                            <MenuNavLink href="/server/allowlist">
                                 <ClipboardCheckIcon className="mr-2 h-4 w-4" />{t('Allowlist')}
                             </MenuNavLink>
                             <MenuNavLink href="/admins" disabled={!hasPerm('manage.admins')}>
@@ -63,8 +63,8 @@ export function GlobalMenuSheet() {
                             <MenuNavLink href="/system/master-actions">
                                 <ZapIcon className="mr-2 h-4 w-4" />{t('Master Actions')}
                             </MenuNavLink>
-                            <MenuNavLink href="/system/diagnostics">
-                                <PieChartIcon className="mr-2 h-4 w-4" />{t('Diagnostics')}
+                            <MenuNavLink href="/system/cfg-editor" disabled={!hasPerm('master')}>
+                                <FileEditIcon className="mr-2 h-4 w-4" />{t('CFG Editor')}
                             </MenuNavLink>
                             <MenuNavLink href="/server/console-log" disabled={!hasPerm('console.view')}>
                                 <ListIcon className="mr-2 h-4 w-4" />{t('Console Log')}

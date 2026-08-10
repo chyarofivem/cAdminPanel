@@ -3,8 +3,9 @@ import { cloneDeep }  from 'lodash-es';
 import { txEnv } from '@core/globalData';
 import consoleFactory from '@lib/console';
 import { InitializedCtx } from '@modules/WebServer/ctxTypes';
-import { panelDisplayName, readBrandingDataUrl } from '@lib/branding';
+import { brandingUrl, panelDisplayName } from '@lib/branding';
 import { ACCENTS, resolveAccent } from '@lib/theme';
+import consts from '@shared/consts';
 const console = consoleFactory(modulename);
 
 
@@ -39,14 +40,15 @@ export default async function Intercom(ctx: InitializedCtx) {
             panelName: panelDisplayName(),
             accent,
             accentColor: ACCENTS[accent].hex,
-            logoUrl: await readBrandingDataUrl('logo'),
-            bannerUrl: await readBrandingDataUrl('banner'),
+            logoUrl: brandingUrl('logo', false, consts.nuiWebpipePath),
+            bannerUrl: brandingUrl('banner', false, consts.nuiWebpipePath),
         });
     } else if (scope == 'resources') {
         if (!Array.isArray(postData.resources)) {
             return ctx.utils.error(400, 'Invalid Request');
         }
         txCore.fxResources.tmpUpdateResourceList(postData.resources);
+        return ctx.send({ success: true, txAdminVersion: txEnv.txaVersion });
     } else {
         return ctx.send({
             type: 'danger',

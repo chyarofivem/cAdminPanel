@@ -83,7 +83,20 @@ const waitForFreshReport = (requestedAt: number) => new Promise<ResourcesDataRes
             },
         });
     }, 50);
-    timeoutTimer = setTimeout(() => finish({ success: false, error: 'report_timeout' }), 2_000);
+    timeoutTimer = setTimeout(() => {
+        const cachedReport = txCore.fxResources.resourceReport;
+        if (cachedReport && Array.isArray(cachedReport.resources)) {
+            finish({
+                success: true,
+                data: {
+                    generatedAt: cachedReport.ts.getTime(),
+                    resources: normalizeResources(cachedReport.resources),
+                },
+            });
+        } else {
+            finish({ success: false, error: 'report_timeout' });
+        }
+    }, 8_000);
 });
 
 /**

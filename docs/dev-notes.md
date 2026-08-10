@@ -7,7 +7,6 @@ Legend:
 ## Before Updating:
 - Search for all FIXME:NEXT:UPDATE
 - Search for all FIXME:REMOVE:NEXT:UPDATE
-- Re-enable diagnostics report
 
 
 ## Newer TODOs
@@ -342,15 +341,6 @@ https://tailwindcss.com/blog/automatic-class-sorting-with-prettier
 - [ ] cfg parser: resource relative read errors shouldn't trigger warnings
 - [ ] check again for the need of lazy loading
 - [ ] put in server name in the login page, to help lost admins notice they are in the wrong txAdmin
-- [ ] Try to replace all the host stats/data with stuff from the SI lib (eg `systeminformation.processLoad()`).
-    - They are already using GWMI: https://github.com/sebhildebrandt/systeminformation/issues/616
-    - Pay attention to the boot and shutdown comments
-    - NOTE: keep in mind the processor time vs utility difference:
-        - https://github.com/citizenfx/fivem/commit/034acc7ed47ec12ca4cfb64a83570cad7dde8f0c
-        - https://learn.microsoft.com/en-us/troubleshoot/windows-client/performance/cpu-usage-exceeds-100
-    - NOTE: Old ref:
-        - update stuff that requires WMIC to use PS command directly
-        - issue: https://github.com/tabarra/txAdmin/issues/970#issuecomment-2308462733
         - new lib, same dev: https://www.npmjs.com/package/pidusage-gwmi
         - https://learn.microsoft.com/en-us/powershell/scripting/learn/ps101/07-working-with-wmi?view=powershell-7.2
 
@@ -690,7 +680,7 @@ seq 50000 | parallel --max-args 0 --jobs 10000 "curl -s http://xxxxxxxxxxx:40120
 
 # check external chart
 cdt
-cd web/public/
+cd panel/public/
 curl -o svMain.json http://localhost:40120/chartData/svMain
 
 # check changes

@@ -1,7 +1,7 @@
 const modulename = 'WebServer:PlayerActions';
 import playerResolver from '@lib/player/playerResolver';
 import { GenericApiResp } from '@shared/genericApiTypes';
-import { PlayerClass, ServerPlayer } from '@lib/player/playerClasses';
+import { isMatchingPlayerSession, PlayerClass, ServerPlayer } from '@lib/player/playerClasses';
 import { anyUndefined, calcExpirationFromDuration } from '@lib/misc';
 import consoleFactory from '@lib/console';
 import { AuthedCtx } from '@modules/WebServer/ctxTypes';
@@ -29,7 +29,7 @@ export default async function PlayerActions(ctx: AuthedCtx) {
         return ctx.utils.error(400, 'Invalid Request');
     }
     const action = ctx.params.action;
-    const { mutex, netid, license } = ctx.query;
+    const { mutex, netid, license, sessionRef } = ctx.query;
     const sendTypedResp = (data: GenericApiResp) => ctx.send(data);
 
     //Finding the player
@@ -39,6 +39,13 @@ export default async function PlayerActions(ctx: AuthedCtx) {
         player = playerResolver(refMutex, parseInt((netid as string)), license);
     } catch (error) {
         return sendTypedResp({ error: (error as Error).message });
+    }
+
+    const referencesOnlineSlot = typeof mutex === 'string' && netid !== undefined;
+    if (referencesOnlineSlot || sessionRef !== undefined) {
+        if (!isMatchingPlayerSession(player, sessionRef)) {
+            return sendTypedResp({ error: 'This player connection changed. Close this view and open the player again.' });
+        }
     }
 
     //Delegate to the specific action handler
@@ -233,7 +240,10 @@ async function handleBan(ctx: AuthedCtx, player: PlayerClass): Promise<GenericAp
         expiration,
         durationInput,
         durationTranslated,
-        targetNetId: (player instanceof ServerPlayer) ? player.netid : null,
+        targetNetId: (player instanceof ServerPlayer && player.isConnected) ? player.netid : null,
+        targetConnectionRef: (player instanceof ServerPlayer && player.isConnected)
+            ? player.connectionRef
+            : null,
         targetIds: allIds,
         targetHwids: allHwids,
         targetName: player.displayName,
@@ -369,13 +379,16 @@ async function handleDirectMessage(ctx: AuthedCtx, player: PlayerClass): Promise
         ctx.admin.logAction(`DM to "${player.displayName}": ${message}`);
 
         // Dispatch `txAdmin:events:playerDirectMessage`
-        txCore.fxRunner.sendEvent('playerDirectMessage', {
+        const eventSent = txCore.fxRunner.sendEvent('playerDirectMessage', {
             target: player.netid,
+            targetConnectionRef: player.connectionRef,
             author: ctx.admin.name,
             message,
         });
 
-        return { success: true };
+        return eventSent
+            ? { success: true }
+            : { error: 'Failed to send the direct message to the game server.' };
     } catch (error) {
         return { error: `Failed to save dm player: ${(error as Error).message}` };
     }
@@ -423,14 +436,17 @@ async function handleKick(ctx: AuthedCtx, player: PlayerClass): Promise<GenericA
         );
 
         // Dispatch `txAdmin:events:playerKicked`
-        txCore.fxRunner.sendEvent('playerKicked', {
+        const eventSent = txCore.fxRunner.sendEvent('playerKicked', {
             target: player.netid,
+            targetConnectionRef: player.connectionRef,
             author: ctx.admin.name,
             reason: kickReason,
             dropMessage,
         });
 
-        return { success: true };
+        return eventSent
+            ? { success: true }
+            : { error: 'Failed to send the kick to the game server.' };
     } catch (error) {
         return { error: `Failed to save kick player: ${(error as Error).message}` };
     }

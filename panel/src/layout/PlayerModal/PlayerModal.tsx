@@ -41,14 +41,15 @@ const baseModalTabs: ModalTabInfo[] = [
 
 export default function PlayerModal() {
     const { hasPerm } = useAdminPerms();
+    const canViewCharacter = window.txConsts.cadminEnabled && hasPerm('cadmin.players.view');
     const modalTabs = useMemo<ModalTabInfo[]>(() => {
-        if (!window.txConsts.cadminEnabled || !hasPerm('cadmin.players.view')) return baseModalTabs;
+        if (!canViewCharacter) return baseModalTabs;
         return [
             baseModalTabs[0],
             { title: 'Character', icon: <UserRoundCogIcon className="mr-2 h-5 w-5 hidden xs:block" /> },
             ...baseModalTabs.slice(1),
         ];
-    }, [hasPerm]);
+    }, [canViewCharacter]);
     const { isModalOpen, closeModal, playerRef } = usePlayerModalStateValue();
     const [selectedTab, setSelectedTab] = useState(modalTabs[0].title);
     const [currRefreshKey, setCurrRefreshKey] = useState(0);
@@ -60,6 +61,10 @@ export default function PlayerModal() {
         path: `/player`,
         abortOnUnmount: true,
     });
+    const actionPlayerRef = useMemo(() => {
+        if (!playerRef || !modalData?.player.sessionRef) return playerRef;
+        return { ...playerRef, sessionRef: modalData.player.sessionRef };
+    }, [modalData?.player.sessionRef, playerRef]);
 
     //Helper for tabs to be able to refresh the modal data
     const refreshModalData = () => {
@@ -98,7 +103,13 @@ export default function PlayerModal() {
                 setSelectedTab(modalTabs[0].title);
             }, 200);
         }
-    }, [isModalOpen]);
+    }, [isModalOpen, modalTabs]);
+
+    useEffect(() => {
+        if (!modalTabs.some(tab => tab.title === selectedTab)) {
+            setSelectedTab(modalTabs[0].title);
+        }
+    }, [modalTabs, selectedTab]);
 
     const handleOpenClose = (newOpenState: boolean) => {
         if (isModalOpen && !newOpenState) {
@@ -185,7 +196,7 @@ export default function PlayerModal() {
                             <>
                                 {selectedTab === 'Info' && <PlayerInfoTab
                                     player={modalData.player}
-                                    playerRef={playerRef!}
+                                    playerRef={actionPlayerRef!}
                                     serverTime={modalData.serverTime}
                                     tsFetch={tsFetch}
                                     setSelectedTab={setSelectedTab}
@@ -199,19 +210,19 @@ export default function PlayerModal() {
                                 {selectedTab === 'Character' && <PlayerCharacterTab license={modalData.player.license} />}
                                 {selectedTab === 'IDs' && <PlayerIdsTab
                                     player={modalData.player}
-                                    playerRef={playerRef!}
+                                    playerRef={actionPlayerRef!}
                                     refreshModalData={refreshModalData}
                                 />}
                                 {selectedTab === 'Ban' && <PlayerBanTab
                                     banTemplates={modalData.banTemplates}
-                                    playerRef={playerRef!}
+                                    playerRef={actionPlayerRef!}
                                 />}
                             </>
                         )}
                     </ModalTabWrapper>
                 </ModalContent>
                 <PlayerModalFooter
-                    playerRef={playerRef!}
+                    playerRef={actionPlayerRef!}
                     player={modalData?.player}
                 />
             </DialogContent>

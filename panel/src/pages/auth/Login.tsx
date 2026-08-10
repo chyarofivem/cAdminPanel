@@ -6,18 +6,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { fetchWithTimeout } from '@/hooks/fetch';
 import { t } from '@/lib/i18n';
-import { isValidRedirectPath } from '@/lib/navigation';
+import { isValidRedirectPath, LogoutReasonHash, navigatePanel } from '@/lib/navigation';
 import { useAuth } from '@/hooks/auth';
 import type { ApiVerifyPasswordReq, ApiVerifyPasswordResp } from '@shared/authApiTypes';
-
-export enum LogoutReasonHash {
-    NONE = '',
-    LOGOUT = '#logout',
-    EXPIRED = '#expired',
-    UPDATED = '#updated',
-    MASTER_ALREADY_SET = '#master_already_set',
-    SHUTDOWN = '#shutdown',
-}
 
 type SetupResponse = {
     success: boolean;
@@ -94,7 +85,7 @@ export default function Login() {
 
     const startLogin = () => {
         const suffix = redirectPath ? `?r=${encodeURIComponent(redirectPath)}` : '';
-        window.location.href = `/auth/chyaro/login${suffix}`;
+        navigatePanel(`/auth/chyaro/login${suffix}`);
     };
 
     const passwordLogin = async () => {
@@ -107,8 +98,7 @@ export default function Login() {
             );
             if ('error' in data) {
                 if (data.error === 'refreshToUpdate') {
-                    window.location.href = `/login${LogoutReasonHash.UPDATED}`;
-                    window.location.reload();
+                    navigatePanel(`/login${LogoutReasonHash.UPDATED}`);
                     return;
                 }
                 throw new Error(data.error === 'no_admins_setup'
@@ -116,6 +106,7 @@ export default function Login() {
                     : data.error);
             }
             setAuthData(data);
+            navigatePanel(redirectPath ?? '/');
         } catch (error) {
             setFeedback({
                 tone: 'error',

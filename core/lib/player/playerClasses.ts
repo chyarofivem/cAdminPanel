@@ -1,4 +1,5 @@
 const modulename = 'Player';
+import { randomUUID } from 'node:crypto';
 import cleanPlayerName from '@shared/cleanPlayerName';
 import { DatabaseActionWarnType, DatabasePlayerType, DatabaseWhitelistApprovalsType } from '@modules/Database/databaseTypes';
 import { cloneDeep, union } from 'lodash-es';
@@ -136,6 +137,7 @@ type PlayerDataType = {
     name: string,
     ids: string[],
     hwids: string[],
+    connectionRef?: string,
 }
 
 /**
@@ -143,7 +145,9 @@ type PlayerDataType = {
  */
 export class ServerPlayer extends BasePlayer {
     readonly #fxPlayerlist: FxPlayerlist;
-    // readonly psid: string; //TODO: calculate player session id (sv mutex, netid, rollover id) here
+    readonly sessionRef: string = randomUUID();
+    readonly connectionRef: string;
+    readonly hasResourceConnectionRef: boolean;
     readonly netid: number;
     readonly tsConnected: number = now();
     readonly isRegistered: boolean;
@@ -158,6 +162,11 @@ export class ServerPlayer extends BasePlayer {
         super(Symbol(`netid${netid}`));
         this.#fxPlayerlist = fxPlayerlist;
         this.netid = netid;
+        this.hasResourceConnectionRef = typeof playerData?.connectionRef === 'string'
+            && playerData.connectionRef.length > 0;
+        this.connectionRef = this.hasResourceConnectionRef
+            ? playerData.connectionRef!
+            : this.sessionRef;
         this.isConnected = true;
         if (
             playerData === null
@@ -209,7 +218,28 @@ export class ServerPlayer extends BasePlayer {
 
         //Check if player is already on the database
         try {
-            const dbPlayer = txCore.database.players.findOne(this.license);
+            let dbPlayer = txCore.database.players.findOne(this.license);
+            if (!dbPlayer) {
+                const onlineIdentifiers = new Set(this.idsOnline.map(id => id.toLowerCase()));
+                const onlineLicenseValues = new Set(this.idsOnline
+                    .filter(id => /^license2?:[0-9a-f]{40}$/i.test(id))
+                    .map(id => id.slice(id.indexOf(':') + 1).toLowerCase()));
+                const matchingPlayers = txCore.database.players.findMany((candidate: DatabasePlayerType) => {
+                    if (onlineLicenseValues.has(candidate.license.toLowerCase())) return true;
+                    return candidate.ids.some((identifier) => {
+                        const normalized = identifier.toLowerCase();
+                        if (/^license2?:[0-9a-f]{40}$/i.test(normalized)) {
+                            return onlineLicenseValues.has(normalized.slice(normalized.indexOf(':') + 1));
+                        }
+                        return onlineIdentifiers.has(normalized);
+                    });
+                });
+                if (matchingPlayers.length > 1) {
+                    throw new Error('multiple player records match the current identifiers');
+                }
+                dbPlayer = matchingPlayers[0] ?? null;
+                if (dbPlayer) this.license = dbPlayer.license;
+            }
             if (dbPlayer) {
                 //Updates database data
                 this.dbData = dbPlayer;
@@ -345,6 +375,20 @@ export class ServerPlayer extends BasePlayer {
         clearInterval(this.#minuteCronInterval);
     }
 }
+
+export const isMatchingPlayerSession = (player: BasePlayer, expectedSessionRef: unknown) => (
+    player instanceof ServerPlayer
+    && player.isConnected
+    && typeof expectedSessionRef === 'string'
+    && player.sessionRef === expectedSessionRef
+);
+
+export const isMatchingPlayerConnection = (player: BasePlayer, expectedConnectionRef: unknown) => (
+    player instanceof ServerPlayer
+    && player.isConnected
+    && typeof expectedConnectionRef === 'string'
+    && player.connectionRef === expectedConnectionRef
+);
 
 
 /**

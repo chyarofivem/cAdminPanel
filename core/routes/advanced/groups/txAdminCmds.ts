@@ -1,5 +1,6 @@
 import { mdCodeBlock, msToShortishDuration } from "@lib/misc";
 import type { AdvancedCommandHandler } from "../runCommand";
+import { getVisibleSettingsConfig } from "@core/routes/settings/configAccess";
 
 
 const setVerbosity: AdvancedCommandHandler = (ctx, args) => {
@@ -31,6 +32,9 @@ const setConfig: AdvancedCommandHandler = (ctx, args) => {
     if (!scopeKey || !valueString) throw new Error(`Invalid set command: ${args}`);
     const [scope, key] = scopeKey.split('.');
     if (!scope || !key) throw new Error(`Invalid scope.key: ${scopeKey}`);
+    if (scope === 'discordBot' && key === 'token') {
+        throw new Error('The Discord bot token can only be changed by the master in Settings.');
+    }
 
     const configUpdate: any = {};
     try {
@@ -43,11 +47,15 @@ const setConfig: AdvancedCommandHandler = (ctx, args) => {
         }
     }
     const { raw: keysUpdated } = txCore.configStore.saveConfigs(configUpdate, ctx.admin.name);
+    const visibleStoredConfig = getVisibleSettingsConfig(txCore.configStore.getStoredConfig(), {
+        isMaster: ctx.admin.isMaster,
+        canWrite: ctx.admin.hasPermission('settings.write'),
+    });
     const outParts = [
         '## Keys Updated:',
         mdCodeBlock(JSON.stringify(keysUpdated ?? 'not set', null, 2), 'json'),
         '## Stored:',
-        mdCodeBlock(JSON.stringify(txCore.configStore.getStoredConfig(), null, 2), 'json'),
+        mdCodeBlock(JSON.stringify(visibleStoredConfig, null, 2), 'json'),
     ];
 
     return {

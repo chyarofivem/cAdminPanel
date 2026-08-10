@@ -79,6 +79,10 @@ function TX_SEND_SERVER_CTX(adminID)
     personalized.locale = admin.locale
     personalized.localeData = false
   end
+  if admin and type(admin.accent) == 'string' and type(admin.accentColor) == 'string' then
+    personalized.accent = admin.accent
+    personalized.accentColor = admin.accentColor
+  end
   TriggerClientEvent('txcl:setServerCtx', tonumber(adminID), personalized)
 end
 

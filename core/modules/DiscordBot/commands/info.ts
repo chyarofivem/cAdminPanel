@@ -1,20 +1,8 @@
-const modulename = 'DiscordBot:cmd:info';
 import { APIEmbedField, CommandInteraction, EmbedBuilder, EmbedData } from 'discord.js';
 import { parsePlayerId } from '@lib/player/idUtils';
 import { embedder } from '../discordHelpers';
 import { findPlayersByIdentifier } from '@lib/player/playerFinder';
-import { txEnv } from '@core/globalData';
-import humanizeDuration from 'humanize-duration';
-import consoleFactory from '@lib/console';
 import { msToShortishDuration } from '@lib/misc';
-const console = consoleFactory(modulename);
-
-
-//Consts
-const footer = {
-    iconURL: 'https://cdn.discordapp.com/emojis/1062339910654246964.webp?size=96&quality=lossless',
-    text: `txAdmin ${txEnv.txaVersion}`,
-}
 
 
 /**
@@ -137,7 +125,6 @@ export default async (interaction: CommandInteraction) => {
             title: player.displayName,
             fields,
             description,
-            footer,
         };
         embeds.push(new EmbedBuilder(embedData).setColor('#4262e2'));
     }

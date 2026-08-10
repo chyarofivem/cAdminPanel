@@ -1,5 +1,5 @@
 import useSWR from 'swr';
-import { ExternalLinkIcon, UserRoundCogIcon } from 'lucide-react';
+import { ExternalLinkIcon, RefreshCwIcon, UserRoundCogIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ModalTabInner, ModalTabMessage } from '@/components/modal-tabs';
 import GenericSpinner from '@/components/GenericSpinner';
@@ -27,10 +27,21 @@ export default function PlayerCharacterTab({ license }: { license: string | null
 
     if (!license) return <ModalTabMessage>{t('This txAdmin record has no FiveM license to match to a character.')}</ModalTabMessage>;
     if (swr.isLoading) return <ModalTabMessage><GenericSpinner msg={t('Loading character...')} /></ModalTabMessage>;
-    if (swr.error || !players?.length) return <ModalTabMessage><span className="text-destructive-inline">{swr.error?.message || t('No framework character was found for this license.')}</span></ModalTabMessage>;
+    if (swr.error) return <ModalTabMessage className="flex-col gap-4 text-center text-sm">
+        <span className="text-destructive-inline">{swr.error.message}</span>
+        <Button size="sm" variant="outline" disabled={swr.isValidating} onClick={() => void swr.mutate().catch(() => undefined)}>
+            <RefreshCwIcon className={`mr-2 size-3.5 ${swr.isValidating ? 'animate-spin' : ''}`} />{t('Try again')}
+        </Button>
+    </ModalTabMessage>;
+    if (!players?.length) return <ModalTabMessage className="flex-col gap-4 text-center text-sm">
+        <span>{t('No framework character was found for this license.')}</span>
+        <Button size="sm" variant="outline" disabled={swr.isValidating} onClick={() => void swr.mutate().catch(() => undefined)}>
+            <RefreshCwIcon className={`mr-2 size-3.5 ${swr.isValidating ? 'animate-spin' : ''}`} />{t('Try again')}
+        </Button>
+    </ModalTabMessage>;
 
     const openFullProfile = (player: CadminPlayer) => {
-        const txAdminLicense = toTxAdminLicense(player.playerLicense ?? player.identifier) ?? license;
+        const txAdminLicense = toTxAdminLicense(license);
         if (!txAdminLicense) return;
         closeModal();
         const characterId = cadminCharacterIdentifier(player);

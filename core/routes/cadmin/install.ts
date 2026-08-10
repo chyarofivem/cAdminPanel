@@ -1,6 +1,6 @@
 import type { AuthedCtx } from '@modules/WebServer/ctxTypes';
 import { installCadminResource, type CadminFramework } from '@lib/cadminInstaller';
-import { cadminRequest } from '@lib/cadminApi';
+import { assertCadminReady, cadminRequest } from '@lib/cadminApi';
 
 export default async function CadminInstall(ctx: AuthedCtx) {
     if (!ctx.admin.testPermission('master', 'WebServer:CadminInstall')) {
@@ -9,7 +9,11 @@ export default async function CadminInstall(ctx: AuthedCtx) {
     }
     const action = ctx.params.action;
     if (action === 'test') {
-        try { return ctx.send({ success: true, data: await cadminRequest('GET', '/ping') }); }
+        try {
+            const ping = await cadminRequest('GET', '/ping');
+            assertCadminReady(ping);
+            return ctx.send({ success: true, data: ping });
+        }
         catch (error) { return ctx.send({ success: false, error: (error as Error).message }); }
     }
     if (action === 'skip') {

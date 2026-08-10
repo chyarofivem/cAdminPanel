@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import useSWR from 'swr';
 import {
+    AlertCircle,
     ArrowLeft,
     BadgeDollarSign,
     Car,
@@ -8,6 +9,9 @@ import {
     Database,
     Fingerprint,
     History,
+    Loader2,
+    LockKeyhole,
+    RefreshCw,
     Save,
     ShieldCheck,
     UserRoundCog,
@@ -43,6 +47,11 @@ import JobTab from '@/pages/CAdmin/JobTab';
 import MoneyTab from '@/pages/CAdmin/MoneyTab';
 import PlayerActions, { type PlayerActionTarget } from './PlayerActions';
 
+type CharacterLookupState = {
+    kind: 'disabled' | 'locked' | 'loading' | 'error' | 'empty' | 'ready';
+    message?: string;
+};
+
 export default function PlayerDetailPage() {
     const [, params] = useRoute('/administration/players/:license');
     const rawLicense = decodeURIComponent(params?.license ?? '');
@@ -53,14 +62,17 @@ export default function PlayerDetailPage() {
     const [selectedCharacterId, setSelectedCharacterId] = useState(() => (
         new URLSearchParams(window.location.search).get('character') || ''
     ));
+    const [retryingCharacter, setRetryingCharacter] = useState(false);
 
     const txDetails = useSWR<PlayerModalSuccess>(license ? `/player?license=${encodeURIComponent(license)}` : null, async (url: string) => {
         const response = await fetcher<PlayerModalResp>(url);
         if ('error' in response) throw new Error(response.error);
         return response;
     });
-    const canViewCharacter = window.txConsts.cadminEnabled && hasPerm('cadmin.players.view');
-    const characterListUrl = canViewCharacter && license
+    const cadminEnabled = window.txConsts.cadminEnabled;
+    const canViewCharacter = hasPerm('cadmin.players.view');
+    const canQueryCharacter = cadminEnabled && canViewCharacter;
+    const characterListUrl = canQueryCharacter && license
         ? `${cadminApiPath(`player/${encodeURIComponent(license)}`)}?scope=player`
         : null;
     const characterList = useSWR<CadminPlayer[]>(characterListUrl, async (url: string) => (
@@ -81,7 +93,7 @@ export default function PlayerDetailPage() {
     const selectedCharacter = characterList.data?.find(character => (
         cadminCharacterIdentifier(character) === selectedCharacterId
     ));
-    const characterUrl = canViewCharacter && selectedCharacter
+    const characterUrl = canQueryCharacter && selectedCharacter
         ? cadminApiPath(`player/${encodeURIComponent(selectedCharacterId)}`)
         : null;
     const characterDetails = useSWR<CadminPlayer>(characterUrl, async (url: string) => (
@@ -101,7 +113,27 @@ export default function PlayerDetailPage() {
     </div>;
 
     const txPlayer = txDetails.data?.player;
-    const character = characterDetails.data;
+    const loadedCharacter = characterDetails.data;
+    const characterLookupState: CharacterLookupState = !cadminEnabled
+        ? { kind: 'disabled', message: t('Character Management is disabled.') }
+        : !canViewCharacter
+        ? { kind: 'locked', message: t('You do not have permission to perform this Character Management action.') }
+        : retryingCharacter
+            ? { kind: 'loading', message: t('Loading character...') }
+            : characterList.error
+            ? { kind: 'error', message: characterList.error.message }
+            : !characterList.data || characterList.isLoading
+                ? { kind: 'loading', message: t('Loading character...') }
+                : characterList.data.length === 0
+                    ? { kind: 'empty', message: t('No framework character was found for this license.') }
+                    : characterDetails.error
+                        ? { kind: 'error', message: characterDetails.error.message }
+                        : !loadedCharacter || characterDetails.isLoading
+                            ? { kind: 'loading', message: t('Loading character...') }
+                            : { kind: 'ready' };
+    const character = characterLookupState.kind === 'ready' ? loadedCharacter : undefined;
+    const initialPlayerLoading = !txPlayer && !character
+        && (txDetails.isLoading || characterLookupState.kind === 'loading');
     const displayName = character?.name || txPlayer?.displayName || t('Unknown player');
     const isOnline = Boolean(txPlayer?.isConnected || character?.online);
     const ids = txPlayer ? [...new Set([...txPlayer.idsOnline, ...txPlayer.idsOffline])] : [];
@@ -116,6 +148,18 @@ export default function PlayerDetailPage() {
         void txDetails.mutate();
         void characterList.mutate();
         void characterDetails.mutate();
+    };
+    const retryCharacter = async () => {
+        if (retryingCharacter) return;
+        setRetryingCharacter(true);
+        try {
+            await characterList.mutate();
+            await characterDetails.mutate();
+        } catch {
+            // SWR stores the request error and the state panel renders it.
+        } finally {
+            setRetryingCharacter(false);
+        }
     };
 
     return <div className="w-full min-w-0 pb-10">
@@ -136,13 +180,15 @@ export default function PlayerDetailPage() {
             <PlayerActions target={target} extended onChanged={refresh} className="flex flex-wrap gap-2" />
         </div>
 
-        {(txDetails.error || characterList.error || characterDetails.error) && <div className="mb-4 rounded-2xl border border-yellow-500/20 bg-yellow-500/10 p-4 text-sm text-yellow-200">
-            {txDetails.error ? t('txAdmin record unavailable: {error}', { error: txDetails.error.message }) : null}
-            {txDetails.error && (characterList.error || characterDetails.error) ? <br /> : null}
-            {characterList.error ? t('Framework character unavailable: {error}', { error: characterList.error.message }) : null}
-            {characterList.error && characterDetails.error ? <br /> : null}
-            {characterDetails.error ? t('Framework character unavailable: {error}', { error: characterDetails.error.message }) : null}
+        {txDetails.error && <div className="mb-4 rounded-2xl border border-yellow-500/20 bg-yellow-500/10 p-4 text-sm text-yellow-200">
+            {t('txAdmin record unavailable: {error}', { error: txDetails.error.message })}
         </div>}
+
+        {characterLookupState.kind !== 'ready' && !initialPlayerLoading && <CharacterManagementState
+            state={characterLookupState}
+            license={license}
+            onRetry={() => void retryCharacter()}
+        />}
 
         {characterList.data && characterList.data.length > 1 && <div className="mb-4 rounded-2xl border border-white/5 bg-white/[0.035] p-4">
             <Label htmlFor="player-management-character">{t('Character')}</Label>
@@ -159,7 +205,7 @@ export default function PlayerDetailPage() {
             </select>
         </div>}
 
-        {!txPlayer && !character && !txDetails.error && !characterList.error && !characterDetails.error
+        {initialPlayerLoading
             ? <div className="rounded-2xl bg-white/[0.035] p-12 text-center text-sm text-zinc-500">{t('Loading player management...')}</div>
             : <>
                 <div className="mb-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
@@ -169,14 +215,14 @@ export default function PlayerDetailPage() {
                     <Metric icon={<History />} label={t('Sanctions')} value={String(txPlayer?.actionHistory.filter(action => !action.revokedAt).length ?? 0)} />
                 </div>
 
-                <Tabs defaultValue="overview" className="rounded-2xl border border-white/5 bg-white/[0.025] p-4 md:p-6">
+                <Tabs key={`${cadminEnabled}:${canViewCharacter}`} defaultValue="overview" className="rounded-2xl border border-white/5 bg-white/[0.025] p-4 md:p-6">
                     <TabsList className="h-auto w-full flex-wrap justify-start bg-white/5">
                         <TabsTrigger value="overview">{t('Overview')}</TabsTrigger>
-                        {character && <TabsTrigger value="money">{t('Money')}</TabsTrigger>}
-                        {character && <TabsTrigger value="job">{t('Job')}</TabsTrigger>}
-                        {character && <TabsTrigger value="group">{t('Group')}</TabsTrigger>}
-                        {character && <TabsTrigger value="inventory">{t('Inventory')}</TabsTrigger>}
-                        {character && <TabsTrigger value="garage">{t('Garage')}</TabsTrigger>}
+                        {cadminEnabled && <TabsTrigger value="money">{t('Money')}</TabsTrigger>}
+                        {cadminEnabled && <TabsTrigger value="job">{t('Job')}</TabsTrigger>}
+                        {cadminEnabled && <TabsTrigger value="group">{t('Group')}</TabsTrigger>}
+                        {cadminEnabled && <TabsTrigger value="inventory">{t('Inventory')}</TabsTrigger>}
+                        {cadminEnabled && <TabsTrigger value="garage">{t('Garage')}</TabsTrigger>}
                         {txPlayer && <TabsTrigger value="history">{t('History')}</TabsTrigger>}
                         {txPlayer && <TabsTrigger value="identifiers">{t('Identifiers')}</TabsTrigger>}
                     </TabsList>
@@ -184,16 +230,72 @@ export default function PlayerDetailPage() {
                     <TabsContent value="overview" className="mt-6">
                         <OverviewTab player={txDetails.data} character={character} license={license} refresh={refresh} />
                     </TabsContent>
-                    {character && <TabsContent value="money" className="mt-6"><MoneyTab player={character} refresh={refresh} /></TabsContent>}
-                    {character && <TabsContent value="job" className="mt-6"><JobTab player={character} refresh={refresh} /></TabsContent>}
-                    {character && <TabsContent value="group" className="mt-6"><GroupTab player={character} refresh={refresh} /></TabsContent>}
-                    {character && <TabsContent value="inventory" className="mt-6"><InventoryTab player={character} refresh={refresh} /></TabsContent>}
-                    {character && <TabsContent value="garage" className="mt-6"><GarageTab player={character} refresh={refresh} /></TabsContent>}
+                    {cadminEnabled && <TabsContent value="money" className="mt-6">{character
+                        ? <MoneyTab player={character} refresh={refresh} />
+                        : <CharacterManagementState state={characterLookupState} license={license} onRetry={() => void retryCharacter()} />}
+                    </TabsContent>}
+                    {cadminEnabled && <TabsContent value="job" className="mt-6">{character
+                        ? <JobTab player={character} refresh={refresh} />
+                        : <CharacterManagementState state={characterLookupState} license={license} onRetry={() => void retryCharacter()} />}
+                    </TabsContent>}
+                    {cadminEnabled && <TabsContent value="group" className="mt-6">{character
+                        ? <GroupTab player={character} refresh={refresh} />
+                        : <CharacterManagementState state={characterLookupState} license={license} onRetry={() => void retryCharacter()} />}
+                    </TabsContent>}
+                    {cadminEnabled && <TabsContent value="inventory" className="mt-6">{character
+                        ? <InventoryTab player={character} refresh={refresh} />
+                        : <CharacterManagementState state={characterLookupState} license={license} onRetry={() => void retryCharacter()} />}
+                    </TabsContent>}
+                    {cadminEnabled && <TabsContent value="garage" className="mt-6">{character
+                        ? <GarageTab player={character} refresh={refresh} />
+                        : <CharacterManagementState state={characterLookupState} license={license} onRetry={() => void retryCharacter()} />}
+                    </TabsContent>}
                     {txPlayer && <TabsContent value="history" className="mt-6"><HistoryTab actions={txPlayer.actionHistory} serverTime={txDetails.data!.serverTime} /></TabsContent>}
                     {txPlayer && <TabsContent value="identifiers" className="mt-6"><IdentifiersTab license={license} player={txPlayer} refresh={refresh} /></TabsContent>}
                 </Tabs>
             </>}
     </div>;
+}
+
+function CharacterManagementState({
+    state,
+    license,
+    onRetry,
+}: {
+    state: CharacterLookupState;
+    license: string;
+    onRetry: () => void;
+}) {
+    const isError = state.kind === 'error';
+    const isLocked = state.kind === 'locked';
+    const isLoading = state.kind === 'loading';
+    const Icon = isLoading ? Loader2 : isLocked ? LockKeyhole : isError ? AlertCircle : UserRoundCog;
+    return <section className={cn(
+        'mb-4 flex flex-col gap-4 rounded-2xl border p-5 sm:flex-row sm:items-center sm:justify-between',
+        isError
+            ? 'border-red-500/20 bg-red-500/[0.08]'
+            : isLocked
+                ? 'border-amber-500/20 bg-amber-500/[0.08]'
+                : 'border-white/5 bg-white/[0.035]',
+    )}>
+        <div className="flex min-w-0 gap-3">
+            <Icon className={cn(
+                'mt-0.5 size-5 shrink-0',
+                isLoading && 'animate-spin text-zinc-500',
+                isError && 'text-red-300',
+                isLocked && 'text-amber-300',
+                state.kind === 'empty' && 'text-brand-400',
+            )} />
+            <div className="min-w-0">
+                <h3 className="font-medium text-white">{t('Character Management')}</h3>
+                <p className={cn('mt-1 text-sm', isError ? 'text-red-200' : isLocked ? 'text-amber-200' : 'text-zinc-400')}>{state.message}</p>
+                <p className="mt-2 break-all font-mono text-[11px] text-zinc-600">license:{license}</p>
+            </div>
+        </div>
+        {(isError || state.kind === 'empty') && <Button size="sm" variant="outline" onClick={onRetry}>
+            <RefreshCw className="mr-2 size-3.5" />{t('Try again')}
+        </Button>}
+    </section>;
 }
 
 function Metric({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
