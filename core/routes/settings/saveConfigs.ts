@@ -59,7 +59,12 @@ const cardNamesMap = {
     'game-notifications': 'Game Notifications',
 } as const;
 const validCardIds = Object.keys(cardNamesMap) as [keyof typeof cardNamesMap];
-const appearanceConfigKeys = new Set(['accent', 'logoUrl', 'faviconUrl', 'bannerUrl']);
+const appearanceGeneralConfigKeys = new Set(['accent', 'logoUrl', 'faviconUrl', 'bannerUrl']);
+const appearanceDiscordConfigKeys = new Set(['embedJson', 'embedConfigJson']);
+const isAppearanceConfig = (scope: string, key: string) => (
+    (scope === 'general' && appearanceGeneralConfigKeys.has(key))
+    || (scope === 'discordBot' && appearanceDiscordConfigKeys.has(key))
+);
 
 //Req validation
 const paramsSchema = z.object({ card: z.enum(validCardIds) });
@@ -120,7 +125,7 @@ export default async function SaveSettingsConfigs(ctx: AuthedCtx) {
     }
     if (cardId === 'appearance' && resetKeys.some(key => {
         const [scope, configKey] = key.split('.');
-        return scope !== 'general' || !configKey || !appearanceConfigKeys.has(configKey);
+        return !configKey || !isAppearanceConfig(scope, configKey);
     })) {
         return sendTypedResp({ type: 'error', msg: 'Appearance access can only reset appearance settings.' });
     }
@@ -213,24 +218,40 @@ export default async function SaveSettingsConfigs(ctx: AuthedCtx) {
 /**
  * Appearance card handler
  */
-const handleAppearanceCard: CardHandler = async (inputConfig) => {
-    if (!inputConfig.general || Object.keys(inputConfig).some(scope => scope !== 'general')) {
+export const handleAppearanceCard: CardHandler = async (inputConfig) => {
+    if (Object.keys(inputConfig).some(scope => scope !== 'general' && scope !== 'discordBot')) {
         throw new Error(`Unexpected data for the 'appearance' card.`);
     }
-    if (Object.keys(inputConfig.general).some(key => !appearanceConfigKeys.has(key))) {
+    if (inputConfig.general && Object.keys(inputConfig.general).some(key => !appearanceGeneralConfigKeys.has(key))) {
         throw new Error('Appearance access can only change appearance settings.');
+    }
+    if (inputConfig.discordBot && Object.keys(inputConfig.discordBot).some(key => !appearanceDiscordConfigKeys.has(key))) {
+        throw new Error('Appearance access can only change embed appearance settings.');
+    }
+    if (!inputConfig.general && !inputConfig.discordBot) {
+        throw new Error(`Unexpected data for the 'appearance' card.`);
     }
     const brandingKeys = ['logoUrl', 'faviconUrl', 'bannerUrl'] as const;
     const brandingKinds = ['logo', 'favicon', 'banner'] as const;
     for (let index = 0; index < brandingKeys.length; index++) {
         const key = brandingKeys[index];
-        const value = inputConfig.general[key];
+        const value = inputConfig.general?.[key];
         if (value === undefined) continue;
         if (typeof value !== 'string') throw new Error(`Invalid ${key} value.`);
         if (value.startsWith('data:')) {
-            inputConfig.general[key] = await storeBrandingDataUrl(brandingKinds[index], value);
+            inputConfig.general![key] = await storeBrandingDataUrl(brandingKinds[index], value);
         } else if (value !== '' && !isStoredBrandingFilename(value)) {
             throw new Error(`Invalid ${key} filename.`);
+        }
+    }
+    if (inputConfig.discordBot) {
+        try {
+            generateStatusMessage(
+                inputConfig.discordBot.embedJson as string | undefined ?? txConfig.discordBot.embedJson,
+                inputConfig.discordBot.embedConfigJson as string | undefined ?? txConfig.discordBot.embedConfigJson,
+            );
+        } catch (error) {
+            throw new Error(`Embed validation failed: ${(error as Error).message}`);
         }
     }
     return { processedConfig: inputConfig };

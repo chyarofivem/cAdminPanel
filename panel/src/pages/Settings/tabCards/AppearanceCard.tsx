@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useReducer, useRef } from 'react';
-import { ImageIcon, PaletteIcon, Trash2Icon, UploadIcon } from 'lucide-react';
+import { ImageIcon, PaletteIcon, RotateCcwIcon, Trash2Icon, UploadIcon, XIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { SettingItem, SettingItemDesc } from '../settingsItems';
 import SettingsCardShell from '../SettingsCardShell';
@@ -10,12 +10,15 @@ import {
     getConfigEmptyState,
     getPageConfig,
     type SettingsCardProps,
+    attemptBeautifyJsonString,
 } from '../utils';
 import { useAccent } from '@/hooks/theme';
 import { txToast } from '@/components/TxToaster';
 import { cn } from '@/lib/utils';
 import { t } from '@/lib/i18n';
 import { useAuth } from '@/hooks/auth';
+import { Textarea } from '@/components/ui/textarea';
+import InlineCode from '@/components/InlineCode';
 
 const MAX_UPLOAD_BYTES = 128 * 1024;
 
@@ -24,6 +27,8 @@ export const pageConfigs = {
     logoUrl: getPageConfig('general', 'logoUrl'),
     faviconUrl: getPageConfig('general', 'faviconUrl'),
     bannerUrl: getPageConfig('general', 'bannerUrl'),
+    embedJson: getPageConfig('discordBot', 'embedJson'),
+    embedConfigJson: getPageConfig('discordBot', 'embedConfigJson'),
 } as const;
 
 const assetLabels = {
@@ -176,6 +181,63 @@ export default function AppearanceCard({ cardCtx, pageCtx }: SettingsCardProps) 
                     </SettingItemDesc>
                 </SettingItem>
             ))}
+
+            <div className="border-t border-dashed border-white/10 pt-6">
+                <h3 className="text-sm font-semibold text-zinc-200">{t('Discord status embed')}</h3>
+                <p className="mt-1 text-sm text-muted-foreground">{t('Customize the public server status message shown by the Discord bot.')}</p>
+            </div>
+
+            <EmbedJsonSetting
+                label={t('Status Embed JSON')}
+                id={cfg.embedJson.eid}
+                value={states.embedJson ?? ''}
+                disabled={pageCtx.isReadOnly}
+                onChange={cfg.embedJson.state.set}
+                onDiscard={cfg.embedJson.state.discard}
+                onDefault={cfg.embedJson.state.default}
+            />
+            <EmbedJsonSetting
+                label={t('Status Config JSON')}
+                id={cfg.embedConfigJson.eid}
+                value={states.embedConfigJson ?? ''}
+                disabled={pageCtx.isReadOnly}
+                onChange={cfg.embedConfigJson.state.set}
+                onDiscard={cfg.embedConfigJson.state.discard}
+                onDefault={cfg.embedConfigJson.state.default}
+            />
         </SettingsCardShell>
     );
+}
+
+function EmbedJsonSetting({ label, id, value, disabled, onChange, onDiscard, onDefault }: {
+    label: string;
+    id: string;
+    value: string;
+    disabled: boolean;
+    onChange: (value: string) => void;
+    onDiscard: () => void;
+    onDefault: () => void;
+}) {
+    return <SettingItem label={label} htmlFor={id}>
+        <Textarea
+            id={id}
+            value={attemptBeautifyJsonString(value)}
+            onChange={event => onChange(event.target.value)}
+            className="min-h-72 font-mono text-xs"
+            autoComplete="off"
+            disabled={disabled}
+            spellCheck={false}
+        />
+        <div className="flex flex-wrap gap-2">
+            <Button size="xs" variant="outline" onClick={onDiscard} disabled={disabled}>
+                <XIcon className="mr-1.5 size-3.5" />{t('Discard changes')}
+            </Button>
+            <Button size="xs" variant="outline" onClick={onDefault} disabled={disabled}>
+                <RotateCcwIcon className="mr-1.5 size-3.5" />{t('Reset to default')}
+            </Button>
+        </div>
+        <SettingItemDesc>
+            {t('Use')} <InlineCode>/status add</InlineCode> {t('in Discord to create or refresh the status embed.')}
+        </SettingItemDesc>
+    </SettingItem>;
 }

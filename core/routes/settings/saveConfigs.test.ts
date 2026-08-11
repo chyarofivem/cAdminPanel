@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, test, vi } from 'vitest';
-import SaveSettingsConfigs, { handleDiscordCard } from './saveConfigs';
+import SaveSettingsConfigs, { handleAppearanceCard, handleDiscordCard } from './saveConfigs';
+import { FxMonitorHealth } from '@shared/enums';
 
 const makeCtx = (body: unknown) => {
     const send = vi.fn();
@@ -75,6 +76,29 @@ describe('settings save access', () => {
         expect(input.discordBot).not.toHaveProperty('token');
         expect(result?.processedConfig).toBe(input);
         expect(send).not.toHaveBeenCalled();
+    });
+
+    test('allows Appearance to save validated embed settings only', async () => {
+        vi.stubGlobal('txConfig', {
+            general: { serverName: 'Test Server' },
+            discordBot: { embedJson: '{}', embedConfigJson: '{}' },
+        });
+        vi.stubGlobal('txCore', {
+            cacheStore: { get: vi.fn(() => undefined) },
+            fxMonitor: { status: { health: FxMonitorHealth.ONLINE, uptime: 0 } },
+            fxPlayerlist: { onlineCount: 0 },
+            fxScheduler: { getStatus: vi.fn(() => ({ nextRelativeMs: undefined })) },
+        });
+        const input = {
+            discordBot: {
+                embedJson: JSON.stringify({ title: '{{serverName}}' }),
+                embedConfigJson: '{}',
+            },
+        } as any;
+
+        await expect(handleAppearanceCard(input, vi.fn())).resolves.toEqual({ processedConfig: input });
+        await expect(handleAppearanceCard({ discordBot: { guild: '123' } } as any, vi.fn()))
+            .rejects.toThrow('Appearance access can only change embed appearance settings.');
     });
 
     test('redacts the token from a non-master save response', async () => {
