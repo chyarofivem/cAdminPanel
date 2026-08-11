@@ -44,6 +44,7 @@
 ## Product invariants
 • Authentication supports Chyaro Login and local username and password login at the same time.
 • Only the master account may view or change the Discord bot token. Delegated Discord settings changes must preserve the stored token without returning it. Token values must not enter panel URLs, action logs, or non-master command output. Discord embeds must not add the txAdmin branded footer.
+• Discord status embeds must not include the legacy txAdmin logo thumbnail. Preserve administrator-configured thumbnail URLs.
 • An email address is optional when creating or granting an administrator account.
 • A local-only account may set its Discord identifier in User Settings.
 • A Chyaro-linked account must connect and manage Discord through Chyaro. Linking Chyaro clears a stale manually managed Discord identifier, and local Discord editing must remain blocked while Chyaro is linked.
@@ -56,6 +57,7 @@
 • Qbox ACE cleanup may remove only grants established by cAdminPanel. Preserve inherited grants from server configuration or other resources. Release cAdminPanel-owned grants on character unload, player drop, character mismatch, and resource stop.
 • The in-game Players page must preserve its player modal action, filters, sorting, periodic refresh, and unbounded incremental loading. Clicked-player modal loads, WebPipe mutations, and native actions must validate the intended per-connection identity. Preserve that identity through monitor resource restarts, and revalidate it throughout long-running native flows such as spectate.
 • Monitor startup must resynchronize every already-connected player into the backend player mirror without recording artificial joins. Kick and ban delivery must carry and validate the selected connection reference; ban must directly drop that live target and may additionally drop sessions matching normalized identifiers.
+• On Qbox servers, vehicles spawned from the in-game menu receive keys through the server-side `qbx_vehiclekeys` `GiveKeys` export. Missing or failed key exports must leave the spawned vehicle usable and emit a diagnostic message.
 • Direct messages to online players must carry and validate the selected connection reference. In-game announcements deliver once inside the monitor resource after permission validation; the command bridge records the action and sends Discord output without rebroadcasting it.
 • Resource reports use the FXServer structured trace as their primary delivery path and retain the HTTP callback as a compatibility fallback. Warm the report cache when the monitor resource starts, accept cached data after a refresh deadline, and clear the cache when FXServer stops.
 • The clicked-player modal uses a fresh request for its selected target and must show explicit loading, disconnected, error, and retry states while preserving permission-gated player actions.

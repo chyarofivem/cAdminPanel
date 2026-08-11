@@ -4,6 +4,7 @@ import { embedder, ensurePermission, isValidButtonEmoji, isValidEmbedUrl, logDis
 import { msToShortishDuration } from '@lib/misc';
 import { FxMonitorHealth } from '@shared/enums';
 
+const legacyTxAdminThumbnailUrl = 'https://forum-cfx-re.akamaized.net/original/5X/9/b/d/7/9bd744dc2b21804e18c3bb331e8902c930624e44.png';
 
 const isValidButtonConfig = (btn: any) => {
     const btnType = typeof btn;
@@ -140,6 +141,9 @@ export const generateStatusMessage = (
         return out;
     }
     const processedEmbedData = processObject(embedJson);
+    if (processedEmbedData.thumbnail?.url === legacyTxAdminThumbnailUrl) {
+        delete processedEmbedData.thumbnail;
+    }
 
     //Attempting to instantiate embed class
     let embed;
