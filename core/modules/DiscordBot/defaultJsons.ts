@@ -1,7 +1,7 @@
 export const defaultEmbedJson = JSON.stringify({
     "title": "{{serverName}}",
     "url": "{{serverBrowserUrl}}",
-    "description": "You can configure this embed in `txAdmin > Settings > Discord Bot`.",
+    "description": "You can configure this embed in `cAdminPanel > Settings > Appearance`.",
     "fields": [
         {
             "name": "> STATUS",

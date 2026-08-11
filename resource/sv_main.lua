@@ -163,7 +163,7 @@ end
 -- =============================================
 -- MARK: Events handling
 -- =============================================
-local txServerName = GetConvar("txAdmin-serverName", "txAdmin")
+local txServerName = GetConvar("txAdmin-serverName", "cAdminPanel")
 local cvHideAdminInPunishments = GetConvarBool('txAdmin-hideAdminInPunishments')
 local cvHideAdminInMessages = GetConvarBool('txAdmin-hideAdminInMessages')
 local cvHideAnnouncement = GetConvarBool('txAdmin-hideDefaultAnnouncement')
@@ -206,9 +206,9 @@ end
 --- Broadcast through an announcement that the server will restart in XX minutes
 TX_EVENT_HANDLERS.scheduledRestart = function(eventData)
     if not cvHideScheduledRestartWarning then
-        TriggerClientEvent('txcl:showAnnouncement', -1, eventData.translatedMessage, 'txAdmin')
+        TriggerClientEvent('txcl:showAnnouncement', -1, eventData.translatedMessage, txServerName)
     end
-    TriggerEvent('txsv:logger:addChatMessage', 'tx', '(Broadcast) txAdmin', eventData.translatedMessage)
+    TriggerEvent('txsv:logger:addChatMessage', 'tx', '(Broadcast) '..txServerName, eventData.translatedMessage)
 end
 
 
@@ -253,7 +253,7 @@ TX_EVENT_HANDLERS.playerKicked = function(eventData)
     if eventData.target == -1 then
         txPrint("Kicking everyone: "..eventData.reason)
         for _, pid in pairs(GetPlayers()) do
-            DropPlayer(pid, '[txAdmin] ' .. eventData.dropMessage)
+            DropPlayer(pid, eventData.dropMessage)
         end
     else
         if
@@ -264,7 +264,7 @@ TX_EVENT_HANDLERS.playerKicked = function(eventData)
             return txPrint('[playerKicked] ignored stale player connection #'..eventData.target)
         end
         txPrint("Kicking: #"..eventData.target..": "..eventData.reason)
-        DropPlayer(eventData.target, '[txAdmin] ' .. eventData.dropMessage)
+        DropPlayer(eventData.target, eventData.dropMessage)
     end
 end
 
@@ -352,7 +352,7 @@ TX_EVENT_HANDLERS.playerBanned = function(eventData)
         txPrint('[handleBanEvent] Kicking #'..playerKey..': '..eventData.reason)
         kickedPlayers[playerKey] = true
         kickCount = kickCount + 1
-        DropPlayer(playerID, '[txAdmin] ' .. eventData.kickMessage)
+        DropPlayer(playerID, eventData.kickMessage)
     end
 
     local directTarget = tonumber(eventData.targetNetId)
@@ -392,7 +392,7 @@ TX_EVENT_HANDLERS.serverShuttingDown = function(eventData)
     TX_IS_SERVER_SHUTTING_DOWN = true
     local players = GetPlayers()
     for _, serverID in pairs(players) do
-        DropPlayer(serverID, '[txAdmin] ' .. eventData.message)
+        DropPlayer(serverID, eventData.message)
     end
 end
 
@@ -446,7 +446,7 @@ local function handleConnections(name, setKickReason, d)
     -- if server is shutting down
     if TX_IS_SERVER_SHUTTING_DOWN then
         CancelEvent()
-        setKickReason("[txAdmin] Server is shutting down, try again in a few seconds.")
+        setKickReason("Server is shutting down, try again in a few seconds.")
         return
     end
 
@@ -464,19 +464,19 @@ local function handleConnections(name, setKickReason, d)
             playerName = name
         }
         if #exData.playerIds <= 1 then
-            d.done("\n[txAdmin] This server has bans or whitelisting enabled, which requires every player to have at least one identifier, but you have none.\nIf you own this server, make sure sv_lan is disabled in your server.cfg.")
+            d.done("\nThis server has bans or whitelisting enabled, which requires every player to have at least one identifier, but you have none.\nIf you own this server, make sure sv_lan is disabled in your server.cfg.")
             return
         end
 
         --Attempt to validate the user
-        d.update("\n[txAdmin] Checking banlist/whitelist... (0/5)")
+        d.update("\nChecking banlist/whitelist... (0/5)")
         CreateThread(function()
             local attempts = 0
             local isDone = false;
             --Do 5 attempts (2.5 mins)
             while isDone == false and attempts < 5 do
                 attempts = attempts + 1
-                d.update("\n[txAdmin] Checking banlist/whitelist... ("..attempts.."/5)")
+                d.update("\nChecking banlist/whitelist... ("..attempts.."/5)")
                 PerformHttpRequest(url, function(httpCode, rawData, resultHeaders)
                     if isDone then return end
                     -- rawData = nil
@@ -494,7 +494,7 @@ local function handleConnections(name, setKickReason, d)
                                 d.done()
                                 isDone = true
                             else
-                                local reason = respObj.reason or "\n[txAdmin] no reason provided"
+                                local reason = respObj.reason or "\nNo reason provided."
                                 d.done("\n"..reason)
                                 isDone = true
                             end
@@ -506,7 +506,7 @@ local function handleConnections(name, setKickReason, d)
 
             --Block client if failed
             if not isDone then
-                d.done("\n[txAdmin] Failed to validate your banlist/whitelist status. Try again in a few minutes.")
+                d.done("\nFailed to validate your banlist/whitelist status. Try again in a few minutes.")
                 isDone = true
             end
         end)

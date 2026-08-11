@@ -277,7 +277,7 @@ export const useBackendApi = <
             console.log('[TIMEOUT]', apiCallDesc);
             const msg = `Request timed out after ${msToShortDuration(timeoutMs, {units: ['s', 'ms']})}.`;
             abortController.current?.abort(msg);
-            handleError('Request Timeout', 'If you closed txAdmin, please restart it and try again.');
+            handleError('Request Timeout', 'If you closed cAdminPanel, please restart it and try again.');
         }, timeoutMs);
 
         try {
@@ -349,7 +349,7 @@ export const useBackendApi = <
             } else if (typeof error.message !== 'string') {
                 errorMessage = JSON.stringify(error);
             } else if (error.message.startsWith('NetworkError')) {
-                errorMessage = 'Network error.\nIf you closed txAdmin, please restart it and try again.';
+                errorMessage = 'Network error.\nIf you closed cAdminPanel, please restart it and try again.';
             } else if (error.message.startsWith('JSON.parse:')) {
                 errorMessage = 'Invalid JSON response from server.';
             } else {

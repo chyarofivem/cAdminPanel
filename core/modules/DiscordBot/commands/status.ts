@@ -22,7 +22,7 @@ const invalidUrlMessage = `Every URL must start with one of (\`http://\`, \`http
 URLs cannot be empty, if you do not want a URL then remove the URL line.`;
 
 const invalidPlaceholderMessage = `Your URL starts with \`{{\`, try removing it.
-If you just tried to edit a placeholder like \`{{serverBrowserUrl}}\` or \`{{serverJoinUrl}}\`, remember that those placeholders are replaced automatically by txAdmin, meaning you do not need to edit them at all.`
+If you just tried to edit a placeholder like \`{{serverBrowserUrl}}\` or \`{{serverJoinUrl}}\`, remember that those placeholders are replaced automatically by cAdminPanel, meaning you do not need to edit them at all.`
 
 const invalidEmojiMessage = `All emojis must be one of:
 - UTF-8 emoji ('😄')

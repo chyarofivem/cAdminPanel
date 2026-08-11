@@ -46,6 +46,7 @@
 • Only the master account may view or change the Discord bot token. Delegated Discord settings changes must preserve the stored token without returning it. Token values must not enter panel URLs, action logs, or non-master command output. Discord embeds must not add the txAdmin branded footer.
 • Discord status embeds must not include the legacy txAdmin logo thumbnail. Preserve administrator-configured thumbnail URLs.
 • Discord status embed JSON and status configuration JSON are edited in Appearance. Administrators with `settings.appearance` may change only those Discord fields and the existing branding fields through that card; the Discord bot token and connection settings remain in Discord.
+• Player-facing kick, ban, shutdown, and connection-deferral messages must never include `[txAdmin]` or visible txAdmin branding. Panel translations and Discord responses present the product as cAdminPanel while internal protocol names remain unchanged.
 • An email address is optional when creating or granting an administrator account.
 • A local-only account may set its Discord identifier in User Settings.
 • A Chyaro-linked account must connect and manage Discord through Chyaro. Linking Chyaro clears a stale manually managed Discord identifier, and local Discord editing must remain blocked while Chyaro is linked.

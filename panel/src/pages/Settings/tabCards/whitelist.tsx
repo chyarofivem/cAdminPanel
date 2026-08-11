@@ -149,7 +149,7 @@ export default function ConfigCardWhitelist({ cardCtx, pageCtx }: SettingsCardPr
                         value="disabled"
                         title="Disabled"
                         desc={(<>
-                            Select this option if your server is public and open for all players to join. When a player connects, txAdmin will only check if they are banned <i>(if that is enabled)</i> and nothing else.
+                            Select this option if your server is public and open for all players to join. When a player connects, cAdminPanel will only check if they are banned <i>(if that is enabled)</i> and nothing else.
                         </>)}
                     />
                     <BigRadioItem
@@ -157,7 +157,7 @@ export default function ConfigCardWhitelist({ cardCtx, pageCtx }: SettingsCardPr
                         value="adminOnly"
                         title="Admin-only (maintenance mode)"
                         desc={(<>
-                            Will only allow server join if the player's <InlineCode>fivem:</InlineCode> or <InlineCode>discord:</InlineCode> identifiers are attached to a txAdmin administrator. Also known as maintenance mode.
+                            Will only allow server join if the player's <InlineCode>fivem:</InlineCode> or <InlineCode>discord:</InlineCode> identifiers are attached to a cAdminPanel administrator. Also known as maintenance mode.
                         </>)}
                     />
                     <BigRadioItem
@@ -191,7 +191,7 @@ export default function ConfigCardWhitelist({ cardCtx, pageCtx }: SettingsCardPr
                         value="approvedLicense"
                         title="Approved License"
                         desc={(<>
-                            The player <InlineCode>license:</InlineCode> identifier must be allowlisted by a txAdmin administrator. This can be done through the <TxAnchor href="/server/allowlist">Allowlist page</TxAnchor>, or the <InlineCode>/allowlist</InlineCode> Discord bot command.
+                            The player <InlineCode>license:</InlineCode> identifier must be allowlisted by a cAdminPanel administrator. This can be done through the <TxAnchor href="/server/allowlist">Allowlist page</TxAnchor>, or the <InlineCode>/allowlist</InlineCode> Discord bot command.
                         </>)}
                     />
                     <BigRadioItem

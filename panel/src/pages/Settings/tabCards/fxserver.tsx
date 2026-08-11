@@ -312,7 +312,7 @@ export default function ConfigCardFxserver({ cardCtx, pageCtx }: SettingsCardPro
             message: (<>
                 Are you sure you want to reset the server data path? <br />
                 <br />
-                <strong>This will not delete any resource files or database</strong>, but just reset the txAdmin configuration, allowing you to go back to the Setup page. <br />
+                <strong>This will not delete any resource files or database</strong>, but just reset the cAdminPanel configuration, allowing you to go back to the Setup page. <br />
                 If you want, you can set the path back to the current value later. <br />
                 <br />
                 <strong className="text-warning-inline">Warning:</strong> take note of the current path before proceeding, so you can set it back later if you need to. Current path:
@@ -458,7 +458,7 @@ export default function ConfigCardFxserver({ cardCtx, pageCtx }: SettingsCardPro
                     disabled={pageCtx.isReadOnly}
                 />
                 <SettingItemDesc>
-                    Start the server automatically after <strong>txAdmin</strong> starts.
+                    Start the server automatically after <strong>cAdminPanel</strong> starts.
                 </SettingItemDesc>
             </SettingItem>
             <SettingItem label="Resource Starting Tolerance" htmlFor={cfg.resourceTolerance.eid} showIf={showAdvanced}>

@@ -46,7 +46,7 @@ export const ensurePermission = async (interaction: CommandInteraction, reqPerm:
     const admin = txCore.adminStore.getAdminByProviderUID(interaction.user.id);
     if (!admin) {
         await interaction.reply(
-            embedder.warning(`**Your account does not have txAdmin access.** :face_with_monocle:\nIf you are already registered in txAdmin, visit the Admin Manager page, and make sure the Discord ID for your user is set to \`${interaction.user.id}\`.`, true)
+            embedder.warning(`**Your account does not have cAdminPanel access.** :face_with_monocle:\nIf you are already registered in cAdminPanel, visit Staff & Permissions and make sure the Discord ID for your user is set to \`${interaction.user.id}\`.`, true)
         );
         return false;
     }
@@ -58,7 +58,7 @@ export const ensurePermission = async (interaction: CommandInteraction, reqPerm:
         //@ts-ignore: not important
         const permName = txCore.adminStore.registeredPermissions[reqPerm] ?? 'Unknown';
         await interaction.reply(
-            embedder.danger(`Your txAdmin account does not have the "${permName}" permissions required for this action.`, true)
+            embedder.danger(`Your cAdminPanel account does not have the "${permName}" permissions required for this action.`, true)
         );
         return false;
     }
