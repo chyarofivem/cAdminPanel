@@ -50,4 +50,26 @@ describe('Discord status embed', () => {
         expect(embed.footer).toBeUndefined();
         expect(embed.timestamp).toBeUndefined();
     });
+
+    it('removes the legacy txAdmin thumbnail while preserving custom thumbnails', () => {
+        const legacyMessage = generateStatusMessage(
+            JSON.stringify({
+                title: '{{serverName}}',
+                thumbnail: {
+                    url: 'https://forum-cfx-re.akamaized.net/original/5X/9/b/d/7/9bd744dc2b21804e18c3bb331e8902c930624e44.png',
+                },
+            }),
+            JSON.stringify({}),
+        );
+        const customMessage = generateStatusMessage(
+            JSON.stringify({
+                title: '{{serverName}}',
+                thumbnail: { url: 'https://example.com/server-logo.png' },
+            }),
+            JSON.stringify({}),
+        );
+
+        expect(legacyMessage.embeds[0].toJSON().thumbnail).toBeUndefined();
+        expect(customMessage.embeds[0].toJSON().thumbnail?.url).toBe('https://example.com/server-logo.png');
+    });
 });

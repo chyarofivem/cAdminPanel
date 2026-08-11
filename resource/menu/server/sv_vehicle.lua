@@ -8,6 +8,27 @@ if not TX_MENU_ENABLED then return end
 --  actions defined on Menu's "Main Page"
 -- =============================================
 
+--- Give the requesting player keys when the active framework uses Qbox.
+--- qbx_vehiclekeys exposes GiveKeys on the server and expects the vehicle entity.
+---@param src number
+---@param vehicle number
+local function giveQboxVehicleKeys(src, vehicle)
+  if GetResourceState('qbx_core') ~= 'started' then return end
+  if GetResourceState('qbx_vehiclekeys') ~= 'started' then
+    return debugPrint('Could not give spawned vehicle keys because qbx_vehiclekeys is not started')
+  end
+
+  local called, result = pcall(function()
+    return exports.qbx_vehiclekeys:GiveKeys(src, vehicle)
+  end)
+  if not called or result == false then
+    debugPrint(string.format(
+      'Failed to give spawned vehicle keys (src=^3%d^0, vehicle=^3%d^0, error=^1%s^0)',
+      src, vehicle, tostring(result)
+    ))
+  end
+end
+
 RegisterNetEvent('txsv:req:vehicle:fix', function()
   local src = source
   local allow = PlayerHasTxPermission(src, 'menu.vehicle')
@@ -91,6 +112,7 @@ RegisterNetEvent('txsv:req:vehicle:spawn:fivem', function(model, modelType)
   end
   SetEntityRoutingBucket(newVeh, sourceBucket)
   SetEntityVelocity(newVeh, oldVehVelocity)
+  giveQboxVehicleKeys(src, newVeh)
 
   local vehNetId = NetworkGetNetworkIdFromEntity(newVeh)
   debugPrint(string.format(
