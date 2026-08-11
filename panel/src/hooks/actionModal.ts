@@ -1,6 +1,7 @@
 import { setUrlSearchParam } from "@/lib/navigation";
 import { useAtom, useAtomValue, useSetAtom } from "jotai";
 import { atomWithReset } from 'jotai/utils';
+import { useCallback } from 'react';
 
 
 /**
@@ -20,11 +21,11 @@ export const setActionModalUrlParam = (ref: string | undefined) => {
 export const useOpenActionModal = () => {
     const setModalRef = useSetAtom(actionModalRefAtom);
     const setModalOpen = useSetAtom(actionModalOpenAtom);
-    return (actionId: string) => {
+    return useCallback((actionId: string) => {
         setActionModalUrlParam(actionId);
         setModalRef(actionId);
         setModalOpen(true);
-    }
+    }, [setModalOpen, setModalRef]);
 };
 
 //Hook to close the action modal
