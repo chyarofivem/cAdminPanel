@@ -1,6 +1,14 @@
 import { dequal } from 'dequal/lite';
 import { GetConfigsResp, PartialTxConfigs, TxConfigs } from "@shared/otherTypes";
 
+export const attemptBeautifyJsonString = (input: string) => {
+    try {
+        return JSON.stringify(JSON.parse(input), null, 4);
+    } catch {
+        return input;
+    }
+};
+
 
 /**
  * Types

@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { ErrorBoundary } from "react-error-boundary";
-import { Route as WouterRoute, Switch, useRoute } from "wouter";
+import { Route as WouterRoute, Switch, useLocation, useRoute } from "wouter";
 import { PageErrorFallback } from "@/components/ErrorFallback";
 import { useAtomValue, useSetAtom } from "jotai";
 import { contentRefreshKeyAtom, pageErrorStatusAtom, useSetPageTitle } from "@/hooks/pages";
@@ -241,16 +241,19 @@ function Route(route: RouteType) {
 
 
 export function MainRouterInner() {
+    const [location] = useLocation();
     return (
-        <Switch>
-            {allRoutes.map((route) => <Route key={route.path} {...route} />)}
+        <div key={location} className="tx-route-enter min-w-0">
+            <Switch>
+                {allRoutes.map((route) => <Route key={route.path} {...route} />)}
 
-            {/* Other Routes - they need to set the title manuually */}
-            {import.meta.env.DEV && (
-                <WouterRoute path="/test"><TestingPage /></WouterRoute>
-            )}
-            <WouterRoute component={NotFound} />
-        </Switch>
+                {/* Other Routes - they need to set the title manuually */}
+                {import.meta.env.DEV && (
+                    <WouterRoute path="/test"><TestingPage /></WouterRoute>
+                )}
+                <WouterRoute component={NotFound} />
+            </Switch>
+        </div>
     );
 }
 

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useLocation } from 'wouter';
 import {
     Activity, ChevronDown, CircleGauge, ClipboardCheck, FileEdit,
@@ -34,16 +34,22 @@ function NavGroup({ label, icon, links }: { label: string; icon: React.ReactNode
     const visible = links.filter(link => link.master ? hasPerm('master') : !link.permission || hasPerm(link.permission));
     const groupActive = visible.some(link => location === link.href || location.startsWith(`${link.href}/`));
     const [open, setOpen] = useState(groupActive);
+    const contentRef = useRef<HTMLDivElement>(null);
+    useEffect(() => {
+        if (contentRef.current) contentRef.current.inert = !open;
+    }, [open]);
     if (!visible.length) return null;
     return <div className="mt-1">
-        <button type="button" onClick={() => setOpen(value => !value)} className={cn(
+        <button type="button" aria-expanded={open} onClick={() => setOpen(value => !value)} className={cn(
             'flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm text-gray-300 transition-colors hover:bg-white/5 hover:text-white',
             groupActive && 'border-2 border-dashed border-brand-600/20 bg-brand-600/10 text-brand-500',
         )}>
             <span className="flex items-center"><span className={cn('mr-2 text-zinc-500', groupActive && 'text-brand-500/60')}>{icon}</span>{label}</span>
             <ChevronDown className={cn('size-4 transition-transform', open && 'rotate-180')} />
         </button>
-        {open && <div className="mt-1 space-y-1">{visible.map(link => <SidebarLink key={link.href} link={link} nested />)}</div>}
+        <div ref={contentRef} aria-hidden={!open} className={cn('grid transition-[grid-template-rows,opacity] duration-200 motion-reduce:transition-none', open ? 'grid-rows-[1fr] opacity-100' : 'pointer-events-none grid-rows-[0fr] opacity-0')}>
+            <div className="overflow-hidden"><div className="mt-1 space-y-1">{visible.map(link => <SidebarLink key={link.href} link={link} nested />)}</div></div>
+        </div>
     </div>;
 }
 
