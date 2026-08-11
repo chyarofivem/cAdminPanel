@@ -1,7 +1,7 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
     AlertTriangle, ArrowDown, ArrowUp, Ban, CalendarDays, CheckCircle2,
-    Clock3, Gavel, Hourglass, Loader2, RotateCcw, ShieldOff, UserRound,
+    Clock3, Gavel, Hourglass, Loader2, RefreshCw, RotateCcw, ShieldOff, UserRound,
 } from 'lucide-react';
 import type {
     HistoryTableActionType,
@@ -65,7 +65,10 @@ const statusDetails = (action: HistoryTableActionType) => {
     };
 };
 
-function TimelineAction({ action, onOpen }: { action: HistoryTableActionType; onOpen: () => void }) {
+const TimelineAction = memo(function TimelineAction({ action, onOpen }: {
+    action: HistoryTableActionType;
+    onOpen: (actionId: string) => void;
+}) {
     const status = statusDetails(action);
     const isBan = action.type === 'ban';
     return <li className="relative pl-9 sm:pl-12">
@@ -75,7 +78,7 @@ function TimelineAction({ action, onOpen }: { action: HistoryTableActionType; on
         )}>{isBan ? <Gavel className="size-3.5" /> : <AlertTriangle className="size-3.5" />}</span>
         <button
             type="button"
-            onClick={onOpen}
+            onClick={() => onOpen(action.id)}
             className="group w-full rounded-2xl border border-white/5 bg-white/[0.035] p-4 text-left transition duration-200 hover:-translate-y-0.5 hover:border-brand-500/20 hover:bg-white/[0.055] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 motion-reduce:transform-none motion-reduce:transition-none"
         >
             <div className="flex flex-wrap items-start justify-between gap-3">
@@ -103,7 +106,7 @@ function TimelineAction({ action, onOpen }: { action: HistoryTableActionType; on
             </div>
         </button>
     </li>;
-}
+});
 
 export default function HistoryTable({ search, filterbyType, filterbyAdmin }: HistoryTableProps) {
     const [history, setHistory] = useState<HistoryTableActionType[]>([]);
@@ -215,12 +218,17 @@ export default function HistoryTable({ search, filterbyType, filterbyAdmin }: Hi
     };
 
     return <section className="mt-4 pb-8">
-        <div className="mb-4 flex items-center justify-between gap-3">
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-2 text-sm text-zinc-500"><CalendarDays className="size-4" />{t('{count} loaded actions', { count: history.length })}</div>
-            <Button variant="outline" size="sm" onClick={toggleSort} disabled={isResetting}>
-                {sorting.desc ? <ArrowDown className="mr-2 size-4" /> : <ArrowUp className="mr-2 size-4" />}
-                {sorting.desc ? t('Newest first') : t('Oldest first')}
-            </Button>
+            <div className="flex items-center gap-2">
+                <Button variant="ghost-muted" size="sm" onClick={() => void fetchNextPage(true)} disabled={isResetting}>
+                    <RefreshCw className={cn('mr-2 size-4', isResetting && 'animate-spin')} />{t('Refresh activity')}
+                </Button>
+                <Button variant="outline" size="sm" onClick={toggleSort} disabled={isResetting}>
+                    {sorting.desc ? <ArrowDown className="mr-2 size-4" /> : <ArrowUp className="mr-2 size-4" />}
+                    {sorting.desc ? t('Newest first') : t('Oldest first')}
+                </Button>
+            </div>
         </div>
 
         {isResetting && !history.length && <Card><CardContent className="flex items-center justify-center gap-2 p-14 text-sm text-zinc-500"><Loader2 className="size-4 animate-spin" />{t('Loading history...')}</CardContent></Card>}
@@ -235,7 +243,7 @@ export default function HistoryTable({ search, filterbyType, filterbyAdmin }: Hi
             {grouped.map(group => <section key={group.label} className="animate-in fade-in slide-in-from-bottom-1 duration-300 motion-reduce:animate-none">
                 <h2 className="mb-3 ml-9 text-xs font-semibold uppercase tracking-[0.16em] text-zinc-500 sm:ml-12">{group.label}</h2>
                 <ol className="relative space-y-3 before:absolute before:bottom-5 before:left-5 before:top-5 before:w-px before:bg-gradient-to-b before:from-brand-500/35 before:via-white/10 before:to-transparent sm:before:left-[1.65rem]">
-                    {group.actions.map(action => <TimelineAction key={action.id} action={action} onOpen={() => openActionModal(action.id)} />)}
+                    {group.actions.map(action => <TimelineAction key={action.id} action={action} onOpen={openActionModal} />)}
                 </ol>
             </section>)}
         </div>

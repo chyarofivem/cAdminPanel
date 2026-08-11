@@ -1015,7 +1015,7 @@ export const isCroatian = uiLocale === 'hr';
 
 export function t(key: string, values: Record<string, string | number> = {}) {
     const translated = uiLocale === 'hr' ? (hr[key] ?? key) : key;
-    return translated.replace(/\{(\w+)\}/g, (match, name) => (
+    return translated.replace(/txAdmin/gi, 'cAdminPanel').replace(/\{(\w+)\}/g, (match, name) => (
         Object.prototype.hasOwnProperty.call(values, name) ? String(values[name]) : match
     ));
 }

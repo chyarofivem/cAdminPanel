@@ -96,7 +96,7 @@ export default function ConfigCardBans({ cardCtx, pageCtx }: SettingsCardProps) 
                 />
                 <SettingItemDesc>
                     Enable checking for ban status on player join. <br />
-                    <strong>Note:</strong> txAdmin bans will not work if this option is disabled.
+                    <strong>Note:</strong> cAdminPanel bans will not work if this option is disabled.
                 </SettingItemDesc>
             </SettingItem>
             <SettingItem label="Ban Templates">

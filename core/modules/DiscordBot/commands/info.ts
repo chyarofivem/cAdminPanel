@@ -23,7 +23,7 @@ export default async (interaction: CommandInteraction) => {
     if (adminInfoFlag) {
         const admin = txCore.adminStore.getAdminByProviderUID(interaction.user.id);
         if (!admin) {
-            return await interaction.reply(embedder.danger('You cannot use the `admininfo` option if you are not a txAdmin admin.'));
+            return await interaction.reply(embedder.danger('You cannot use the `admininfo` option without cAdminPanel staff access.'));
         } else {
             includeAdminInfo = true;
         }
@@ -67,9 +67,9 @@ export default async (interaction: CommandInteraction) => {
     //Searching for players
     const players = findPlayersByIdentifier(searchId);
     if (!players.length) {
-        return await interaction.reply(embedder.warning(`Identifier (\`${searchId}\`) does not seem to be associated to any player in the txAdmin Database.`));
+        return await interaction.reply(embedder.warning(`Identifier (\`${searchId}\`) does not seem to be associated with any player record.`));
     } else if (players.length > 10) {
-        return await interaction.reply(embedder.warning(`The identifier (\`${searchId}\`) is associated with more than 10 players, please use the txAdmin Web Panel to search for it.`));
+        return await interaction.reply(embedder.warning(`The identifier (\`${searchId}\`) is associated with more than 10 players. Please use cAdminPanel to search for it.`));
     }
 
     //Format players

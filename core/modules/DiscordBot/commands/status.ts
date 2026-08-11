@@ -4,6 +4,7 @@ import { embedder, ensurePermission, isValidButtonEmoji, isValidEmbedUrl, logDis
 import { msToShortishDuration } from '@lib/misc';
 import { FxMonitorHealth } from '@shared/enums';
 
+const legacyTxAdminThumbnailUrl = 'https://forum-cfx-re.akamaized.net/original/5X/9/b/d/7/9bd744dc2b21804e18c3bb331e8902c930624e44.png';
 
 const isValidButtonConfig = (btn: any) => {
     const btnType = typeof btn;
@@ -21,7 +22,7 @@ const invalidUrlMessage = `Every URL must start with one of (\`http://\`, \`http
 URLs cannot be empty, if you do not want a URL then remove the URL line.`;
 
 const invalidPlaceholderMessage = `Your URL starts with \`{{\`, try removing it.
-If you just tried to edit a placeholder like \`{{serverBrowserUrl}}\` or \`{{serverJoinUrl}}\`, remember that those placeholders are replaced automatically by txAdmin, meaning you do not need to edit them at all.`
+If you just tried to edit a placeholder like \`{{serverBrowserUrl}}\` or \`{{serverJoinUrl}}\`, remember that those placeholders are replaced automatically by cAdminPanel, meaning you do not need to edit them at all.`
 
 const invalidEmojiMessage = `All emojis must be one of:
 - UTF-8 emoji ('😄')
@@ -140,6 +141,9 @@ export const generateStatusMessage = (
         return out;
     }
     const processedEmbedData = processObject(embedJson);
+    if (processedEmbedData.thumbnail?.url === legacyTxAdminThumbnailUrl) {
+        delete processedEmbedData.thumbnail;
+    }
 
     //Attempting to instantiate embed class
     let embed;

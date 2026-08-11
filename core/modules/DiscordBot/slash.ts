@@ -14,7 +14,7 @@ const statusCommand: ApplicationCommandDataResolvable = {
         {
             type: ApplicationCommandOptionType.Subcommand,
             name: 'remove',
-            description: 'Removes the configured persistent txAdmin status embed.'
+            description: 'Removes the configured persistent cAdminPanel status embed.'
         }
     ]
 }
@@ -93,7 +93,7 @@ const allowlistCommand: ApplicationCommandDataResolvable = {
 const infoCommand: ApplicationCommandDataResolvable = {
     type: ApplicationCommandType.ChatInput,
     name: 'info',
-    description: 'Searches for a player in the txAdmin Database and prints information.',
+    description: 'Searches for a player in the cAdminPanel database and prints information.',
     options: [
         {
             type: ApplicationCommandOptionType.Subcommand,

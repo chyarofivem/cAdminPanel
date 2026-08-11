@@ -54,7 +54,7 @@ const DEPLOYMENT_CHOICES: {
         type: 'local',
         icon: FolderTree,
         title: 'Existing Server Data',
-        description: 'Point txAdmin at a server data folder that already exists on this host, with its own resources folder and server.cfg.',
+        description: 'Point cAdminPanel at a server data folder that already exists on this host, with its own resources folder and server.cfg.',
     },
     {
         type: 'remote',

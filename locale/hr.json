@@ -34,8 +34,8 @@
     "whitelist_messages": {
         "admin_only": {
             "mode_title": "Server je u načinu rada <strong>samo za administratore</strong>.",
-            "insufficient_ids": "Nemate <code>discord</code> ili <code>fivem</code> identifikator. Za provjeru txAdmin administratorskog računa potreban je barem jedan od njih.",
-            "deny_message": "Nijedan vaš identifikator nije povezan s txAdmin administratorskim računom."
+            "insufficient_ids": "Nemate <code>discord</code> ili <code>fivem</code> identifikator. Za provjeru cAdminPanel administratorskog računa potreban je barem jedan od njih.",
+            "deny_message": "Nijedan vaš identifikator nije povezan s cAdminPanel administratorskim računom."
         },
         "guild_member": {
             "mode_title": "Server koristi <strong>Discord popis dopuštenih</strong>.",
@@ -79,12 +79,12 @@
             "panel": "Panel"
         },
         "misc": {
-            "help_message": "txAdmin izbornik je uključen. Upišite /tx kako biste ga otvorili.\nMožete postaviti i vlastitu tipku u [Postavke igre > Dodjela tipki > FiveM > Izbornik: otvori glavnu stranicu].",
-            "menu_not_admin": "Vaši identifikatori ne odgovaraju nijednom registriranom txAdmin administratoru.\nOtvorite Upravljanje administratorima i provjerite jesu li identifikatori spremljeni.",
-            "menu_auth_failed": "Provjera autentičnosti txAdmin izbornika nije uspjela: %{reason}",
+            "help_message": "cAdminPanel izbornik je uključen. Upišite /tx kako biste ga otvorili.\nMožete postaviti i vlastitu tipku u [Postavke igre > Dodjela tipki > FiveM > Izbornik: otvori glavnu stranicu].",
+            "menu_not_admin": "Vaši identifikatori ne odgovaraju nijednom registriranom cAdminPanel administratoru.\nOtvorite Upravljanje administratorima i provjerite jesu li identifikatori spremljeni.",
+            "menu_auth_failed": "Provjera autentičnosti cAdminPanel izbornika nije uspjela: %{reason}",
             "no_perms": "Nemate dopuštenje.",
             "unknown_error": "Dogodila se nepoznata pogreška.",
-            "not_enabled": "txAdmin izbornik nije omogućen. Možete ga omogućiti u web-postavkama.",
+            "not_enabled": "cAdminPanel izbornik nije omogućen. Možete ga omogućiti u web-postavkama.",
             "announcement_title": "Obavijest servera — %{author}:",
             "dialog_empty_input": "Unos ne može biti prazan.",
             "directmessage_title": "Izravna poruka administratora %{author}:",
