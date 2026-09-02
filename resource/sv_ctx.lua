@@ -91,11 +91,11 @@ local function syncBranding()
   local payload = json.encode({ txAdminToken = TX_LUACOMTOKEN })
   PerformHttpRequest(url, function(httpCode, data)
     if httpCode ~= 200 then
-      return txPrint('^3WARNING: failed to sync panel branding from txAdmin.')
+      return txPrint('^3WARNING: failed to sync branding from the panel.')
     end
     local ok, branding = pcall(json.decode, data)
     if not ok or type(branding) ~= 'table' or branding.success ~= true then
-      return txPrint('^3WARNING: received invalid panel branding from txAdmin.')
+      return txPrint('^3WARNING: received invalid branding data from the panel.')
     end
     ServerCtxObj.panelName = branding.panelName or ServerCtxObj.panelName
     ServerCtxObj.accent = branding.accent or ServerCtxObj.accent

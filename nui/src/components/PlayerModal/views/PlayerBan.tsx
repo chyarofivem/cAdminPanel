@@ -19,7 +19,7 @@ import { usePermissionsValue } from "@nui/src/state/permissions.state";
 import { useSetPlayerModalVisibility } from "@nui/src/state/playerModal.state";
 import { fetchWebPipe } from "@nui/src/utils/fetchWebPipe";
 import { userHasPerm } from "@nui/src/utils/miscUtils";
-import { nuiTokens } from "@nui/src/styles/nuiTokens";
+import { fontMono, nuiTokens } from "@nui/src/styles/nuiTokens";
 
 type DurationValue =
   | "2 hours"
@@ -207,7 +207,7 @@ export const PlayerBan: React.FC<PlayerModalViewProps> = ({ details, target }) =
               <li key={key ?? option.id} {...optionProps}>
                 <Typography
                   component="span"
-                  sx={{ mr: 1, minWidth: 40, fontFamily: "monospace", opacity: 0.72 }}
+                  sx={{ mr: 1, minWidth: 40, fontFamily: fontMono, opacity: 0.72 }}
                 >
                   {template ? durationToShortString(template.duration) : "?"}
                 </Typography>

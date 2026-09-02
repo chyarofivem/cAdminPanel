@@ -10,6 +10,7 @@ import { getConfigEmptyState, getConfigAccessors, SettingsCardProps, getPageConf
 import SettingsCardShell from "../SettingsCardShell"
 import { txToast } from "@/components/TxToaster"
 import { t } from "@/lib/i18n"
+import TransText from "@/components/TransText"
 
 
 export const pageConfigs = {
@@ -85,39 +86,39 @@ export default function ConfigCardBans({ cardCtx, pageCtx }: SettingsCardProps) 
             advancedVisible={showAdvanced}
             advancedSetter={setShowAdvanced}
         >
-            <SettingItem label="Ban Checking">
+            <SettingItem label={t('Ban Checking')}>
                 <SwitchText
                     id={cfg.checkingEnabled.eid}
-                    checkedLabel="Enabled"
-                    uncheckedLabel="Disabled"
+                    checkedLabel={t('Enabled')}
+                    uncheckedLabel={t('Disabled')}
                     checked={states.checkingEnabled}
                     onCheckedChange={cfg.checkingEnabled.state.set}
                     disabled={pageCtx.isReadOnly}
                 />
                 <SettingItemDesc>
-                    Enable checking for ban status on player join. <br />
-                    <strong>Note:</strong> cAdminPanel bans will not work if this option is disabled.
+                    {t('Enable checking for ban status on player join.')} <br />
+                    <TransText k="**Note:** cAdminPanel bans will not work if this option is disabled." />
                 </SettingItemDesc>
             </SettingItem>
-            <SettingItem label="Ban Templates">
+            <SettingItem label={t('Ban Templates')}>
                 <Link asChild href="/settings/ban-templates">
                     <Button
                         size={'sm'}
                         variant="secondary"
                         disabled={pageCtx.isReadOnly}
                     >
-                        <PencilIcon className='size-4 mr-1.5 inline-block' /> Edit Ban Templates
+                        <PencilIcon className='size-4 mr-1.5 inline-block' /> {t('Edit Ban Templates')}
                     </Button>
                 </Link>
                 <SettingItemDesc>
-                    Configure ban reasons and durations that will appear as dropdown options when banning a player. This is useful for common reasons that happen frequently, like violation of your server rules.
+                    {t('Configure ban reasons and durations that will appear as dropdown options when banning a player. This is useful for common reasons that happen frequently, like violation of your server rules.')}
                 </SettingItemDesc>
             </SettingItem>
-            <SettingItem label="Ban Rejection Message" htmlFor={cfg.rejectionMessage.eid} showOptional>
+            <SettingItem label={t('Ban Rejection Message')} htmlFor={cfg.rejectionMessage.eid} showOptional>
                 <AutosizeTextarea
                     id={cfg.rejectionMessage.eid}
                     ref={rejectionMessageRef}
-                    placeholder='You can join http://discord.gg/example to appeal this ban.'
+                    placeholder={t('You can join http://discord.gg/example to appeal this ban.')}
                     defaultValue={cfg.rejectionMessage.initialValue}
                     onInput={updatePageState}
                     autoComplete="off"
@@ -126,34 +127,34 @@ export default function ConfigCardBans({ cardCtx, pageCtx }: SettingsCardProps) 
                     disabled={pageCtx.isReadOnly}
                 />
                 <SettingItemDesc>
-                    Optional message to display to a player on the rejection message that shows when they try to connect while being banned. <br />
-                    If you have a ban appeal process, you can use this field to inform the players.
+                    {t('Optional message to display to a player on the rejection message that shows when they try to connect while being banned.')} <br />
+                    {t('If you have a ban appeal process, you can use this field to inform the players.')}
                 </SettingItemDesc>
             </SettingItem>
 
             {showAdvanced && <AdvancedDivider />}
 
-            <SettingItem label="Required Ban HWID Matches" htmlFor={cfg.requiredHwids.eid} showIf={showAdvanced}>
+            <SettingItem label={t('Required Ban HWID Matches')} htmlFor={cfg.requiredHwids.eid} showIf={showAdvanced}>
                 <Select
                     value={selectNumberUtil.toUi(states.requiredHwids)}
                     onValueChange={(val) => cfg.requiredHwids.state.set(selectNumberUtil.toCfg(val))}
                     disabled={pageCtx.isReadOnly}
                 >
                     <SelectTrigger id={cfg.requiredHwids.eid}>
-                        <SelectValue placeholder="Select..." />
+                        <SelectValue placeholder={t('Select...')} />
                     </SelectTrigger>
                     <SelectContent>
-                        <SelectItem value="1">1 - recommended</SelectItem>
-                        <SelectItem value="2">2 - lax</SelectItem>
-                        <SelectItem value="3">3 - very lax</SelectItem>
-                        <SelectItem value="4">4 - virtually disabled</SelectItem>
-                        <SelectItem value="0">Disable HWID Bans</SelectItem>
+                        <SelectItem value="1">{t('1 - recommended')}</SelectItem>
+                        <SelectItem value="2">{t('2 - lax')}</SelectItem>
+                        <SelectItem value="3">{t('3 - very lax')}</SelectItem>
+                        <SelectItem value="4">{t('4 - virtually disabled')}</SelectItem>
+                        <SelectItem value="0">{t('Disable HWID Bans')}</SelectItem>
                     </SelectContent>
                 </Select>
                 <SettingItemDesc>
-                    This option configures how many HWID tokens must match between a player and an existing ban for the player join to be blocked, or can disable HWID Bans entirely. <br />
-                    Since Hardware ID Tokens are not guaranteed to be unique, there is the possibility of tokens from two players matching without them being related to each other. <br />
-                    <strong>Note:</strong> Most players have 3 to 6 HWID tokens.
+                    {t('This option configures how many HWID tokens must match between a player and an existing ban for the player join to be blocked, or can disable HWID Bans entirely.')} <br />
+                    {t('Since Hardware ID Tokens are not guaranteed to be unique, there is the possibility of tokens from two players matching without them being related to each other.')} <br />
+                    <TransText k="**Note:** Most players have 3 to 6 HWID tokens." />
                 </SettingItemDesc>
             </SettingItem>
         </SettingsCardShell>

@@ -34,7 +34,7 @@ try {
     console.error(error);
     process.exit(1);
 }
-console.log(`[BUILDER] Starting txAdmin Dev Builder for ${fxsPaths.root}`);
+console.log(`[BUILDER] Starting cAdminPanel Dev Builder for ${fxsPaths.root}`);
 
 //Sync target path and start chokidar
 //We don't really care about the path, just remove everything and copy again

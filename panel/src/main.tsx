@@ -7,7 +7,7 @@ import './globals.css';
 
 import MainShell from './layout/MainShell.tsx';
 import { AppErrorFallback } from './components/ErrorFallback.tsx';
-import { logoutWatcher, useAuth, useIsAuthenticated } from './hooks/auth.ts';
+import { logoutWatcher, useIsAuthenticated } from './hooks/auth.ts';
 import AuthShell from './layout/AuthShell.tsx';
 import { isValidRedirectPath, redirectToLogin } from '@/lib/navigation';
 import ThemeProvider from './components/ThemeProvider.tsx';
@@ -15,7 +15,6 @@ import { StrictMode, useEffect } from 'react';
 import { isMobile } from 'is-mobile';
 import { useAtomValue } from 'jotai';
 import { pageTitleWatcher } from './hooks/pages.ts';
-import UpdateSetupPage from './pages/UpdateSetup/UpdateSetupPage.tsx';
 
 
 //If inside NUI, silence console.* calls to prevent confusion.
@@ -72,17 +71,9 @@ export function AuthContextSwitch() {
     useAtomValue(logoutWatcher);
     useAtomValue(pageTitleWatcher);
     const isAuthenticated = useIsAuthenticated();
-    const { authData } = useAuth();
-    const needsUpdateReview = Boolean(authData && authData.isMaster && authData.pendingUpdate);
 
     useEffect(() => {
-        if (isAuthenticated && needsUpdateReview) {
-            if (!window.location.pathname.startsWith('/update-setup')) {
-                const current = window.location.pathname + window.location.search + window.location.hash;
-                const redirect = isAuthRoute(window.location.pathname) ? '' : `?r=${encodeURIComponent(current)}`;
-                window.history.replaceState(null, '', `/update-setup${redirect}`);
-            }
-        } else if (isAuthenticated) {
+        if (isAuthenticated) {
             //Replace the current URL with the redirect path if it exists and is valid
             const urlParams = new URLSearchParams(window.location.search);
             const redirectPath = urlParams.get('r');
@@ -102,10 +93,9 @@ export function AuthContextSwitch() {
                 redirectToLogin();
             }
         }
-    }, [isAuthenticated, needsUpdateReview]);
+    }, [isAuthenticated]);
 
     if (!isAuthenticated) return <AuthShell />;
-    if (needsUpdateReview) return <UpdateSetupPage />;
     return <MainShell />;
 }
 

@@ -1,6 +1,6 @@
 # Recipe Files
 A Recipe is a YAML document that describes how to deploy a server properly: from downloading resources, to configuring the `server.cfg` file.  
-You can run a recipe from txAdmin's built-in Server Deployer.  
+You can run a recipe from the panel's built-in Server Deployer.  
 Recipes will be "jailed" to the target folder, so for example they won't be able to execute `write_file` to your `admins.json`.  
 At the end of the deployment process, your target folder will be checked for the presence of a `server.cfg` and a `resources` folder to make sure everything went correctly.  
 On the setup page you will be able to import a recipe via its URL or by selecting one of the recommended ones from the community.  
@@ -89,7 +89,7 @@ If the directory structure does not exist, it is created.
 - `ref`: *(optional)* The git reference to be downloaded. This can be a branch, a tag, or a commit hash. If none is set, the recipe engine will query GitHub's API to get the default branch name (usually `master` or `main`).
 - `subpath`: *(optional)* When specified, copies a subpath of the repository.
 - `dest`: The destination path for the downloaded file.
-> Note: If you have more than 30 of this action, it is recommended to set the ref, otherwise users will may end up getting download errors (401/403 instead of 429) due to the number of times txAdmin calls the GitHub API.
+> Note: If you have more than 30 of this action, it is recommended to set the ref, otherwise users will may end up getting download errors (401/403 instead of 429) due to the number of times the panel calls the GitHub API.
 ```yaml
 # Example with subpath and reference
 - action: download_github
@@ -250,7 +250,7 @@ You need to execute the `connect_database` before this action.
         `id` int(10) unsigned NOT NULL,
         `name` tinytext NOT NULL
     );
-    INSERT INTO `users` (`name`) VALUES ('tabarra');
+    INSERT INTO `users` (`name`) VALUES ('example_user');
 ```
 
 ### `load_vars`

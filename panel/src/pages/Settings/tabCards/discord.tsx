@@ -1,5 +1,4 @@
 import { Input } from "@/components/ui/input"
-import TxAnchor from '@/components/TxAnchor'
 import SwitchText from '@/components/SwitchText'
 import { SettingItem, SettingItemDesc } from '../settingsItems'
 import { useEffect, useRef, useMemo, useReducer } from "react"
@@ -7,6 +6,7 @@ import { getConfigEmptyState, getConfigAccessors, SettingsCardProps, getPageConf
 import SettingsCardShell from "../SettingsCardShell"
 import { txToast } from "@/components/TxToaster"
 import { t } from "@/lib/i18n"
+import TransText from "@/components/TransText"
 import { useAdminPerms } from "@/hooks/auth"
 
 
@@ -86,21 +86,21 @@ export default function ConfigCardDiscord({ cardCtx, pageCtx }: SettingsCardProp
             pageCtx={pageCtx}
             onClickSave={handleOnSave}
         >
-            <SettingItem label="Discord Bot">
+            <SettingItem label={t('Discord Bot')}>
                 <SwitchText
                     id={cfg.botEnabled.eid}
-                    checkedLabel="Enabled"
-                    uncheckedLabel="Disabled"
+                    checkedLabel={t('Enabled')}
+                    uncheckedLabel={t('Disabled')}
                     variant="checkedGreen"
                     checked={states.botEnabled}
                     onCheckedChange={cfg.botEnabled.state.set}
                     disabled={pageCtx.isReadOnly}
                 />
                 <SettingItemDesc>
-                    Enable Discord Integration.
+                    {t('Enable Discord Integration.')}
                 </SettingItemDesc>
             </SettingItem>
-            {isMaster && <SettingItem label="Token" htmlFor={cfg.botToken.eid} required={states.botEnabled}>
+            {isMaster && <SettingItem label={t('Token')} htmlFor={cfg.botToken.eid} required={states.botEnabled}>
                 <Input
                     id={cfg.botToken.eid}
                     ref={botTokenRef}
@@ -114,13 +114,13 @@ export default function ConfigCardDiscord({ cardCtx, pageCtx }: SettingsCardProp
                     required
                 />
                 <SettingItemDesc>
-                    To get a token and the bot to join your server, follow these two guides: <br />
-                    <TxAnchor href="https://discordjs.guide/legacy/preparations/app-setup">Setting up a bot application</TxAnchor> and <TxAnchor href="https://discordjs.guide/legacy/preparations/adding-your-app">Adding your bot to servers</TxAnchor> <br />
-                    <strong>Note:</strong> Do not reuse the same token for another bot. <br />
-                    <strong>Note:</strong> The bot requires the <strong>Server Members</strong> intent, which can be set at the <TxAnchor href="https://discord.com/developers/applications">Discord Developer Portal</TxAnchor>.
+                    {t('To get a token and the bot to join your server, follow these two guides:')} <br />
+                    <TransText k="[Setting up a bot application](https://discordjs.guide/legacy/preparations/app-setup) and [Adding your bot to servers](https://discordjs.guide/legacy/preparations/adding-your-app)" /> <br />
+                    <TransText k="**Note:** Do not reuse the same token for another bot." /> <br />
+                    <TransText k="**Note:** The bot requires the **Server Members** intent, which can be set at the [Discord Developer Portal](https://discord.com/developers/applications)." />
                 </SettingItemDesc>
             </SettingItem>}
-            <SettingItem label="Guild/Server ID" htmlFor={cfg.discordGuild.eid} required={states.botEnabled}>
+            <SettingItem label={t('Guild/Server ID')} htmlFor={cfg.discordGuild.eid} required={states.botEnabled}>
                 <Input
                     id={cfg.discordGuild.eid}
                     ref={discordGuildRef}
@@ -130,11 +130,11 @@ export default function ConfigCardDiscord({ cardCtx, pageCtx }: SettingsCardProp
                     placeholder='000000000000000000'
                 />
                 <SettingItemDesc>
-                    The ID of the Discord Server (also known as Discord Guild). <br />
-                    To get the Server ID, go to Discord's settings and <TxAnchor href="https://support.discordapp.com/hc/article_attachments/115002742731/mceclip0.png">enable developer mode</TxAnchor>, then right-click on the guild icon select "Copy ID".
+                    {t('The ID of the Discord Server (also known as Discord Guild).')} <br />
+                    <TransText k={"To get the Server ID, go to Discord's settings and [enable developer mode](https://support.discordapp.com/hc/article_attachments/115002742731/mceclip0.png), then right-click on the guild icon select \"Copy ID\"."} />
                 </SettingItemDesc>
             </SettingItem>
-            <SettingItem label="Warnings Channel ID" htmlFor={cfg.warningsChannel.eid} showOptional>
+            <SettingItem label={t('Warnings Channel ID')} htmlFor={cfg.warningsChannel.eid} showOptional>
                 <Input
                     id={cfg.warningsChannel.eid}
                     ref={warningsChannelRef}
@@ -144,9 +144,9 @@ export default function ConfigCardDiscord({ cardCtx, pageCtx }: SettingsCardProp
                     placeholder='000000000000000000'
                 />
                 <SettingItemDesc>
-                    The ID of the channel to send Announcements (eg server restarts). <br />
-                    You can leave it blank to disable this feature. <br />
-                    To get the channel ID, go to Discord's settings and <TxAnchor href="https://support.discordapp.com/hc/article_attachments/115002742731/mceclip0.png">enable developer mode</TxAnchor>, then right-click on the channel name and select "Copy ID".
+                    {t('The ID of the channel to send Announcements (eg server restarts).')} <br />
+                    {t('You can leave it blank to disable this feature.')} <br />
+                    <TransText k={"To get the channel ID, go to Discord's settings and [enable developer mode](https://support.discordapp.com/hc/article_attachments/115002742731/mceclip0.png), then right-click on the channel name and select \"Copy ID\"."} />
                 </SettingItemDesc>
             </SettingItem>
         </SettingsCardShell>

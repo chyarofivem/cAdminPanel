@@ -2,6 +2,7 @@ import { SvRtPerfThreadNamesType } from "@core/modules/Metrics/svRuntime/config"
 import { SvRtNodeMemoryType, SvRtPerfBoundariesType } from "@core/modules/Metrics/svRuntime/perfSchemas";
 import type { ReactAuthDataType } from "./authApiTypes";
 import type { TxAdminLogEntry } from './txAdminLogTypes';
+import type { UpdateDataType } from './otherTypes';
 import { DiscordBotStatus, TxConfigState, type FxMonitorHealth } from "./enums";
 
 /**
@@ -91,6 +92,15 @@ export type PlayerlistEventType = FullPlayerlistEventType | PlayerDroppedEventTy
 
 
 /**
+ * Update available event
+ */
+export type UpdateAvailableEventType = {
+    panel?: UpdateDataType;
+    fxserver?: UpdateDataType;
+}
+
+
+/**
  * Listen Events Map
  */
 export type ListenEventsMap = {
@@ -104,4 +114,5 @@ export type ListenEventsMap = {
     consoleData: (data: string) => void;
     logData: (data: TxAdminLogEntry[]) => void;
     dashboard: (data: DashboardDataEventType) => void;
+    updateAvailable: (data: UpdateAvailableEventType) => void;
 };

@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { numberToLocaleString } from "@/lib/utils";
 import { PlayerDropsMessage } from "./PlayerDropsGenericSubcards";
+import { t } from "@/lib/i18n";
 
 type DisplayResourceDatum = {
     label: string;
@@ -29,7 +30,7 @@ export default function DrilldownResourcesSubcard({ resKicks }: DrilldownResourc
     }, [resKicks]);
 
     if (!resources.length) {
-        return <PlayerDropsMessage message="No players kicked by resources within this time window." />;
+        return <PlayerDropsMessage message={t('No players kicked by resources within this time window.')} />;
     }
 
     return (

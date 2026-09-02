@@ -1,6 +1,10 @@
+import { fontSans } from './nuiTokens';
+
 export default {
   name: 'redm',
-  logo: 'images/txadmin-redm.png',
+  typography: {
+    fontFamily: fontSans,
+  },
   palette: {
     mode: "dark",
     primary: {
@@ -68,6 +72,16 @@ export default {
       styleOverrides: {
         root: {
           backgroundImage: "unset"
+        }
+      }
+    },
+    MuiButton: {
+      styleOverrides: {
+        root: {
+          borderRadius: 9,
+          textTransform: "none",
+          fontWeight: 700,
+          boxShadow: "none",
         }
       }
     },

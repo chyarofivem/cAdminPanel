@@ -1,10 +1,17 @@
 {
-  "name": "txadmin-panel",
+  "name": "cadminpanel-panel",
   "version": "1.0.0",
   "description": "The package responsible for the web panel.",
-  "author": "André Tabarra",
+  "author": "chyarogroup",
   "license": "MIT",
   "type": "module",
+  "//browserslist": "Autoprefixer targets. The panel runs in evergreen desktop browsers and in the FiveM NUI CEF runtime, which tracks Chrome 103. There is no CEF entry in browserslist's 'defaults' query, so the targets are pinned explicitly.",
+  "browserslist": [
+    "chrome >= 103",
+    "edge >= 103",
+    "firefox >= 115",
+    "safari >= 16.4"
+  ],
   "scripts": {
     "dev": "vite --port 40122 --strictPort --host",
     "build": "vite build",

@@ -1,6 +1,11 @@
 MIT License
 
+Copyright (c) 2026 chyarogroup
 Copyright (c) 2019-2025 Take-Two Interactive Software, Inc.
+
+cAdminPanel is a derivative work of txAdmin, which is distributed under the
+MIT License by Take-Two Interactive Software, Inc. The upstream copyright
+notice above is retained as required by that license.
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

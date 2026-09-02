@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ExternalLink, KeyRound, Languages, Link2, Loader2, Palette, Save, Settings2 } from 'lucide-react';
+import { KeyRound, Languages, Link2, Loader2, Palette, Save, Settings2 } from 'lucide-react';
 import { PageHeader } from '@/components/page-header';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -48,9 +48,7 @@ export default function UserSettingsPage() {
     const saveIdentifiers = () => {
         setIsSavingIdentifiers(true);
         saveIdentifiersApi({
-            data: authData.chyaroLinked
-                ? { cfxIdentifier: cfxInput.trim() }
-                : { cfxIdentifier: cfxInput.trim(), discordIdentifier: discordInput.trim() },
+            data: { cfxIdentifier: cfxInput.trim(), discordIdentifier: discordInput.trim() },
             toastLoadingMessage: t('Saving your identifiers...'),
             finally: () => setIsSavingIdentifiers(false),
             error: (message, toastId) => txToast.error(message, { id: toastId }),
@@ -139,7 +137,7 @@ export default function UserSettingsPage() {
         });
     };
     const language = authData.locale || window.txConsts.uiLocale;
-    const avatar = authData.discordAvatar || authData.profilePicture;
+    const avatar = authData.profilePicture;
 
     return <div className="pb-10">
         <PageHeader title={t('User settings')} icon={<Settings2 className="size-6" />} />
@@ -178,20 +176,17 @@ export default function UserSettingsPage() {
             <Card className="xl:col-span-2">
                 <CardHeader><CardTitle className="flex items-center gap-2"><Link2 className="size-5 text-brand-500" />{t('Connected identities')}</CardTitle></CardHeader>
                 <CardContent className="flex flex-col gap-6">
+                    {!authData.cfxIdentifier && !authData.discordIdentifier && <div className="rounded-xl border border-amber-500/20 bg-amber-500/10 p-3 text-sm text-amber-200">{t('This account has no game identifier, so the in-game menu will not open for you. Add one below, then rejoin the server. Accounts created with the console PIN start without one.')}</div>}
                     <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
                         <div className="flex min-w-0 items-center gap-4">
                             <Avatar className="size-12"><AvatarImage src={avatar} /><AvatarFallback>{authData.name.slice(0, 2).toUpperCase()}</AvatarFallback></Avatar>
                             <div className="min-w-0">
-                                <p className="truncate font-medium">{authData.email || authData.name}</p>
+                                <p className="truncate font-medium">{authData.name}</p>
                                 <p className="text-sm text-muted-foreground">
                                     Discord: {authData.discordIdentifier || t('Not connected')}
-                                    {authData.chyaroLinked && <span className="ml-2 text-xs">({t('synced from chyarologin')})</span>}
                                 </p>
                             </div>
                         </div>
-                        {authData.chyaroLinked && <Button variant="outline" onClick={() => window.open(window.txConsts.chyaroUrl, '_blank', 'noopener,noreferrer')}>
-                            <ExternalLink className="mr-2 size-4" />{t('Manage identities')}
-                        </Button>}
                     </div>
 
                     <div className="border-t border-dashed border-white/5 pt-5">
@@ -201,19 +196,15 @@ export default function UserSettingsPage() {
                                 <p className="mb-3 mt-1 text-sm text-muted-foreground">{t('Enter your cfx.re forum username or an identifier in the fivem:0000 format. Leave it empty to unlink.')}</p>
                                 <Input id="cfx-identifier" value={cfxInput} onChange={(e) => setCfxInput(e.target.value)} placeholder="fivem:0000" disabled={isSavingIdentifiers} />
                             </div>
-                            {!authData.chyaroLinked ? <div>
+                            <div>
                                 <Label htmlFor="discord-identifier">{t('Discord user ID')}</Label>
                                 <p className="mb-3 mt-1 text-sm text-muted-foreground">{t('Enter the numeric Discord user ID. Leave it empty to unlink.')}</p>
                                 <Input id="discord-identifier" inputMode="numeric" value={discordInput} onChange={(e) => setDiscordInput(e.target.value)} placeholder="272800190639898628" disabled={isSavingIdentifiers} />
-                            </div> : <div className="rounded-xl border border-white/5 bg-white/[0.025] p-4 text-sm text-zinc-400">
-                                {authData.discordIdentifier
-                                    ? t('Your verified Discord connection is managed by chyarologin.')
-                                    : t('Connect Discord in chyarologin, then sign in with chyarologin again to sync it here.')}
-                            </div>}
+                            </div>
                             <div className="sm:col-span-2">
                                 <Button type="submit" disabled={isSavingIdentifiers || (
                                     cfxInput.trim() === (authData.cfxIdentifier ?? '')
-                                    && (authData.chyaroLinked || discordInput.trim() === (authData.discordIdentifier ?? '').replace(/^discord:/, ''))
+                                    && discordInput.trim() === (authData.discordIdentifier ?? '').replace(/^discord:/, '')
                                 )}>
                                     {isSavingIdentifiers ? <Loader2 className="mr-2 size-4 animate-spin" /> : <Save className="mr-2 size-4" />}
                                     {t('Save identifiers')}
@@ -228,7 +219,7 @@ export default function UserSettingsPage() {
                 <CardHeader><CardTitle className="flex items-center gap-2"><KeyRound className="size-5 text-brand-500" />{t('Local password')}</CardTitle></CardHeader>
                 <CardContent>
                     {authData.isTempPassword && <div className="mb-5 rounded-xl border border-amber-500/20 bg-amber-500/10 p-3 text-sm text-amber-200">{t('You are using a temporary password. Replace it before sharing or bookmarking this account.')}</div>}
-                    <p className="mb-5 text-sm text-muted-foreground">{t('A local password lets you sign in with this username even when chyarologin is unavailable. The current password is not required for a temporary password or during a chyarologin-authenticated session.')}</p>
+                    <p className="mb-5 text-sm text-muted-foreground">{t('Your username and this password are how you sign in to the panel. The current password is not required while you are using a temporary one.')}</p>
                     <form className="grid gap-4 md:grid-cols-3" onSubmit={(event) => { event.preventDefault(); savePassword(); }}>
                         <div className="space-y-2"><Label htmlFor="current-password">{t('Current password')}</Label><Input id="current-password" type="password" autoComplete="current-password" value={currentPassword} disabled={isSavingPassword} onChange={event => setCurrentPassword(event.target.value)} placeholder={t('when required')} /></div>
                         <div className="space-y-2"><Label htmlFor="new-password">{t('New password')}</Label><Input id="new-password" type="password" autoComplete="new-password" minLength={consts.adminPasswordMinLength} maxLength={consts.adminPasswordMaxLength} required value={newPassword} disabled={isSavingPassword} onChange={event => setNewPassword(event.target.value)} /></div>

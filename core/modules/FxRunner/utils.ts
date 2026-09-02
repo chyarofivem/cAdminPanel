@@ -33,7 +33,9 @@ export const getMutableConvars = (isCmdLine = false) => {
 
     const convars: RawConvarSetTuple[] = [
         ['setr', 'locale', txConfig.general.language ?? 'en'],
-        ['set', 'serverName', txConfig.general.serverName ?? 'txAdmin'],
+        //The fallback is only reached before a name is configured, and it reaches the
+        //in-game menu, so it has to stay game-neutral.
+        ['set', 'serverName', txConfig.general.serverName ?? 'Server'],
         ['set', 'checkPlayerJoin', checkPlayerJoin],
         ['set', 'menuAlignRight', txConfig.gameFeatures.menuAlignRight],
         ['set', 'menuPageKey', txConfig.gameFeatures.menuPageKey],

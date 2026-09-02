@@ -63,7 +63,7 @@ export default class ProcessManager {
             this.exitCallback && this.exitCallback();
             this.triggerStatusUpdate();
             if (this.tsExit - this.tsStart <= 5000) {
-                console.defer(500).warn('FXServer didn\'t start. This is not an issue with txAdmin.');
+                console.defer(500).warn('FXServer didn\'t start. This is not an issue with the panel.');
             }
         });
 

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import useSWR from 'swr';
 import Editor, { loader, type BeforeMount } from '@monaco-editor/react';
 import * as monaco from 'monaco-editor';
@@ -8,6 +8,8 @@ import {
     Loader2, Play, Rocket, Settings2, ShieldCheck, TerminalSquare, X,
 } from 'lucide-react';
 import { navigate } from 'wouter/use-browser-location';
+import { useLocation } from 'wouter';
+import { TxConfigState } from '@shared/enums';
 import type { DeployerActionResp, DeployerData, DeployerDataResp } from '@shared/deployerApiTypes';
 import { PageHeader } from '@/components/page-header';
 import MarkdownProse from '@/components/MarkdownProse';
@@ -25,7 +27,9 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { useOpenConfirmDialog } from '@/hooks/dialogs';
 import { useAuthedFetcher } from '@/hooks/fetch';
+import { useSetTxConfigState } from '@/hooks/status';
 import { t } from '@/lib/i18n';
+import { editorThemeColors } from '@/lib/monacoTheme';
 import { cn } from '@/lib/utils';
 
 self.MonacoEnvironment = { getWorker: () => new EditorWorker() };
@@ -68,14 +72,7 @@ const configureMonaco: BeforeMount = monacoApi => {
             { token: 'keyword.control', foreground: 'c084fc' },
             { token: 'string', foreground: '86efac' },
         ],
-        colors: {
-            'editor.background': '#0b0d11',
-            'editorGutter.background': '#0f1116',
-            'editorLineNumber.foreground': '#4f515b',
-            'editorLineNumber.activeForeground': '#a1a1aa',
-            'editor.selectionBackground': '#3b82f633',
-            'editor.lineHighlightBackground': '#ffffff08',
-        },
+        colors: editorThemeColors,
     });
 };
 
@@ -152,6 +149,8 @@ function EditorShell({ value, onChange, language, height = '26rem' }: {
 export default function DeployerPage() {
     const fetcher = useAuthedFetcher();
     const openConfirmDialog = useOpenConfirmDialog();
+    const [location] = useLocation();
+    const setTxConfigState = useSetTxConfigState();
     const [recipeDraft, setRecipeDraft] = useState('');
     const [cfgDraft, setCfgDraft] = useState('');
     const [inputs, setInputs] = useState<InputState>();
@@ -159,6 +158,9 @@ export default function DeployerPage() {
     const [busy, setBusy] = useState(false);
     const [actionError, setActionError] = useState<{ message: string; markdown?: boolean }>();
     const [cadminDecision, setCadminDecision] = useState<string>();
+    //The actions that end the wizard pick their own destination, so the redirect below
+    //must not race them and drop the admin somewhere else.
+    const ownsNavigation = useRef(false);
 
     const deployerSWR = useSWR('/deployer/data', async url => {
         const response = await fetcher<DeployerDataResp>(url);
@@ -171,8 +173,15 @@ export default function DeployerPage() {
     const data = deployerSWR.data && 'step' in deployerSWR.data ? deployerSWR.data : undefined;
 
     useEffect(() => {
-        if (deployerSWR.data && 'redirect' in deployerSWR.data) navigate(deployerSWR.data.redirect, { replace: true });
-    }, [deployerSWR.data]);
+        const redirect = deployerSWR.data && 'redirect' in deployerSWR.data ? deployerSWR.data.redirect : undefined;
+        if (!redirect) return;
+        //This route answers with the live config state while the cached one can still say
+        //`Deployer` for a few seconds. Correcting it before leaving stops the dashboard from
+        //sending us straight back here, which looped until react gave up on the whole panel.
+        setTxConfigState(redirect === '/server/setup' ? TxConfigState.Setup : TxConfigState.Ready);
+        if (ownsNavigation.current || location === redirect) return;
+        navigate(redirect, { replace: true });
+    }, [deployerSWR.data, location, setTxConfigState]);
 
     useEffect(() => {
         if (!data) return;
@@ -220,8 +229,10 @@ export default function DeployerPage() {
         actionLabel: t('Exit wizard'),
         confirmBtnVariant: 'destructive',
         onConfirm: async () => {
+            ownsNavigation.current = true;
             const response = await postAction('cancel');
             if (response?.success) navigate('/server/setup', { replace: true });
+            else ownsNavigation.current = false;
         },
     });
 
@@ -253,25 +264,34 @@ export default function DeployerPage() {
     };
 
     const commit = async () => {
+        ownsNavigation.current = true;
         if (cfgDraft.length < 256) {
+            ownsNavigation.current = false;
             setActionError({ message: t('The server CFG is unusually small and cannot be saved from the deployer.') });
             return;
         }
         if (cfgDraft.includes('sv_licenseKey "changeme"')) {
+            ownsNavigation.current = false;
             setActionError({ message: t('Replace the placeholder server registration key before continuing.') });
             return;
         }
         const response = await postAction('commit', { serverCFG: cfgDraft });
-        if (!response?.success) return;
+        if (!response?.success) {
+            ownsNavigation.current = false;
+            return;
+        }
         if (response.installCadminDialog) setCadminDecision(response.framework || 'supported framework');
         else navigate('/server/console-log', { replace: true });
     };
 
     const finishCadmin = async (install: boolean) => {
+        ownsNavigation.current = true;
         const response = await postAction('finishCadmin', { install });
         if (response?.success) {
             setCadminDecision(undefined);
             navigate('/server/console-log', { replace: true });
+        } else {
+            ownsNavigation.current = false;
         }
     };
 

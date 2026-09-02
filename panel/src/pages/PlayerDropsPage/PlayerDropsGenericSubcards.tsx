@@ -1,4 +1,5 @@
 import { Loader2Icon, OctagonXIcon } from "lucide-react";
+import { t } from "@/lib/i18n";
 
 type PlayerDropsLoadingSpinnerProps = {
     isError?: boolean;
@@ -8,7 +9,7 @@ export function PlayerDropsLoadingSpinner({ isError }: PlayerDropsLoadingSpinner
         return (
             <div className="h-full min-h-28 flex flex-col items-center justify-center gap-2 text-destructive-inline">
                 <OctagonXIcon className="size-16 opacity-75" />
-                <span>Error loading data.</span>
+                <span>{t('Error loading data.')}</span>
             </div>
         );
     } else {

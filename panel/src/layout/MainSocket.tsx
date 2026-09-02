@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react';
 import { getSocket } from '@/lib/utils';
 import { useExpireAuthData, useSetAuthData } from '@/hooks/auth';
 import { useSetGlobalStatus } from '@/hooks/status';
-import { useSetOfflineWarning } from '@/hooks/useWarningBar';
+import { useSetOfflineWarning, useSetUpdateAvailable } from '@/hooks/useWarningBar';
 import { useProcessPlayerlistEvents } from '@/hooks/playerlist';
 import { LogoutReasonHash } from '@/lib/navigation';
 
@@ -16,6 +16,7 @@ export default function MainSocket() {
     const setAuthData = useSetAuthData();
     const socketStateChangeCounter = useRef(0);
     const setIsSocketOffline = useSetOfflineWarning();
+    const setUpdateAvailable = useSetUpdateAvailable();
     const setGlobalStatus = useSetGlobalStatus();
     const processPlayerlistEvents = useProcessPlayerlistEvents();
 
@@ -62,6 +63,9 @@ export default function MainSocket() {
         socket.on('updateAuthData', function (authData) {
             console.warn('Got updateAuthData from websocket', authData);
             setAuthData(authData);
+        });
+        socket.on('updateAvailable', function (data) {
+            setUpdateAvailable(data);
         });
 
         return () => {

@@ -126,7 +126,7 @@ type ServerEntryInput = {
 /**
  * Persistent combined stream for in-server events and administrative actions.
  * The active file uses newline-delimited JSON so it can be restored after a
- * txAdmin process restart without loading an entire log into memory.
+ * panel process restart without loading an entire log into memory.
  */
 export default class TxAdminLogger extends LoggerBase {
     private recentBuffer: TxAdminLogEntry[] = [];
@@ -136,7 +136,7 @@ export default class TxAdminLogger extends LoggerBase {
     constructor(basePath: string, profileConfig: RfsOptions | false) {
         const defaultOptions: RfsOptions = {
             path: basePath,
-            history: 'txadmin.history',
+            history: 'panel.history',
             interval: '1d',
             intervalBoundary: true,
             initialRotation: true,
@@ -145,7 +145,7 @@ export default class TxAdminLogger extends LoggerBase {
         };
         super(
             basePath,
-            'txadmin',
+            'panel',
             defaultOptions,
             enforceDailyRotation(profileConfig),
             false,

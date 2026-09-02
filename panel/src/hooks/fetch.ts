@@ -4,7 +4,7 @@ import { msToShortDuration } from "@/lib/dateTime";
 import { useEffect, useRef } from "react";
 
 const WEBPIPE_PATH = "https://monitor/WebPipe";
-const headeruserAgent = `txAdminPanel/v${window.txConsts.txaVersion} (atop FXServer/b${window.txConsts.fxsVersion})`;
+const headeruserAgent = `cAdminPanel/v${window.txConsts.txaVersion} (atop FXServer/b${window.txConsts.fxsVersion})`;
 const defaultHeaders = {
     'Content-Type': 'application/json; charset=UTF-8',
     'Accept': 'application/json',

@@ -25,7 +25,7 @@ export default function PlayerCharacterTab({ license }: { license: string | null
     const swr = useSWR(url, async () => cadminData(await fetcher<CadminResponse<CadminPlayer[]>>(url!)));
     const players = swr.data;
 
-    if (!license) return <ModalTabMessage>{t('This txAdmin record has no FiveM license to match to a character.')}</ModalTabMessage>;
+    if (!license) return <ModalTabMessage>{t('This panel record has no FiveM license to match to a character.')}</ModalTabMessage>;
     if (swr.isLoading) return <ModalTabMessage><GenericSpinner msg={t('Loading character...')} /></ModalTabMessage>;
     if (swr.error) return <ModalTabMessage className="flex-col gap-4 text-center text-sm">
         <span className="text-destructive-inline">{swr.error.message}</span>

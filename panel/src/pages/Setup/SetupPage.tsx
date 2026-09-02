@@ -8,7 +8,9 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { TxConfigState } from '@shared/enums';
 import { ApiTimeout, useBackendApi } from '@/hooks/fetch';
+import { useSetTxConfigState } from '@/hooks/status';
 import { cn } from '@/lib/utils';
 import { t } from '@/lib/i18n';
 import { reloadPanel } from '@/lib/navigation';
@@ -48,7 +50,7 @@ const DEPLOYMENT_CHOICES: {
         icon: Layers,
         title: 'Popular Recipes',
         badge: 'Recommended',
-        description: 'Start from a curated template. Pick an empty server, ESX Legacy or Qbox from the built-in supported list.',
+        description: 'Start from a curated template. Empty FiveM and RedM servers, ESX Legacy, Qbox, QBCore, StreetKings and VORP Core, all deployed from a trusted source.',
     },
     {
         type: 'local',
@@ -83,6 +85,7 @@ export default function SetupPage() {
     const [detectedCfg, setDetectedCfg] = useState(false);
     const [targetPathLocked, setTargetPathLocked] = useState(true);
     const didLoad = useRef(false);
+    const setTxConfigState = useSetTxConfigState();
 
     const dataApi = useBackendApi<SetupDataApiResp>({ method: 'GET', path: '/setup/data' });
     const validateRecipeUrlApi = useBackendApi<ValidationResp>({ method: 'POST', path: '/setup/validateRecipeURL' });
@@ -99,7 +102,14 @@ export default function SetupPage() {
             error: (message) => setLoadError(message),
             success: (resp) => {
                 if ('error' in resp) return setLoadError(resp.error);
-                if ('redirect' in resp) return setLocation(resp.redirect, { replace: true });
+                if ('redirect' in resp) {
+                    //This route knows the live config state, the cached one may be seconds
+                    //behind and would redirect the admin right back into this page.
+                    setTxConfigState(resp.redirect === '/server/deployer'
+                        ? TxConfigState.Deployer
+                        : TxConfigState.Ready);
+                    return setLocation(resp.redirect, { replace: true });
+                }
                 setPageData(resp);
                 setState((prev) => ({ ...prev, serverName: resp.serverName }));
                 if (resp.skipServerName) setStepIndex(STEP_TYPE);
@@ -416,8 +426,11 @@ export default function SetupPage() {
                             <p className="truncate text-xs uppercase tracking-widest text-neutral-500">{recipe.author}</p>
                         </div>
                         <div className="flex shrink-0 flex-wrap justify-end gap-1">
-                            {[recipe.framework, ...recipe.tags].map((tag, i) => <span
-                                key={`${tag}-${i}`}
+                            {/* `framework: 'none'` is a backend flag for the post-deploy
+                                Character Management prompt, so only a real framework
+                                earns a badge next to the game and genre tags. */}
+                            {[...recipe.tags, ...(recipe.framework === 'none' ? [] : [recipe.framework])].map((tag) => <span
+                                key={tag}
                                 className={cn('rounded border px-1.5 py-0.5 text-[0.6rem] font-bold uppercase', tagColorClass(tag))}
                             >{tag}</span>)}
                         </div>
@@ -448,7 +461,7 @@ export default function SetupPage() {
                     className="mt-2"
                     autoFocus
                     disabled={isBusy}
-                    placeholder="https://raw.githubusercontent.com/tabarra/CFX-Default-recipe/main/recipe.yaml"
+                    placeholder="https://raw.githubusercontent.com/citizenfx/txAdmin-recipes/main/default-fivem/recipe.yaml"
                     value={state.recipeURL}
                     onChange={(e) => {
                         clearStepFeedback();
@@ -491,7 +504,7 @@ export default function SetupPage() {
                     <li>
                         <a
                             className="text-brand-500 underline-offset-2 hover:underline"
-                            href="https://github.com/tabarra/txAdmin/blob/master/docs/recipe.md"
+                            href="https://github.com/chyarofivem/cAdminPanel/blob/master/docs/recipe.md"
                             target="_blank"
                             rel="noopener noreferrer"
                         >{t('Recipe documentation')}</a>
@@ -499,7 +512,7 @@ export default function SetupPage() {
                     <li>
                         <a
                             className="text-brand-500 underline-offset-2 hover:underline"
-                            href="https://github.com/tabarra/txAdmin-recipes"
+                            href="https://github.com/citizenfx/txAdmin-recipes"
                             target="_blank"
                             rel="noopener noreferrer"
                         >{t('Example recipes')}</a>

@@ -23,9 +23,9 @@ export default function TmpPageHeader() {
                 <PageHeader title="Simple + links" icon={<Settings2Icon />}>
                     <PageHeaderLinks
                         topLabel="Documentation"
-                        topLink="https://github.com/tabarra/txAdmin"
+                        topLink="https://github.com/chyarofivem/cAdminPanel"
                         bottomLabel="Repository"
-                        bottomLink="https://github.com/tabarra/txAdmin"
+                        bottomLink="https://github.com/chyarofivem/cAdminPanel"
                     />
                 </PageHeader>
             </Wrapper>
@@ -33,7 +33,7 @@ export default function TmpPageHeader() {
             <Wrapper>
                 <PageHeader title="Simple + changelog" icon={<Settings2Icon />}>
                     <PageHeaderChangelog
-                        changelogData={[{ author: 'tabarra', keys: [], ts: Date.now() }]}
+                        changelogData={[{ author: 'chyarogroup', keys: [], ts: Date.now() }]}
                     />
                 </PageHeader>
             </Wrapper>
@@ -55,7 +55,7 @@ export default function TmpPageHeader() {
                     parentLink="/parent"
                 >
                     <PageHeaderChangelog
-                        changelogData={[{ author: 'tabarra', keys: [], ts: 1741168243520 }]}
+                        changelogData={[{ author: 'chyarogroup', keys: [], ts: 1741168243520 }]}
                     />
                 </PageHeader>
             </Wrapper>

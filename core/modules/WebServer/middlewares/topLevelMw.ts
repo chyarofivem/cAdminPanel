@@ -1,5 +1,4 @@
 const modulename = 'WebServer:TopLevelMw';
-import { txEnv } from '@core/globalData';
 import consoleFactory from '@lib/console';
 const console = consoleFactory(modulename);
 import { Next } from "koa";
@@ -34,7 +33,9 @@ const timeoutLimit = 47 * 1000; //REQ_TIMEOUT_REALLY_REALLY_LONG is 45s
  * Middleware responsible for timeout/error/no-output/413
  */
 const topLevelMw = async (ctx: RawKoaCtx, next: Next) => {
-    ctx.set('Server', `txAdmin v${txEnv.txaVersion}`);
+    //NOTE: no version here on purpose, so a public panel does not advertise which
+    //release it is running. The version is printed on the console at startup.
+    ctx.set('Server', 'cAdminPanel');
     let timerId;
     const timeout = new Promise((_, reject) => {
         timerId = setTimeout(() => {
@@ -49,7 +50,7 @@ const topLevelMw = async (ctx: RawKoaCtx, next: Next) => {
         }
     } catch (e) {
         const error = e as any; //this has all been previously validated
-        const prefix = `[txAdmin v${txEnv.txaVersion}]`;
+        const prefix = `[cAdminPanel]`;
         const reqPath = (ctx.path.length > 80) ? `${ctx.path.slice(0, 77)}...` : ctx.path;
         const methodName = (error.stack && error.stack[0] && error.stack[0].name) ? error.stack[0].name : 'anonym';
 
@@ -89,7 +90,7 @@ const topLevelMw = async (ctx: RawKoaCtx, next: Next) => {
                 `${prefix} Internal Error.`,
                 `Route: ${reqPath}`,
                 `Message: ${error.message}`,
-                'Make sure your txAdmin is updated.',
+                'Make sure your panel is updated.',
             ].join('\n');
             ctx.status = 500;
             ctx.body = desc;

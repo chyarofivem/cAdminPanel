@@ -13,6 +13,11 @@ import { restartSchedulePromptProps } from './restartScheduleUtils';
 import { validateRestartSchedule } from './restartScheduleValidation';
 
 
+//NOTE: same constraint as ServerControls - the sidebar is narrow and the button base class is
+//`whitespace-nowrap`, so labels wrap and the button grows instead of painting outside its background.
+const scheduleButtonClass = 'h-auto min-h-7 flex-grow min-w-0 py-1 bg-muted border shadow';
+const scheduleLabelClass = 'min-w-0 whitespace-normal break-words text-center leading-tight';
+
 export default function ServerSchedule() {
     const closeAllSheets = useCloseAllSheets();
     const openPromptDialog = useOpenPromptDialog();
@@ -125,43 +130,47 @@ export default function ServerSchedule() {
                 <Button
                     size='xs'
                     variant='ghost'
-                    className='flex-grow bg-muted border shadow'
+                    className={scheduleButtonClass}
                     disabled={!hasSchedulePerms || disableAddEditBtn}
                     onClick={handleEdit}
                 >
-                    <PenLineIcon className='h-4 w-4 mr-1' /> {t('Edit')}
+                    <PenLineIcon className='h-4 w-4 mr-1 shrink-0' />
+                    <span className={scheduleLabelClass}>{t('Edit')}</span>
                 </Button>
             ) : (
                 <Button
                     size='xs'
                     variant='ghost'
-                    className='flex-grow bg-muted border shadow'
+                    className={scheduleButtonClass}
                     disabled={!hasSchedulePerms || disableAddEditBtn}
                     onClick={handleAddSchedule}
                 >
-                    <PlusCircleIcon className='h-4 w-4 mr-1' /> {t('Schedule Restart')}
+                    <PlusCircleIcon className='h-4 w-4 mr-1 shrink-0' />
+                    <span className={scheduleLabelClass}>{t('Schedule Restart')}</span>
                 </Button>
             )}
             {showCancelBtn && (
                 <Button
                     size='xs'
                     variant='ghost'
-                    className='flex-grow bg-muted border shadow'
+                    className={scheduleButtonClass}
                     onClick={handleCancel}
                     disabled={!hasSchedulePerms}
                 >
-                    <XCircleIcon className='h-4 w-4 mr-1' /> {t('Cancel')}
+                    <XCircleIcon className='h-4 w-4 mr-1 shrink-0' />
+                    <span className={scheduleLabelClass}>{t('Cancel')}</span>
                 </Button>
             )}
             {showEnableBtn && (
                 <Button
                     size='xs'
                     variant='ghost'
-                    className='flex-grow bg-muted border'
+                    className={cn(scheduleButtonClass, 'shadow-none')}
                     onClick={handleEnable}
                     disabled={!hasSchedulePerms}
                 >
-                    <PlayCircleIcon className='h-4 w-4 mr-1' /> {t('Enable')}
+                    <PlayCircleIcon className='h-4 w-4 mr-1 shrink-0' />
+                    <span className={scheduleLabelClass}>{t('Enable')}</span>
                 </Button>
             )}
         </div>

@@ -5,6 +5,7 @@ import drawDropsTimeline, { TimelineDropsDatum } from "./drawDropsTimeline";
 import { playerDropCategories } from "@/lib/playerDropCategories";
 import { PlayerDropsMessage } from "./PlayerDropsGenericSubcards";
 import { DrilldownRangeSelectionType } from "./PlayerDropsPage";
+import { t } from "@/lib/i18n";
 import './timeline.css';
 
 export type TimelineDropsChartData = {
@@ -29,7 +30,7 @@ const ChartLabels = memo(({ categories }: { categories: string[] }) => {
                     }}
                 />
                 <span className="tracking-wider">
-                    {playerDropCategories[catName].label}:
+                    {t(playerDropCategories[catName].label)}:
                 </span>
                 <div className="flex-grow text-right font-semibold min-w-[3ch] text-muted-foreground">
                     <span data-category={catName} />
@@ -87,7 +88,7 @@ function TimelineDropsChart({ chartData, chartName, width, height, rangeSelected
             setRenderError('');
             console.timeEnd(`drawDropsTimeline-${chartName}`);
         } catch (error) {
-            setRenderError((error as Error).message ?? 'Unknown error.');
+            setRenderError((error as Error).message ?? t('Unknown error.'));
         } finally {
             console.groupEnd();
         }
@@ -108,7 +109,7 @@ function TimelineDropsChart({ chartData, chartName, width, height, rangeSelected
     if (!width || !height) return null;
     if (renderError) {
         return <div className="absolute inset-0 p-4 flex flex-col gap-4 items-center justify-center text-center text-lg font-mono text-destructive-inline">
-            Render Error: {renderError}
+            {t('Render Error: {error}', { error: renderError })}
             <br />
             <Button
                 size={'sm'}
@@ -119,11 +120,11 @@ function TimelineDropsChart({ chartData, chartName, width, height, rangeSelected
                     setRenderError('');
                 }}
             >
-                Retry{errorRetry ? ` (${errorRetry})` : ''}
+                {t('Retry')}{errorRetry ? ` (${errorRetry})` : ''}
             </Button>
         </div>
     } else if (!chartData.maxDrops) {
-        return <PlayerDropsMessage message="No players disconnected from your server recently." />
+        return <PlayerDropsMessage message={t('No players disconnected from your server recently.')} />
     }
     return (<>
         <div

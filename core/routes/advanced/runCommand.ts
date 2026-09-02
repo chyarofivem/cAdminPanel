@@ -2,7 +2,11 @@ const modulename = 'WebServer:Advanced:Run';
 import { AuthedCtx } from '@modules/WebServer/ctxTypes';
 import consoleFactory from '@lib/console';
 import { z } from 'zod';
-import type { GenericApiErrorResp } from '@shared/genericApiTypes';
+import type {
+    RunAdvancedCommandReq,
+    RunAdvancedCommandResp,
+    RunAdvancedCommandRespSuccess,
+} from '@shared/advancedCommands';
 import txAdminCmds from './groups/txAdminCmds';
 import serverCmds from './groups/serverCmds';
 import processCmds from './groups/processCmds';
@@ -12,15 +16,12 @@ const console = consoleFactory(modulename);
 
 
 //Req validation & types
+//NOTE: the response types are declared in shared/ because the panel cannot import
+//from core. The satisfies below fails the build if the schema drifts from them.
 const bodySchema = z.object({
     cmd: z.string(),
-});
-export type RunAdvancedCommandReq = z.infer<typeof bodySchema>;
-export type RunAdvancedCommandRespSuccess = {
-    type: 'md' | 'json';
-    data: string;
-}
-export type RunAdvancedCommandResp = RunAdvancedCommandRespSuccess | GenericApiErrorResp;
+}) satisfies z.ZodType<RunAdvancedCommandReq>;
+export type { RunAdvancedCommandReq, RunAdvancedCommandResp, RunAdvancedCommandRespSuccess };
 
 
 //NOTE: leaving the args splitting to the handler

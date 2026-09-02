@@ -5,6 +5,7 @@ import { txEnv, txHostConfig } from '@core/globalData';
 import localeMap from '@shared/localeMap';
 import consoleFactory from '@lib/console';
 import fatalError from '@lib/fatalError';
+import { panelDisplayName } from '@lib/branding';
 import type { UpdateConfigKeySet } from './ConfigStore/utils';
 import humanizeDuration, { HumanizerOptions } from 'humanize-duration';
 import { msToDuration } from '@lib/misc';
@@ -106,12 +107,18 @@ export default class Translator {
 
     /**
      * Perform a translation (polyglot.t)
+     * Every phrase can use %{panelName} and %{serverName} without the caller
+     * having to pass them, so the locale files never hardcode the panel branding.
      */
-    t(key: string, options = {}) {
+    t(key: string, options: Record<string, any> = {}) {
         if (!this.#polyglot) throw new Error(`polyglot not yet loaded`);
 
         try {
-            return this.#polyglot.t(key, options);
+            return this.#polyglot.t(key, {
+                panelName: panelDisplayName(),
+                serverName: txConfig.general.serverName,
+                ...options,
+            });
         } catch (error) {
             console.error(`Error performing a translation with key '${key}'`);
             return key;

@@ -1,7 +1,7 @@
 {
-  "name": "txadmin",
+  "name": "cadminpanel",
   "version": "1.0.0",
-  "description": "The official FiveM/RedM server management platform used by tens of thousands of servers.",
+  "description": "A self-hosted FiveM/RedM server management panel with built-in character management.",
   "module": "./core/index.js",
   "type": "module",
   "workspaces": [
@@ -24,14 +24,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/tabarra/txAdmin.git"
+    "url": "git+https://github.com/chyarofivem/cAdminPanel.git"
   },
-  "author": "André Tabarra",
+  "author": "chyarogroup",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/tabarra/txAdmin/issues"
+    "url": "https://github.com/chyarofivem/cAdminPanel/issues"
   },
-  "homepage": "https://txadmin.gg/",
+  "homepage": "https://github.com/chyarofivem/cAdminPanel#readme",
   "dependencies": {
     "chalk": "^5.3.0",
     "dequal": "^2.0.3",

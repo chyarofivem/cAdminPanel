@@ -115,7 +115,7 @@ function pending.deliver(source, identifier)
         TriggerClientEvent('chat:addMessage', source, {
             color = { 255, 140, 0 },
             multiline = true,
-            args = { 'cAdminPanel', ('%d item(s) waiting for you have been delivered.'):format(delivered) }
+            args = { CAdminConfig.displayName, ('%d item(s) waiting for you have been delivered.'):format(delivered) }
         })
     end
 
@@ -125,7 +125,7 @@ function pending.deliver(source, identifier)
         TriggerClientEvent('chat:addMessage', source, {
             color = { 255, 80, 80 },
             multiline = true,
-            args = { 'cAdminPanel', ('%d item(s) could not fit. Free some space and rejoin.'):format(failed) }
+            args = { CAdminConfig.displayName, ('%d item(s) could not fit. Free some space and rejoin.'):format(failed) }
         })
     end
 end

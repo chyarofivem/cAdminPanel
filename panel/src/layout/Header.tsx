@@ -21,8 +21,8 @@ export function Header() {
         </div>
         <DropdownMenu>
             <DropdownMenuTrigger className="flex items-center gap-2 rounded-xl px-4 py-2 transition hover:scale-95 hover:bg-white/5 focus:outline-none">
-                <Avatar className="size-8 rounded-full" username={authData.name} profilePicture={authData.discordAvatar || authData.profilePicture} />
-                <span className="hidden font-medium text-white sm:block">{authData.email || authData.name}</span>
+                <Avatar className="size-8 rounded-full" username={authData.name} profilePicture={authData.profilePicture} />
+                <span className="hidden font-medium text-white sm:block">{authData.name}</span>
                 <span className="hidden text-xs uppercase tracking-widest text-brand-500 md:block">{authData.isMaster ? t('master') : t('staff')}</span>
                 <ChevronDown className="size-4" />
             </DropdownMenuTrigger>

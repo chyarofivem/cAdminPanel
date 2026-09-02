@@ -1,6 +1,6 @@
 {
-  "name": "txAdmin",
-  "short_name": "txAdmin",
+  "name": "cAdminPanel",
+  "short_name": "cAdminPanel",
   "description": "FiveM/RedM server management",
   "start_url": "/",
   "display": "standalone",
@@ -8,9 +8,8 @@
   "theme_color": "#191A1C",
   "icons": [
     {
-      "src": "https://forum-cfx-re.akamaized.net/optimized/5X/5/4/8/e/548e82fce6119ea9b4d2b3ec3b3d50375463adbc_2_375x375.png",
-      "sizes": "any",
-      "type": "image/png"
+      "src": "./branding/logo",
+      "sizes": "any"
     }
   ],
   "categories": ["productivity", "utilities"],

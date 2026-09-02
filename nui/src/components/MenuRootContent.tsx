@@ -1,5 +1,5 @@
 import React from "react";
-import { Box, Collapse, Typography, alpha, styled, useTheme } from "@mui/material";
+import { Box, Collapse, Typography, alpha, styled } from "@mui/material";
 import { PageTabs } from "@nui/src/components/misc/PageTabs";
 import { txAdminMenuPage, usePageValue } from "@nui/src/state/page.state";
 import { MainPageList } from "@nui/src/components/MainPage/MainPageList";
@@ -58,8 +58,14 @@ const VersionPill = styled(Box)(({ theme }) => ({
   boxShadow: `inset 0 0 0 1px ${nuiTokens.ring}`,
 }));
 
+const MonogramFallback = styled(Typography)(({ theme }) => ({
+  fontSize: 17,
+  fontWeight: 800,
+  lineHeight: 1,
+  color: theme.palette.primary.main,
+}));
+
 export const MenuRootContent: React.FC = React.memo(() => {
-  const theme = useTheme();
   const serverCtx = useServerCtxValue();
   const curPage = usePageValue();
   const isMenuVisible = useIsMenuVisibleValue();
@@ -70,17 +76,22 @@ export const MenuRootContent: React.FC = React.memo(() => {
   // time frame
   const debouncedCurPage = useDebounce(curPage, 50);
 
-  const fallbackLogo = theme.name === 'fivem' ? 'images/txadmin.png' : 'images/txadmin-redm.png';
+  //Only request the server logo while the menu is actually on screen, otherwise
+  //fall back to a neutral monogram derived from the panel name.
+  const logoUrl = isMenuVisible ? serverCtx.logoUrl : undefined;
+  const monogram = (serverCtx.panelName ?? '').trim().charAt(0).toUpperCase() || 'P';
 
   return (
     <StyledRoot>
       <HeaderRow>
         <LogoSlot>
-          <img
-            src={isMenuVisible ? serverCtx.logoUrl || fallbackLogo : fallbackLogo}
-            alt={serverCtx.panelName}
-            style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }}
-          />
+          {logoUrl
+            ? <img
+              src={logoUrl}
+              alt={serverCtx.panelName}
+              style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }}
+            />
+            : <MonogramFallback aria-hidden>{monogram}</MonogramFallback>}
         </LogoSlot>
         <Box minWidth={0}>
           <Typography

@@ -1,10 +1,11 @@
 import TxAnchor from '@/components/TxAnchor';
 import SwitchText from '@/components/SwitchText';
-import InlineCode from '@/components/InlineCode';
 import { SettingItem, SettingItemDesc } from '../settingsItems';
 import { useEffect, useMemo, useReducer } from "react";
 import { getConfigEmptyState, getConfigAccessors, SettingsCardProps, getPageConfig, configsReducer, getConfigDiff } from "../utils";
 import SettingsCardShell from '../SettingsCardShell';
+import { t } from '@/lib/i18n';
+import TransText from '@/components/TransText';
 
 
 export const pageConfigs = {
@@ -54,88 +55,100 @@ export default function ConfigCardGameNotifications({ cardCtx, pageCtx }: Settin
             pageCtx={pageCtx}
             onClickSave={handleOnSave}
         >
-            <SettingItem label="Hide Admin Name In Punishments">
+            <SettingItem label={t('Hide Admin Name In Punishments')}>
                 <SwitchText
                     id={cfg.hideAdminInPunishments.eid}
-                    checkedLabel="Hidden"
-                    uncheckedLabel="Visible"
+                    checkedLabel={t('Hidden')}
+                    uncheckedLabel={t('Visible')}
                     checked={states.hideAdminInPunishments}
                     onCheckedChange={cfg.hideAdminInPunishments.state.set}
                     disabled={pageCtx.isReadOnly}
                 />
                 <SettingItemDesc>
-                    Never show to the players the admin name on <strong>Bans</strong> or <strong>Warns</strong>. <br />
-                    This information will still be available in the history and logs.
+                    <TransText k="Never show to the players the admin name on **Bans** or **Warns**." /> <br />
+                    {t('This information will still be available in the history and logs.')}
                 </SettingItemDesc>
             </SettingItem>
-            <SettingItem label="Hide Admin Name In Messages">
+            <SettingItem label={t('Hide Admin Name In Messages')}>
                 <SwitchText
                     id={cfg.hideAdminInMessages.eid}
-                    checkedLabel="Hidden"
-                    uncheckedLabel="Visible"
+                    checkedLabel={t('Hidden')}
+                    uncheckedLabel={t('Visible')}
                     checked={states.hideAdminInMessages}
                     onCheckedChange={cfg.hideAdminInMessages.state.set}
                     disabled={pageCtx.isReadOnly}
                 />
                 <SettingItemDesc>
-                    Do not show the admin name on <strong>Announcements</strong> or <strong>DMs</strong>. <br />
-                    This information will still be available in the live console and logs.
+                    <TransText k="Do not show the admin name on **Announcements** or **DMs**." /> <br />
+                    {t('This information will still be available in the live console and logs.')}
                 </SettingItemDesc>
             </SettingItem>
-            <SettingItem label="Hide Announcement Notifications">
+            <SettingItem label={t('Hide Announcement Notifications')}>
                 <SwitchText
                     id={cfg.hideDefaultAnnouncement.eid}
-                    checkedLabel="Hidden"
-                    uncheckedLabel="Visible"
+                    checkedLabel={t('Hidden')}
+                    uncheckedLabel={t('Visible')}
                     checked={states.hideDefaultAnnouncement}
                     onCheckedChange={cfg.hideDefaultAnnouncement.state.set}
                     disabled={pageCtx.isReadOnly}
                 />
                 <SettingItemDesc>
-                    Suppresses the display of announcements, allowing you to implement your own announcement via the event <InlineCode>txAdmin:events:announcement</InlineCode>.
-                    &nbsp;<TxAnchor href="https://aka.cfx.re/txadmin-events#txadmineventsannouncement">Documentation</TxAnchor>
+                    <TransText
+                        k="Suppresses the display of announcements, allowing you to implement your own announcement via the event `{event}`."
+                        values={{ event: 'txAdmin:events:announcement' }}
+                    />
+                    &nbsp;<TxAnchor href="https://github.com/chyarofivem/cAdminPanel/blob/master/docs/events.md#txadmineventsannouncement">{t('Documentation')}</TxAnchor>
                 </SettingItemDesc>
             </SettingItem>
-            <SettingItem label="Hide Direct Message Notification">
+            <SettingItem label={t('Hide Direct Message Notification')}>
                 <SwitchText
                     id={cfg.hideDefaultDirectMessage.eid}
-                    checkedLabel="Hidden"
-                    uncheckedLabel="Visible"
+                    checkedLabel={t('Hidden')}
+                    uncheckedLabel={t('Visible')}
                     checked={states.hideDefaultDirectMessage}
                     onCheckedChange={cfg.hideDefaultDirectMessage.state.set}
                     disabled={pageCtx.isReadOnly}
                 />
                 <SettingItemDesc>
-                    Suppresses the display of direct messages, allowing you to implement your own direct message notification via the event <InlineCode>txAdmin:events:playerDirectMessage</InlineCode>.
-                    &nbsp;<TxAnchor href="https://aka.cfx.re/txadmin-events#txadmineventsplayerdirectmessage">Documentation</TxAnchor>
+                    <TransText
+                        k="Suppresses the display of direct messages, allowing you to implement your own direct message notification via the event `{event}`."
+                        values={{ event: 'txAdmin:events:playerDirectMessage' }}
+                    />
+                    &nbsp;<TxAnchor href="https://github.com/chyarofivem/cAdminPanel/blob/master/docs/events.md#txadmineventsplayerdirectmessage">{t('Documentation')}</TxAnchor>
                 </SettingItemDesc>
             </SettingItem>
-            <SettingItem label="Hide Warning Notification">
+            <SettingItem label={t('Hide Warning Notification')}>
                 <SwitchText
                     id={cfg.hideDefaultWarning.eid}
-                    checkedLabel="Hidden"
-                    uncheckedLabel="Visible"
+                    checkedLabel={t('Hidden')}
+                    uncheckedLabel={t('Visible')}
                     checked={states.hideDefaultWarning}
                     onCheckedChange={cfg.hideDefaultWarning.state.set}
                     disabled={pageCtx.isReadOnly}
                 />
                 <SettingItemDesc>
-                    Suppresses the display of warnings, allowing you to implement your own warning via the event <InlineCode>txAdmin:events:playerWarned</InlineCode>.
-                    &nbsp;<TxAnchor href="https://aka.cfx.re/txadmin-events#txadmineventsplayerwarned">Documentation</TxAnchor>
+                    <TransText
+                        k="Suppresses the display of warnings, allowing you to implement your own warning via the event `{event}`."
+                        values={{ event: 'txAdmin:events:playerWarned' }}
+                    />
+                    &nbsp;<TxAnchor href="https://github.com/chyarofivem/cAdminPanel/blob/master/docs/events.md#txadmineventsplayerwarned">{t('Documentation')}</TxAnchor>
                 </SettingItemDesc>
             </SettingItem>
-            <SettingItem label="Hide Scheduled Restart Warnings">
+            <SettingItem label={t('Hide Scheduled Restart Warnings')}>
                 <SwitchText
                     id={cfg.hideScheduledRestartWarnings.eid}
-                    checkedLabel="Hidden"
-                    uncheckedLabel="Visible"
+                    checkedLabel={t('Hidden')}
+                    uncheckedLabel={t('Visible')}
                     checked={states.hideScheduledRestartWarnings}
                     onCheckedChange={cfg.hideScheduledRestartWarnings.state.set}
                     disabled={pageCtx.isReadOnly}
                 />
                 <SettingItemDesc>
-                    Suppresses the display of scheduled restart warnings, allowing you to implement your own warning via the event <InlineCode>txAdmin:events:scheduledRestart</InlineCode>.
-                    &nbsp;<TxAnchor href="https://aka.cfx.re/txadmin-events#txadmineventsscheduledrestart">Documentation</TxAnchor>
+                    <TransText
+                        k="Suppresses the display of scheduled restart warnings, allowing you to implement your own warning via the event `{event}`."
+                        values={{ event: 'txAdmin:events:scheduledRestart' }}
+                    />
+                    &nbsp;<TxAnchor href="https://github.com/chyarofivem/cAdminPanel/blob/master/docs/events.md#txadmineventsscheduledrestart">{t('Documentation')}</TxAnchor>
                 </SettingItemDesc>
             </SettingItem>
         </SettingsCardShell>

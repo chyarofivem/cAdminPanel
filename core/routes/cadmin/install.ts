@@ -1,5 +1,5 @@
 import type { AuthedCtx } from '@modules/WebServer/ctxTypes';
-import { installCadminResource, type CadminFramework } from '@lib/cadminInstaller';
+import { applyCadminResourceLive, installCadminResource, type CadminFramework } from '@lib/cadminInstaller';
 import { assertCadminReady, cadminRequest } from '@lib/cadminApi';
 
 export default async function CadminInstall(ctx: AuthedCtx) {
@@ -49,7 +49,17 @@ export default async function CadminInstall(ctx: AuthedCtx) {
             },
         }, ctx.admin.name);
         ctx.admin.logAction(`cadmin: installed resource for ${framework}.`);
-        return ctx.send({ success: true, data: { resourcePath: installed.resourcePath, apiUrl: installed.apiUrl } });
+        //Convars, a resource rescan and the resource start, so a running server picks the
+        //install up without a restart. Skipped (and unnecessary) when the server is down.
+        const started = applyCadminResourceLive(installed.convars, ctx.admin.name);
+        return ctx.send({
+            success: true,
+            data: {
+                resourcePath: installed.resourcePath,
+                apiUrl: installed.apiUrl,
+                started,
+            },
+        });
     } catch (error) {
         return ctx.send({ success: false, error: (error as Error).message });
     }

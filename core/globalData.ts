@@ -62,7 +62,7 @@ const handleMultiVar = <T extends ZodSchema>(
         fatalError.GlobalData(20, [
             `Invalid value for the TXHOST_${name}-equivalent config in ${whichAlt}.`,
             ['Value', alt],
-            'For more information: https://aka.cfx.re/txadmin-env-config',
+            'For more information: https://github.com/chyarofivem/cAdminPanel/blob/master/docs/env-config.md',
         ], fromZodError(parsed.error, { prefix: null }));
     }
     return parsed.data;
@@ -85,7 +85,7 @@ type TxDevEnvDisabledType = Overwrite<TxDevEnvType, {
 let _txDevEnv: TxDevEnvEnabledType | TxDevEnvDisabledType;
 const devVars = parseTxDevEnv();
 if (devVars.ENABLED) {
-    console.debug('Starting txAdmin in DEV mode.');
+    console.debug('Starting cAdminPanel in DEV mode.');
     if (!devVars.SRC_PATH || !devVars.VITE_URL) {
         fatalError.GlobalData(8, 'Missing TXDEV_VITE_URL and/or TXDEV_SRC_PATH env variables.');
     }
@@ -120,14 +120,14 @@ const fxsVerParsed = parseFxserverVersion(nativeVars.fxsVersion);
 const fxsVersion = fxsVerParsed.valid ? fxsVerParsed.build : 99999;
 if (!fxsVerParsed.valid) {
     console.error('It looks like you are running a custom build of fxserver.');
-    console.error('And because of that, there is no guarantee that txAdmin will work properly.');
+    console.error('And because of that, there is no guarantee that the panel will work properly.');
     console.error(`Convar: ${nativeVars.fxsVersion}`);
     console.error(`Parsed Build: ${fxsVerParsed.build}`);
     console.error(`Parsed Branch: ${fxsVerParsed.branch}`);
     console.error(`Parsed Platform: ${fxsVerParsed.platform}`);
 } else if (fxsVerParsed.build < minFxsVersion) {
     fatalError.GlobalData(2, [
-        'This version of FXServer is too outdated and NOT compatible with txAdmin',
+        'This version of FXServer is too outdated and NOT compatible with cAdminPanel',
         ['Current FXServer version', fxsVerParsed.build.toString()],
         ['Minimum required version', minFxsVersion.toString()],
         'Please update your FXServer to a newer version.',
@@ -136,19 +136,19 @@ if (!fxsVerParsed.valid) {
     console.warn(`You are running a custom branch of FXServer: ${fxsVerParsed.branch}`);
 }
 
-//Getting txAdmin version
+//Getting the panel version
 if (!nativeVars.txaResourceVersion) {
     fatalError.GlobalData(3, [
-        'txAdmin version not set or in the wrong format.',
+        'Panel version not set or in the wrong format.',
         ['Detected version', nativeVars.txaResourceVersion],
     ]);
 }
 const txaVersion = nativeVars.txaResourceVersion;
 
-//Get txAdmin Resource Path
+//Get the panel's Resource Path
 if (!nativeVars.txaResourcePath) {
     fatalError.GlobalData(4, [
-        'Could not resolve txAdmin resource path.',
+        'Could not resolve the panel resource path.',
         ['Convar', nativeVars.txaResourcePath],
     ]);
 }

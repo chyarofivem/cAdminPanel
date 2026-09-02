@@ -5,6 +5,7 @@ import { playerDropCategories } from "@/lib/playerDropCategories";
 import { PlayerDropsCategoryCount } from './chartingUtils';
 import { TimelineDropsChartData } from './TimelineDropsChart';
 import { DrilldownRangeSelectionType } from './PlayerDropsPage';
+import { t } from '@/lib/i18n';
 
 
 //Helpers
@@ -389,7 +390,9 @@ export default function drawDropsTimeline({
         if (changeFlagEl) {
             if (datum.changes) {
                 changeFlagEl.style.display = 'block';
-                changeFlagEl.textContent = datum.changes > 1 ? `${datum.changes} CHANGES` : '1 CHANGE';
+                changeFlagEl.textContent = datum.changes > 1
+                    ? t('{count} CHANGES', { count: datum.changes })
+                    : t('1 CHANGE');
             } else {
                 changeFlagEl.style.display = 'none';
                 changeFlagEl.textContent = '';

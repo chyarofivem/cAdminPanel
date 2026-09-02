@@ -8,15 +8,15 @@ const console = consoleFactory('ATTENTION');
 const PRERELEASE_EXPIRATION = parseInt(TX_PRERELEASE_EXPIRATION)
 
 const expiredError = [
-    'This pre-release version has expired, please update your txAdmin.',
+    'This pre-release version has expired, please update your panel.',
     'Bye bye 👋',
 ]
 
 const printExpirationBanner = (timeUntilExpiration: number) => {
     const timeLeft = msToDuration(timeUntilExpiration)
-    console.error('This is a pre-release version of txAdmin!');
-    console.error('This build is meant to be used by txAdmin beta testers.');
-    console.error('txAdmin will automatically shut down when this pre-release expires.');
+    console.error('This is a pre-release version of cAdminPanel!');
+    console.error('This build is meant to be used by beta testers.');
+    console.error('The panel will automatically shut down when this pre-release expires.');
     console.error(`Time until expiration: ${chalkInversePad(timeLeft)}.`);
 }
 

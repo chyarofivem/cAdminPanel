@@ -28,7 +28,6 @@ export default () => {
 
     //Public, content-addressed branding assets.
     router.get('/branding/:kind', routes.branding);
-    router.post('/api/link/fivem', authLimiter, routes.cadmin_link);
 
     //Authentication
     router.get('/auth/self', apiAuthMw, routes.auth_self);
@@ -37,11 +36,7 @@ export default () => {
     router.post('/auth/password', authLimiter, routes.auth_verifyPassword);
     router.post('/auth/changePassword', apiAuthMw, routes.auth_changePassword);
     router.post('/auth/logout', authLimiter, routes.auth_logout);
-    router.post('/auth/chyaro/setup', authLimiter, routes.auth_chyaroSetup);
-    router.get('/auth/chyaro/login', authLimiter, routes.auth_chyaroLogin);
-    router.get('/auth/chyaro/callback', authLimiter, routes.auth_chyaroCallback);
-    router.get('/update-setup/data', apiAuthMw, routes.updateSetup_data);
-    router.post('/update-setup/complete', apiAuthMw, routes.updateSetup_complete);
+    router.post('/auth/bootstrap', authLimiter, routes.auth_bootstrapMaster);
 
     //Admin Manager
     router.get('/adminManager/data', apiAuthMw, routes.adminManager_data);
@@ -63,8 +58,6 @@ export default () => {
     router.get('/api/cadmin/garage/:identifier', apiAuthMw, routes.cadmin_garage);
     router.post('/api/cadmin/garage/vehicle', apiAuthMw, routes.cadmin_garage);
     router.get('/api/cadmin/jobs', apiAuthMw, routes.cadmin_jobs);
-    router.get('/api/cadmin/users', apiAuthMw, routes.cadmin_users);
-    router.post('/api/cadmin/users/:id/:action', apiAuthMw, routes.cadmin_userAction);
     router.post('/api/cadmin/install/:action', apiAuthMw, routes.cadmin_install);
 
     //Settings
@@ -99,7 +92,7 @@ export default () => {
 
     //Data routes
     router.get('/resources/data', apiAuthMw, routes.resources_data);
-    router.get('/api/logs/txadmin', apiAuthMw, routes.txAdminLog);
+    router.get('/api/logs/panel', apiAuthMw, routes.panelLog);
     router.get('/perfChartData/:thread', apiAuthMw, routes.perfChart);
     router.get('/playerDropsData', apiAuthMw, routes.playerDrops);
 

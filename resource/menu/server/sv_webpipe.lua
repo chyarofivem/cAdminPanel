@@ -4,7 +4,7 @@ if not TX_SERVER_MODE then return end
 if not TX_MENU_ENABLED then return end
 
 if TX_LUACOMHOST == "invalid" or TX_LUACOMTOKEN == "invalid" then
-  txPrint('^1API Host or Pipe Token ConVars not found. Do not start this resource if not using txAdmin.')
+  txPrint('^1API Host or Pipe Token ConVars not found. Do not start this resource manually - it is managed by the panel.')
   return
 end
 if TX_LUACOMTOKEN == "removed" then
@@ -24,7 +24,7 @@ local _pipeFastCache = {}
 -- Check if we should use latent events
 local useLatentEvents = GetConvarBool('sv_enableNetEventReassembly', true);
 if not useLatentEvents then
-  txPrint('^3WARNING: Latent events are disabled. If you have issues using the txAdmin in-game menu, please enable them by setting sv_enableNetEventReassembly to true in your server.cfg.')
+  txPrint('^3WARNING: Latent events are disabled. If you have issues using the in-game admin menu, please enable them by setting sv_enableNetEventReassembly to true in your server.cfg.')
 end
 
 -- So it's easy to enable-disable debug messages for webpipe

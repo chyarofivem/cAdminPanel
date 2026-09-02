@@ -14,28 +14,31 @@ const makeCtx = (body: unknown) => {
 describe('self-managed Discord identity', () => {
     afterEach(() => vi.unstubAllGlobals());
 
-    it('rejects manual Discord changes when chyarologin is linked', async () => {
+    it('leaves the stored Discord provider untouched when the field is omitted', async () => {
+        const admin: any = {
+            name: 'admin',
+            providers: {
+                discord: { id: '272800190639898628', identifier: 'discord:272800190639898628', data: {} },
+            },
+        };
         const editAdmin = vi.fn();
         vi.stubGlobal('txCore', {
             adminStore: {
-                getAdminByName: vi.fn(() => ({
-                    name: 'admin',
-                    providers: { chyarologin: { identifier: 'admin@example.com', data: {} } },
-                })),
+                getAdminByName: vi.fn(() => admin),
+                getAdminByIdentifiers: vi.fn(() => false),
                 editAdmin,
             },
         });
-        const ctx = makeCtx({
-            cfxIdentifier: '',
-            discordIdentifier: '272800190639898628',
-        });
+        const ctx = makeCtx({ cfxIdentifier: '' });
 
         await AuthSelfIdentifiers(ctx);
 
+        expect(editAdmin).toHaveBeenCalledWith('admin', undefined, undefined);
         expect(ctx.send).toHaveBeenCalledWith({
-            error: 'Discord must be connected or disconnected through chyarologin for this account.',
+            success: true,
+            cfxIdentifier: undefined,
+            discordIdentifier: 'discord:272800190639898628',
         });
-        expect(editAdmin).not.toHaveBeenCalled();
     });
 
     it('stores a normalized Discord identifier for a local-only account', async () => {

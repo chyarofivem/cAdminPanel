@@ -119,7 +119,7 @@ export function HistorySearchBox({ doSearch, initialState, adminStats }: History
                     className="pl-9 pr-14"
                     autoCapitalize="off"
                     autoCorrect="off"
-                    placeholder={selectedSearchType.placeholder}
+                    placeholder={t(selectedSearchType.placeholder)}
                     onChange={event => setQuery(event.target.value)}
                     onKeyDown={event => {
                         if (event.key === 'Enter') {

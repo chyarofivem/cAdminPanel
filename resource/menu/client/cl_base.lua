@@ -138,26 +138,30 @@ local function retryAuthentication()
   TriggerServerEvent('txsv:checkIfAdmin')
 end
 RegisterNetEvent('txcl:reAuth', retryAuthentication)
-RegisterCommand('txAdmin-reauth', function()
+local function reauthCommand()
   sendSnackbarMessage('info', 'Retrying menu authentication.', false)
   awaitingReauth = true
   retryAuthentication()
-end)
+end
+RegisterCommand('cadmin-reauth', reauthCommand)
+-- Kept as a hidden alias for anyone with the old name bound. It is stripped from
+-- the chat suggestions in cl_main.lua so players never see the old name.
+RegisterCommand('txAdmin-reauth', reauthCommand)
 
 
 -- Register chat suggestions
--- txAdmin starts before the chat resource, so we need to wait a bit
+-- The monitor resource starts before the chat resource, so we need to wait a bit
 CreateThread(function()
   Wait(1000)
   TriggerEvent(
     'chat:addSuggestion',
     '/tx',
-    'Opens the main txAdmin Menu or specific for a player.',
+    'Opens the admin menu, or opens it for a specific player.',
     { { name = "player ID/name", help = "(Optional) Open player modal for specific ID or name." } }
   )
   TriggerEvent(
     'chat:addSuggestion',
-    '/txAdmin-reauth',
+    '/cadmin-reauth',
     'Retries to authenticate the menu NUI.'
   )
 end)

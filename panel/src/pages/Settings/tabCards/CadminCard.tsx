@@ -44,7 +44,9 @@ export default function CadminCard({ cardCtx, pageCtx }: SettingsCardProps) {
             const response = await actionApi({ pathParams: { action }, data: action === 'install' ? { framework: states.framework, dirtyMoneyItem: states.dirtyMoneyItem } : {} });
             if (!response?.success) throw new Error(response?.error || t('The action failed.'));
             if (action === 'install') {
-                txToast.success(t('Character Management installed. Restarting this page…'));
+                txToast.success(response.data?.started
+                    ? t('Character Management installed and started on the server. Reloading this page…')
+                    : t('Character Management installed. It loads the next time the server starts. Reloading this page…'));
                 window.setTimeout(reloadPanel, 900);
             } else txToast.success(t('Connected to {name}.', { name: response.data?.framework || 'cadminpanel' }));
         } catch (error) { txToast.error(error instanceof Error ? t(error.message) : t('The action failed.')); }
@@ -56,8 +58,8 @@ export default function CadminCard({ cardCtx, pageCtx }: SettingsCardProps) {
     };
 
     return <SettingsCardShell cardCtx={cardCtx} pageCtx={{ ...pageCtx, isReadOnly: pageCtx.isReadOnly || working }} onClickSave={handleSave}>
-        <SettingItem label={t('Enabled')}><Switch checked={states.enabled ?? false} onCheckedChange={value => dispatch({ configName: 'enabled', configValue: value })} /><SettingItemDesc>{t('Enables Character Management pages and the bridge API. Staff access still comes only from local txAdmin permissions.')}</SettingItemDesc></SettingItem>
-        <SettingItem label={t('Framework')}><select className="h-10 w-full max-w-sm rounded-lg border border-white/10 bg-[#0f1116] px-3 text-sm text-white outline-none focus:border-brand-600 focus:ring-2 focus:ring-brand-600/20" value={states.framework ?? 'auto'} onChange={event => dispatch({ configName: 'framework', configValue: event.target.value })}><option value="auto">{t('Auto-detect')}</option><option value="esx">ESX</option><option value="qbox">Qbox</option></select></SettingItem>
+        <SettingItem label={t('Enabled')}><Switch checked={states.enabled ?? false} onCheckedChange={value => dispatch({ configName: 'enabled', configValue: value })} /><SettingItemDesc>{t('Enables Character Management pages and the bridge API. Staff access still comes only from local panel permissions.')}</SettingItemDesc></SettingItem>
+        <SettingItem label={t('Framework')}><select className="h-10 w-full max-w-sm rounded-lg border border-white/10 bg-[#0f1116] px-3 text-sm text-white outline-none focus:border-brand-600 focus:ring-2 focus:ring-brand-600/20" value={states.framework ?? 'auto'} onChange={event => dispatch({ configName: 'framework', configValue: event.target.value })}><option value="auto">{t('Auto-detect')}</option><option value="esx">ESX</option><option value="qbox">Qbox</option></select><SettingItemDesc>{t('Only ESX and Qbox have a bridge adapter, and both are FiveM frameworks. There is nothing to connect to on a RedM server.')}</SettingItemDesc></SettingItem>
         <SettingItem label={t('Bridge URL')}><Input value={states.apiUrl ?? ''} onChange={event => dispatch({ configName: 'apiUrl', configValue: event.target.value })} placeholder="http://127.0.0.1:30120/cadminpanel" /></SettingItem>
         <SettingItem label={t('Shared secret')}><Input type="password" autoComplete="off" value={states.apiSecret ?? ''} onChange={event => dispatch({ configName: 'apiSecret', configValue: event.target.value })} /></SettingItem>
         <SettingItem label={t('Dirty money item')}><Input value={states.dirtyMoneyItem ?? ''} onChange={event => dispatch({ configName: 'dirtyMoneyItem', configValue: event.target.value })} /></SettingItem>

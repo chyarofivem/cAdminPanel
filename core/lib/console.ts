@@ -40,7 +40,7 @@ export const getLogBuffer = () => headBuffer + bodyBuffer;
 
 
 //Variables
-const header = 'tx';
+const header = 'monitor';
 let stackPathAlias: { path: string, alias: string } | undefined;
 let _txAdminVersion: string | undefined;
 let _verboseFlag = false;
@@ -160,7 +160,7 @@ const orangeredColor = chalk.rgb(255, 69, 0);
  */
 const getPrettyError = (error: Error, multilineError?: boolean) => {
     const out: string[] = [];
-    const prefixStr = `[${getTimestamp()}][tx]`;
+    const prefixStr = `[${getTimestamp()}][${header}]`;
     let prefixColor = chalk.redBright;
     let nameColor = chalk.redBright;
     if (error.name === 'ExperimentalWarning') {
@@ -246,8 +246,8 @@ export const cleanTerminal = () => {
  * Sets terminal title
  */
 export const setTTYTitle = (title?: string) => {
-    const txVers = _txAdminVersion ? `txAdmin v${_txAdminVersion}` : 'txAdmin';
-    const out = title ? `${title} - txAdmin` : txVers;
+    const versionedName = _txAdminVersion ? `cAdminPanel v${_txAdminVersion}` : 'cAdminPanel';
+    const out = title ? `${title} - cAdminPanel` : versionedName;
     process.stdout.write(`\x1B]0;${out}\x07`);
 }
 

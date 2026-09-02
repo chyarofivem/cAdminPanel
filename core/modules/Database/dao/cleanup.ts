@@ -136,7 +136,7 @@ export default class CleanupDao {
         //Skip if failed or nothing was removed
         if (playerRemoved || wlRequestsRemoved || wlApprovalsRemoved) {
             this.db.writeFlag(SavePriority.LOW);
-            console.ok(`Internal Database optimized. This applies only for the txAdmin internal database, and does not affect your MySQL or framework (ESX/QBCore/etc) databases.`);
+            console.ok(`Internal Database optimized. This applies only for the panel's internal database, and does not affect your MySQL or framework (ESX/QBCore/etc) databases.`);
         }
         if (playerRemoved) {
             console.ok(chalk.dim(`- ${playerRemoved} players that haven't connected in the past 16 days and had less than 2 hours of playtime.`));

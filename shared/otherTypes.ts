@@ -32,6 +32,13 @@ export type AccentType = {
     vars: Record<string, string>;
 };
 
+//Update checker stuff
+export type UpdateDataType = {
+    version: string;
+    isImportant: boolean;
+    url?: string;
+};
+
 
 export type InjectedTxConsts = {
     //Env
@@ -43,8 +50,6 @@ export type InjectedTxConsts = {
     isWebInterface: boolean;
     showAdvanced: boolean;
     hasMasterAccount: boolean;
-    chyaroConfigured: boolean;
-    chyaroUrl: string;
     cadminEnabled: boolean;
     uiLocale: 'en' | 'hr';
     defaultTheme: string;

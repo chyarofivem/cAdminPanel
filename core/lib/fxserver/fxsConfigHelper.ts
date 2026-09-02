@@ -392,7 +392,7 @@ const validateCommands = async (parsedCommands: (ExecRecursionError | Command)[]
             toCommentOut.add(
                 cmd.file,
                 cmd.line,
-                'you MUST NOT start/stop/ensure txadmin resources.',
+                'you MUST NOT start/stop/ensure the panel\'s monitor resource.',
             );
             continue;
         }
@@ -425,12 +425,11 @@ const validateCommands = async (parsedCommands: (ExecRecursionError | Command)[]
             );
             continue;
         }
-        if (
-            txHostConfig.forceGameName
-            && isGameNameString
-        ) {
+        if (isGameNameString) {
+            //NOTE: recorded even when the host does not force a game name, otherwise the
+            //duplicate check above would only ever run on hosts that do force one.
             detectedGameName = isGameNameString;
-            if (isGameNameString !== requiredGameName) {
+            if (requiredGameName && isGameNameString !== requiredGameName) {
                 hasHostConfigMessage = true;
                 errors.add(
                     cmd.file,
@@ -446,7 +445,7 @@ const validateCommands = async (parsedCommands: (ExecRecursionError | Command)[]
             toCommentOut.add(
                 cmd.file,
                 cmd.line,
-                'onesync MUST only be set in the txAdmin settings page.',
+                'onesync MUST only be set in the panel settings page.',
             );
             continue;
         }
@@ -456,7 +455,7 @@ const validateCommands = async (parsedCommands: (ExecRecursionError | Command)[]
             toCommentOut.add(
                 cmd.file,
                 cmd.line,
-                'The allowlist convars are overwritten by the txAdmin settings page.',
+                'The allowlist convars are overwritten by the panel settings page.',
             );
             continue;
         }
@@ -518,7 +517,7 @@ const validateCommands = async (parsedCommands: (ExecRecursionError | Command)[]
                 errors.add(
                     cmd.file,
                     cmd.line,
-                    `the \`${cmd.command}\` port \`${port}\` is dedicated for txAdmin and CAN NOT be used for FXServer.`
+                    `the \`${cmd.command}\` port \`${port}\` is dedicated for the panel and CAN NOT be used for FXServer.`
                 );
                 continue;
             }
@@ -526,7 +525,7 @@ const validateCommands = async (parsedCommands: (ExecRecursionError | Command)[]
                 errors.add(
                     cmd.file,
                     cmd.line,
-                    `the \`${cmd.command}\` port \`${port}\` is being used by txAdmin and CAN NOT be used for FXServer at the same time.`
+                    `the \`${cmd.command}\` port \`${port}\` is being used by the panel and CAN NOT be used for FXServer at the same time.`
                 );
                 continue;
             }
@@ -650,7 +649,7 @@ export const validateFixServerConfig = async (cfgPath: string, serverDataPath: s
                 if (typeof cfgLines[ln - 1] !== 'string') {
                     throw new Error(`Line ${ln} not found.`);
                 }
-                cfgLines[ln - 1] = `## [txAdmin CFG validator]: ${reason}${fileEOL}# ${cfgLines[ln - 1]}`;
+                cfgLines[ln - 1] = `## [cAdminPanel CFG validator]: ${reason}${fileEOL}# ${cfgLines[ln - 1]}`;
                 warnings.add(targetCfgPath, ln, `Commented out: ${reason}`);
             }
 

@@ -3,6 +3,7 @@ import { numberToLocaleString } from "@/lib/utils";
 import { PlayerDropsMessage } from "./PlayerDropsGenericSubcards";
 import { playerDropCategories } from "@/lib/playerDropCategories";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { t } from "@/lib/i18n";
 
 type DisplayCategoryDatum = {
     label: string;
@@ -23,8 +24,8 @@ export default function DrilldownOverviewSubcard({ dropTypes }: DrilldownOvervie
             totalDrops += cnt;
             if (!(cat in playerDropCategories)) continue;
             categories[cat] = {
-                label: playerDropCategories[cat].label,
-                tooltip: playerDropCategories[cat].description,
+                label: t(playerDropCategories[cat].label),
+                tooltip: t(playerDropCategories[cat].description),
                 color: playerDropCategories[cat].color,
                 count: cnt,
             };
@@ -36,7 +37,7 @@ export default function DrilldownOverviewSubcard({ dropTypes }: DrilldownOvervie
     }, [dropTypes]);
 
     if (!categories.length) {
-        return <PlayerDropsMessage message="No player drops within this time window." />;
+        return <PlayerDropsMessage message={t('No player drops within this time window.')} />;
     }
 
     return (

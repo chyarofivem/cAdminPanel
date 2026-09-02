@@ -106,8 +106,6 @@ export default async function getReactIndex(ctx: CtxWithVars | AuthedCtx) {
         isWebInterface: ctx.txVars.isWebInterface,
         showAdvanced: (txDevEnv.ENABLED || console.isVerbose),
         hasMasterAccount: txCore.adminStore.hasAdmins(true),
-        chyaroConfigured: txConfig.chyaro.apiKey.length > 0 && txConfig.chyaro.panelUrl.length > 0,
-        chyaroUrl: txConfig.chyaro.apiUrl,
         cadminEnabled: txConfig.cadmin.enabled,
         uiLocale: txConfig.general.language === 'hr' ? 'hr' : 'en',
         defaultTheme: tmpDefaultTheme,
@@ -140,6 +138,7 @@ export default async function getReactIndex(ctx: CtxWithVars | AuthedCtx) {
     replacers.faviconUrl = escapeHtmlAttribute(branding.faviconUrl);
     replacers.ogTitle = escapeHtmlAttribute(branding.panelName);
     replacers.ogDescripttion = escapeHtmlAttribute(`Manage and monitor ${branding.panelName} atop FXServer ${txEnv.fxsVersion}.`);
+    replacers.ogImage = escapeHtmlAttribute(branding.bannerUrl);
     replacers.txConstsInjection = `<script>window.txConsts = ${escapeHtmlRawText(JSON.stringify(injectedConsts))};</script>`;
     replacers.devModules = txDevEnv.ENABLED ? devModulesScript : '';
 

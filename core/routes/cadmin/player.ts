@@ -7,7 +7,6 @@ import {
     normalizeCadminLicenseIdentifier,
     requireCadminPermission,
 } from '@lib/cadminApi';
-import { fetchChyaroUsers } from '@lib/chyaroApi';
 import { findPlayersByIdentifier } from '@lib/player/playerFinder';
 import playerResolver from '@lib/player/playerResolver';
 
@@ -36,7 +35,7 @@ function resolveAccountLicenses(identifier: unknown): string[] {
     } catch { /* The identifier may belong only to the framework database. */ }
 
     if (matches.size > 1) {
-        throw new Error('That FiveM identifier is associated with more than one txAdmin player record.');
+        throw new Error('That FiveM identifier is associated with more than one player record.');
     }
     const txPlayer = matches.values().next().value;
     return txPlayer
@@ -72,35 +71,11 @@ export default async function CadminPlayer(ctx: AuthedCtx) {
                     characters.push(character);
                 }
             }
-            try {
-                const users = await fetchChyaroUsers();
-                const account = users.find(user => {
-                    try { return accountLicenses.includes(normalizeCadminLicenseIdentifier(user.fivemLicense)); }
-                    catch { return false; }
-                }) || null;
-                for (const character of characters) character.account = account;
-            } catch {
-                for (const character of characters) character.account = null;
-            }
             return ctx.send({ success: true, data: characters });
         }
 
         const identifier = normalizeCadminCharacterIdentifier(ctx.params.identifier);
         const data: any = await cadminRequest('GET', `/player/${encodeURIComponent(identifier)}`);
-        try {
-            const users = await fetchChyaroUsers();
-            const accountLicenses = typeof data.playerLicense === 'string'
-                ? resolveAccountLicenses(data.playerLicense)
-                : [];
-            data.account = accountLicenses.length
-                ? users.find(user => {
-                    try { return accountLicenses.includes(normalizeCadminLicenseIdentifier(user.fivemLicense)); }
-                    catch { return false; }
-                }) || null
-                : null;
-        } catch {
-            data.account = null;
-        }
         if (!ctx.admin.hasPermission('cadmin.garage.view')) delete data.vehicles;
         return ctx.send({ success: true, data });
     }

@@ -2,7 +2,7 @@
 if not TX_SERVER_MODE then return end
 
 if TX_LUACOMHOST == "invalid" or TX_LUACOMTOKEN == "invalid" then
-    txPrint('^1API Host or Pipe Token ConVars not found. Do not start this resource if not using txAdmin.')
+    txPrint('^1API Host or Pipe Token ConVars not found. Do not start this resource manually - it is managed by the panel.')
     return
 end
 if TX_LUACOMTOKEN == "removed" then

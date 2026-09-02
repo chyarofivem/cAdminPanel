@@ -11,11 +11,10 @@ import { advancedCommands } from "@shared/advancedCommands";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import JsonCodeBlock from "@/components/JsonCodeBlock";
 import MarkdownProse from "@/components/MarkdownProse";
-import { cn, downloadTextFile } from "@/lib/utils";
+import { downloadTextFile } from "@/lib/utils";
 import { txToast } from "@/components/TxToaster";
 import type {
     RunAdvancedCommandResp,
-    RunAdvancedCommandRespSuccess,
     RunAdvancedCommandReq,
 } from "@shared/advancedCommands";
 import { getUrlSearchParam, setUrlSearchParam } from "@/lib/navigation";
@@ -77,7 +76,7 @@ function HelpPopover({ onCommandClick }: { onCommandClick: (c: string) => void }
 }
 
 
-function OutputArea({ output }: { output: RunAdvancedCommandRespSuccess | null }) {
+function OutputArea({ output }: { output: RunAdvancedCommandResp | null }) {
     return (
         <div className="pt-4">
             {output ? (
@@ -107,7 +106,7 @@ function OutputArea({ output }: { output: RunAdvancedCommandRespSuccess | null }
 
 export default function AdvancedPage() {
     const inputRef = useRef<HTMLInputElement>(null);
-    const [output, setOutput] = useState<RunAdvancedCommandRespSuccess | null>(null);
+    const [output, setOutput] = useState<RunAdvancedCommandResp | null>(null);
     const [isLoading, setIsLoading] = useState(false);
 
     const runCommandApi = useBackendApi<RunAdvancedCommandResp, RunAdvancedCommandReq>({
@@ -246,17 +245,6 @@ export default function AdvancedPage() {
                 </div>
                 <OutputArea output={output} />
             </div>
-
-            {/* txSnaily */}
-            <img
-                className={cn(
-                    "absolute bottom-0 right-0 size-64 opacity-35 pointer-events-none",
-                    "border border-transparent",
-                    isLoading && "opacity-100 animate-bounce",
-                )}
-                src="img/txSnaily2anim_320.png"
-                alt="Not A Meme"
-            />
         </div>
     )
 }

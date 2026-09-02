@@ -208,6 +208,14 @@ export default class WebSocket {
                 console.verbose.debug('SocketIO', `Socket error with message: ${error.message}`);
             });
 
+            //Update notices are pushed on a 15 minute cycle, so clients that connect
+            //between checks need the current state right away
+            //NOTE: optional access so removing the UpdateChecker module cannot break this
+            const updateEventData = txCore.updateChecker?.updateEventData;
+            if (updateEventData) {
+                socket.emit('updateAvailable', updateEventData);
+            }
+
             // console.verbose.log('SocketIO', `Connected: ${authedAdmin.name} from ${getIP(socket)}`);
         } catch (error) {
             console.error('SocketIO', `Error handling new connection: ${(error as Error).message}`);

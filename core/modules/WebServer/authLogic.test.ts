@@ -75,17 +75,17 @@ describe('administrator authentication methods', () => {
         expect(result).toMatchObject({ success: false });
     });
 
-    test('never falls back to a manual Discord provider once chyarologin is linked', () => {
+    test('surfaces the locally managed Discord and CitizenFX identifiers', () => {
         vi.stubGlobal('txCore', { cacheStore: { get: vi.fn() } });
         const admin = new AuthedAdmin(vaultAdmin({
             providers: {
-                chyarologin: { identifier: 'admin@example.com', data: { email: 'admin@example.com', discordId: null } },
+                citizenfx: { id: 'admin', identifier: 'fivem:12345678', data: {} },
                 discord: { id: '272800190639898628', identifier: 'discord:272800190639898628', data: {} },
             },
         }));
 
-        expect(admin.chyaroLinked).toBe(true);
-        expect(admin.discordIdentifier).toBeUndefined();
+        expect(admin.discordIdentifier).toBe('discord:272800190639898628');
+        expect(admin.cfxIdentifier).toBe('fivem:12345678');
     });
 
     test('exposes a validated account accent to web and game sessions', () => {

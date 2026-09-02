@@ -149,19 +149,22 @@ module.exports = {
           to: { height: 0 },
         },
 
-        //Animation for the toastbar copied from react-hot-toast, except for the icon animation
-        //https://github.com/timolins/react-hot-toast/blob/main/site/tailwind.config.js
+        //Animations for the notification toasts
         "toastbar-icon": {
           '0%': { transform: 'scale(0.5)', opacity: 0 },
           '100%': { transform: 'scale(1)', opacity: 1 },
         },
         "toastbar-enter": {
-          '0%': { transform: 'scale(0.9)', opacity: 0 },
-          '100%': { transform: 'scale(1)', opacity: 1 },
+          '0%': { transform: 'translateY(-0.75rem) scale(0.97)', opacity: 0 },
+          '100%': { transform: 'translateY(0) scale(1)', opacity: 1 },
         },
         "toastbar-leave": {
-          '0%': { transform: 'scale(1)', opacity: 1 },
-          '100%': { transform: 'scale(0.9)', opacity: 0 },
+          '0%': { transform: 'translateY(0) scale(1)', opacity: 1 },
+          '100%': { transform: 'translateY(-0.5rem) scale(0.97)', opacity: 0 },
+        },
+        "toastbar-progress": {
+          '0%': { transform: 'scaleX(1)' },
+          '100%': { transform: 'scaleX(0)' },
         },
         //NOTE: added these while testing stuff, never used, idk if they work
         // "fade-left": {
@@ -185,8 +188,10 @@ module.exports = {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
         "toastbar-icon": 'toastbar-icon 350ms ease-out',
-        "toastbar-enter": 'toastbar-enter 200ms ease-out',
+        "toastbar-enter": 'toastbar-enter 220ms cubic-bezier(0.16, 1, 0.3, 1)',
         "toastbar-leave": 'toastbar-leave 150ms ease-in forwards',
+        //NOTE: the duration is overridden inline with the toast's own duration
+        "toastbar-progress": 'toastbar-progress 5s linear forwards',
         //NOTE: added these while testing stuff, never used, idk if they work
         // "fade-left": "fade-left 0.2s ease",
         // "fade-down": "fade-down 0.2s ease",

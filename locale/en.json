@@ -34,8 +34,8 @@
     "whitelist_messages": {
         "admin_only": {
             "mode_title": "This server is in <strong>Admin-only (maintenance)</strong>.",
-            "insufficient_ids": "You do not have <code>discord</code> or <code>fivem</code> identifiers, and at least one of them is required to validate if you are a cAdminPanel administrator.",
-            "deny_message": "Your identifiers are not assigned to any cAdminPanel administrator."
+            "insufficient_ids": "You do not have <code>discord</code> or <code>fivem</code> identifiers, and at least one of them is required to validate if you are a %{panelName} administrator.",
+            "deny_message": "Your identifiers are not assigned to any %{panelName} administrator."
         },
         "guild_member": {
             "mode_title": "This server is in <strong>Discord server Member Allowlist</strong> mode.",
@@ -79,13 +79,15 @@
             "panel": "Panel"
         },
         "misc": {
-            "help_message": "cAdminPanel Menu enabled, type /tx to open it.\nYou can also configure a keybind at [Game Settings > Key Bindings > FiveM > Menu: Open Main Page].",
-            "menu_not_admin": "Your identifiers do not match any admin registered on cAdminPanel.\nIf you are registered on cAdminPanel, go to Admin Manager and make sure your identifiers are saved.",
-            "menu_auth_failed": "cAdminPanel Menu authentication failed with reason: %{reason}",
+            "help_message": "%{panelName} Menu enabled, type /tx to open it.\nYou can also configure a keybind at [Game Settings > Key Bindings > FiveM > Menu: Open Main Page].",
+            "help_message_no_keybind": "%{panelName} Menu enabled, type /tx to open it.",
+            "menu_not_admin": "Your identifiers do not match any admin registered on %{panelName}.\nIf you are registered, go to Admin Manager and make sure your identifiers are saved.",
+            "menu_auth_failed": "%{panelName} Menu authentication failed with reason: %{reason}",
             "no_perms": "You do not have this permission.",
             "unknown_error": "An unknown error occurred.",
-            "not_enabled": "The cAdminPanel Menu is not enabled! You can enable it in the cAdminPanel settings page.",
+            "not_enabled": "The %{panelName} Menu is not enabled! You can enable it in the settings page.",
             "announcement_title": "Server Announcement by %{author}:",
+            "restart_title": "Scheduled Restart",
             "directmessage_title": "DM from admin %{author}:",
             "dialog_empty_input": "You cannot have an empty input.",
             "onesync_error": "This option requires OneSync to be enabled."
@@ -213,7 +215,8 @@
                 "label": "Reset a specified world area to its default state",
                 "dialog_desc": "Please enter the radius where you wish to reset entities in (0-300). This will not clear entities spawned server side.",
                 "dialog_success": "Clearing area with radius of %{radius}m",
-                "dialog_error": "Invalid radius input. Try again."
+                "dialog_error": "Invalid radius input. Try again.",
+                "redm_error": "Resetting a world area is not available on RedM."
             },
             "player_ids": {
                 "title": "Toggle Player IDs",

@@ -55,7 +55,6 @@ const customComponents: Components = {
         if (isValidElement(children)) {
             const codeProps = children.props as { className?: string; children?: ReactNode };
             const match = /language-(\w+)/.exec(codeProps.className ?? '');
-            console.log('match', match);
             if (match?.[1] === 'json' && typeof codeProps.children === 'string') {
                 return (
                     <JsonCodeBlock

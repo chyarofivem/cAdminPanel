@@ -16,7 +16,7 @@ import type { PlayerModalViewProps } from "../PlayerModal.types";
 import { usePermissionsValue } from "@nui/src/state/permissions.state";
 import { fetchWebPipe } from "@nui/src/utils/fetchWebPipe";
 import { tsToLocaleDateTime, userHasPerm } from "@nui/src/utils/miscUtils";
-import { nuiTokens } from "@nui/src/styles/nuiTokens";
+import { fontMono, nuiTokens } from "@nui/src/styles/nuiTokens";
 
 const ViewRoot = styled(Box)({
   width: "100%",
@@ -122,7 +122,7 @@ const HistoryCard: React.FC<HistoryCardProps> = ({
           gap: "4px 12px",
           mt: 1.25,
           color: "text.secondary",
-          fontFamily: "monospace",
+          fontFamily: fontMono,
           fontSize: 11.5,
         }}
       >

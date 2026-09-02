@@ -33,9 +33,7 @@ export default async function AuthChangePassword(ctx: AuthedCtx) {
     const vaultAdmin = txCore.adminStore.getAdminByName(ctx.admin.name);
     if (!vaultAdmin) throw new Error('Authenticated admin is no longer present in AdminStore.');
     const currentSession = ctx.sessTools.get();
-    const canEstablishPassword = ctx.admin.isTempPassword
-        || currentSession?.auth?.type === 'chyarologin';
-    if (!canEstablishPassword && (!oldPassword || !VerifyPasswordHash(oldPassword, vaultAdmin.password_hash))) {
+    if (!ctx.admin.isTempPassword && (!oldPassword || !VerifyPasswordHash(oldPassword, vaultAdmin.password_hash))) {
         return ctx.send<GenericApiResp>({ error: 'Wrong current password.' });
     }
 

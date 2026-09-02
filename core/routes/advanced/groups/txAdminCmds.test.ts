@@ -43,6 +43,6 @@ describe('advanced txAdmin config commands', () => {
         const result = await txAdminCmds.set(ctx, 'general.serverName "Updated"');
 
         expect(result.data).not.toContain('discord-secret');
-        expect(result.data).toContain('[redacted by txAdmin]');
+        expect(result.data).toContain('[redacted]');
     });
 });

@@ -1,6 +1,5 @@
-import { useEffect } from "react";
 import { ErrorBoundary } from "react-error-boundary";
-import { Route as WouterRoute, Switch, useLocation, useRoute } from "wouter";
+import { Route as WouterRoute, Switch, useLocation } from "wouter";
 import { PageErrorFallback } from "@/components/ErrorFallback";
 import { useAtomValue, useSetAtom } from "jotai";
 import { contentRefreshKeyAtom, pageErrorStatusAtom, useSetPageTitle } from "@/hooks/pages";
@@ -18,7 +17,6 @@ import PlayerDropsPage from "@/pages/PlayerDropsPage/PlayerDropsPage";
 import SettingsPage from "@/pages/Settings/SettingsPage";
 import UnauthorizedPage from "@/pages/UnauthorizedPage";
 import AdvancedPage from "@/pages/AdvancedPage";
-import CadminUsersPage from '@/pages/CAdmin/UsersPage';
 import AdminsPage from '@/pages/Admins/AdminsPage';
 import AllowlistPage from '@/pages/Allowlist/AllowlistPage';
 import CfgEditorPage from '@/pages/CfgEditor/CfgEditorPage';
@@ -38,7 +36,6 @@ type RouteType = {
     title: string;
     permission?: string;
     Page: JSX.Element;
-    requiresCadmin?: boolean;
 };
 
 const allRoutes: RouteType[] = [
@@ -57,33 +54,6 @@ const allRoutes: RouteType[] = [
         path: '/administration/history',
         title: 'History',
         Page: <HistoryPage />
-    },
-    {
-        path: '/players',
-        title: 'Player Management',
-        Page: <LegacyRedirect to="/administration/players" />,
-    },
-    {
-        path: '/cadmin/players',
-        title: 'Player Management',
-        Page: <LegacyRedirect to="/administration/players" />,
-    },
-    {
-        path: '/cadmin/player/:identifier',
-        title: 'Player Management',
-        Page: <LegacyPlayerRedirect />,
-    },
-    {
-        path: '/cadmin/garage',
-        title: 'Player Management',
-        Page: <LegacyRedirect to="/administration/players" />,
-    },
-    {
-        path: '/cadmin/users',
-        title: 'Linked Accounts',
-        permission: 'master',
-        requiresCadmin: true,
-        Page: <CadminUsersPage />,
     },
     {
         path: '/insights/player-drops',
@@ -119,9 +89,9 @@ const allRoutes: RouteType[] = [
         Page: <MasterActionsPage />
     },
     {
-        path: '/system/txadmin-log',
-        title: 'txAdmin Log',
-        permission: 'txadmin.log.combined',
+        path: '/system/panel-log',
+        title: 'Panel Log',
+        permission: 'panel.log.view',
         Page: <TxAdminLogPage />,
     },
 
@@ -167,33 +137,6 @@ const allRoutes: RouteType[] = [
         Page: <AdvancedPage />
     },
 
-    // Retain old bookmarks while keeping every document URL separate from JSON APIs.
-    {
-        path: '/server/console',
-        title: 'Console Log',
-        Page: <LegacyRedirect to="/server/console-log" />,
-    },
-    {
-        path: '/system/console-log',
-        title: 'Console Log',
-        Page: <LegacyRedirect to="/server/console-log" />,
-    },
-    {
-        path: '/system/action-log',
-        title: 'txAdmin Log',
-        Page: <LegacyRedirect to="/system/txadmin-log" />,
-    },
-    {
-        path: '/server/server-log',
-        title: 'txAdmin Log',
-        Page: <LegacyRedirect to="/system/txadmin-log" />,
-    },
-    {
-        path: '/cadmin/logs',
-        title: 'txAdmin Log',
-        Page: <LegacyRedirect to="/system/txadmin-log" />,
-    },
-
     //No nav routes
     {
         path: '/settings/ban-templates',
@@ -215,25 +158,12 @@ const allRoutes: RouteType[] = [
     // },
 ];
 
-function LegacyRedirect({ to }: { to: string }) {
-    useEffect(() => setLocation(to, { replace: true }), [to]);
-    return null;
-}
-
-function LegacyPlayerRedirect() {
-    const [, params] = useRoute('/cadmin/player/:identifier');
-    const identifier = params?.identifier ? decodeURIComponent(params.identifier) : '';
-    return <LegacyRedirect to={`/administration/players?mode=playerIds&q=${encodeURIComponent(identifier)}`} />;
-}
-
 
 function Route(route: RouteType) {
     const { hasPerm } = useAdminPerms();
     const setPageTitle = useSetPageTitle();
     setPageTitle(t(route.title));
-    const nodeToRender = route.requiresCadmin && !window.txConsts.cadminEnabled
-        ? <UnauthorizedPage pageName={t(route.title)} permission={t('Character Management enabled')} />
-        : route.permission && !hasPerm(route.permission)
+    const nodeToRender = route.permission && !hasPerm(route.permission)
         ? <UnauthorizedPage pageName={t(route.title)} permission={route.permission} />
         : route.Page;
     return <WouterRoute path={route.path}>{nodeToRender}</WouterRoute>

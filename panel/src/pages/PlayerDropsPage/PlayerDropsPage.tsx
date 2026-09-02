@@ -6,6 +6,7 @@ import TimelineCard from "./TimelineCard";
 import { useState } from "react";
 import { PageHeader } from '@/components/page-header';
 import { ActivityIcon } from 'lucide-react';
+import { t } from '@/lib/i18n';
 
 export type DrilldownRangeSelectionType = {
     startDate: Date;
@@ -71,9 +72,9 @@ export default function PlayerDropsPage() {
     return (
         <div className="w-full space-y-6 pb-10">
             <div className="border-b border-dashed border-white/5 pb-5">
-                <PageHeader title="Player Drops" icon={<ActivityIcon className="size-6" />} />
+                <PageHeader title={t('Player Drops')} icon={<ActivityIcon className="size-6" />} />
                 <p className="-mt-3 max-w-3xl text-sm leading-6 text-zinc-400">
-                    See when players leave, what caused unexpected disconnects, and which server changes line up with them.
+                    {t('See when players leave, what caused unexpected disconnects, and which server changes line up with them.')}
                 </p>
             </div>
             <TimelineCard

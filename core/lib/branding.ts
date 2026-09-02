@@ -75,7 +75,11 @@ export async function storeBrandingDataUrl(kind: BrandingKind, value: string) {
 
 export function panelDisplayName(serverName = txConfig.general.serverName) {
     const normalizedName = typeof serverName === 'string' ? serverName.trim() : '';
-    return `${!normalizedName || normalizedName === 'change-me' ? 'FiveM' : normalizedName} Panel`;
+    //Before the wizard stores a name the config still holds the schema default and
+    //there is no server to name yet, so fall back to the product name. A game name
+    //cannot be used here: it would brand a RedM install for the wrong game.
+    if (!normalizedName || normalizedName === 'change-me') return 'cAdminPanel';
+    return `${normalizedName} Panel`;
 }
 
 function configuredFilename(kind: BrandingKind) {

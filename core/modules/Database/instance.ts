@@ -7,7 +7,6 @@ import { Low, Adapter } from 'lowdb';
 import { TextFile } from 'lowdb/node';
 import { txDevEnv, txEnv } from '@core/globalData';
 import { DatabaseDataType } from './databaseTypes.js';
-import migrations from './migrations.js';
 import consoleFactory from '@lib/console.js';
 import fatalError from '@lib/fatalError.js';
 import { TimeCounter } from '@modules/Metrics/statsUtils.js';
@@ -124,7 +123,7 @@ export class DbInstance {
             dbo = new LowWithLodash(adapterAsync, defaultDatabase);
             await dbo.read();
         } catch (errorMain) {
-            const errTitle = 'Your txAdmin player/actions database could not be loaded.';
+            const errTitle = 'Your player/actions database could not be loaded.';
             try {
                 await fsp.copyFile(this.backupPath, this.dbPath);
                 const adapterAsync = new JSONFile<DatabaseDataType>(this.dbPath);
@@ -153,13 +152,19 @@ export class DbInstance {
             //Need to chain after setting defaults
             dbo.chain = lodash.chain(dbo.data);
 
-            //If old database
+            //Version check
+            //NOTE: cAdminPanel does not migrate databases, so anything else is rejected
             if (dbo.data.version !== DATABASE_VERSION) {
-                await this.backupDatabase(`${txEnv.profilePath}/data/playersDB.backup.v${dbo.data.version}.json`);
-                this.obj = await migrations(dbo);
-            } else {
-                this.obj = dbo;
+                fatalError.Database(3, [
+                    'Your player/actions database is not compatible with this version of cAdminPanel.',
+                    'Databases are not migrated between versions or from other panels.',
+                    'Rename or delete the file below to start with an empty database.',
+                    ['Path', this.dbPath],
+                    ['File version', String(dbo.data.version ?? 'not set')],
+                    ['Supported version', String(DATABASE_VERSION)],
+                ]);
             }
+            this.obj = dbo;
 
             //Checking basic structure integrity
             if (
@@ -169,7 +174,7 @@ export class DbInstance {
                 || !Array.isArray(this.obj!.data.whitelistRequests)
             ) {
                 fatalError.Database(2, [
-                    'Your txAdmin player/actions database is corrupted!',
+                    'Your player/actions database is corrupted!',
                     'It is missing one of the required arrays (players, actions, whitelistApprovals, whitelistRequests).',
                     'If you modified the database file manually, you may try to restore it from the automatic backup file.',
                     ['Database path', this.dbPath],

@@ -52,7 +52,7 @@ export function getVisibleSettingsConfig(
 
     if (!access.isMaster) {
         if (visible.discordBot?.token) {
-            visible.discordBot.token = '[redacted by txAdmin]';
+            visible.discordBot.token = '[redacted]';
         }
         delete visible.server;
         if (visible.restarter) {
@@ -60,7 +60,6 @@ export function getVisibleSettingsConfig(
                 ? {}
                 : { schedule: visible.restarter.schedule };
         }
-        if (visible.chyaro?.apiKey) visible.chyaro.apiKey = '[redacted]';
         if (visible.cadmin?.apiSecret) visible.cadmin.apiSecret = '[redacted]';
     }
 

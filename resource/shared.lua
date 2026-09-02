@@ -55,7 +55,7 @@ TX_MENU_ENABLED = GetConvarBool('txAdmin-menuEnabled')
 TX_DEBUG_MODE = GetConvarBool('txAdmin-debugMode')
 
 
---- Internal helper to format txAdmin console messages
+--- Internal helper to format panel console messages
 local function _formatTxString(args)
   local appendedStr = ''
   for _, v in ipairs(args) do
@@ -66,12 +66,12 @@ end
 
 --- Prints formatted string to console
 function txPrint(...)
-  local msg = ('^5[txAdmin]^0%s^0'):format(_formatTxString({...}))
+  local msg = ('^5[monitor]^0%s^0'):format(_formatTxString({...}))
   print(msg)
 end
 
 function txPrintError(...)
-  local msg = ('^5[txAdmin]^1%s^0'):format(_formatTxString({...}))
+  local msg = ('^5[monitor]^1%s^0'):format(_formatTxString({...}))
   print(msg)
 end
 

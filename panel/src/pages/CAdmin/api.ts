@@ -29,6 +29,18 @@ export function cadminApiPath(path: string): string {
     return `${CADMIN_API_BASE}/${path.replace(/^\/+/, '')}`;
 }
 
+/**
+ * Whether the Character Management UI should be reachable at all.
+ * The framework bridge only supports es_extended and qbx_core, both FiveM-only,
+ * so the feature can never work on RedM. The game name comes from the last
+ * FXServer boot, so an unknown game keeps the feature visible.
+ * NOTE: this must not be used to decide whether toggling the setting requires a
+ * page reload, as that comparison needs the raw injected value.
+ */
+export function isCadminAvailable(): boolean {
+    return window.txConsts.cadminEnabled && window.txConsts.server.game !== 'redm';
+}
+
 export function cadminCharacterIdentifier(player: CadminPlayer): string {
     return player.characterId || player.citizenid || player.identifier;
 }
@@ -51,18 +63,6 @@ export type CadminPlayer = {
     inventory?: any[];
     vehicles?: any[];
     pendingItems?: number;
-    account?: ChyaroUser | null;
-};
-
-export type ChyaroUser = {
-    id: string;
-    email: string;
-    discordId?: string;
-    discordUsername?: string;
-    discordAvatar?: string;
-    fivemLinked?: boolean;
-    fivemLicense?: string;
-    fivemName?: string;
 };
 
 export function cadminData<T>(response: CadminResponse<T>): T {

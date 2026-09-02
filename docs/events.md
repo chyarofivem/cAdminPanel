@@ -1,7 +1,10 @@
 # Events Broadcasted
 
-txAdmin sends **server events** to allow for integration of some functionalities with other resources.
-The event name will be `txAdmin:events:<name>` and the first (and only) parameter will be a table that may contain relevant data.  
+The panel sends **server events** to allow for integration of some functionalities with other resources.
+The event name will be `txAdmin:events:<name>` and the first (and only) parameter will be a table that may contain relevant data.
+
+> [!NOTE]
+> The `txAdmin:` event prefix is kept for compatibility with the wide range of existing FiveM/RedM resources that already listen to it. It is a stable contract and will not be renamed.
 
 > [!IMPORTANT]
 > Do not fully rely on events where consistency is key since they may be executed while the server is not online therefore your resource would not be notified about it. For instance, while the server is stopped one could whitelist or ban player identifiers.
@@ -10,24 +13,24 @@ The event name will be `txAdmin:events:<name>` and the first (and only) paramete
 ## Server-related Events
 
 ### txAdmin:events:announcement
-Broadcasted when an announcement is made using txAdmin.  
-If you want to hide the default notification, you can do that in `txAdmin -> Settings -> Game -> Notifications`.  
+Broadcasted when an announcement is made through the panel.  
+If you want to hide the default notification, you can do that in `Settings > Game > Notifications`.  
 Event Data:
-- `author`: The name of the admin or `txAdmin`.
+- `author`: The name of the admin, or the panel name (eg. `My Server Panel`) when the announcement was automated.
 - `message`: The message of the broadcast.
 
 ### txAdmin:events:serverShuttingDown
 Broadcasted when the server is about to shut down.  
 This can be triggered in a scheduled and unscheduled stop or restart, by an admin or by the system.  
 Event Data:
-- `delay`: How many milliseconds txAdmin will wait before killing the server process.
-- `author`: The name of the admin or `txAdmin`.
+- `delay`: How many milliseconds the panel will wait before killing the server process.
+- `author`: The name of the admin, or the panel name when the shutdown was automated.
 - `message`: The message of the broadcast.
 
 
 ### txAdmin:events:scheduledRestart
 Broadcasted automatically `[30, 15, 10, 5, 4, 3, 2, 1]` minutes before a scheduled restart.  
-If you want to hide the default notification, you can do that in `txAdmin -> Settings -> Game -> Notifications`.   
+If you want to hide the default notification, you can do that in `Settings > Game > Notifications`.  
 Event Data:
 - `secondsRemaining`: The number of seconds before the scheduled restart.  
 - `translatedMessage`: The translated message to show on the announcement.
@@ -61,24 +64,23 @@ Event Data:
 ## Player-related Events
 
 ### txAdmin:events:playerBanned
-Broadcasted when a player is banned using txAdmin.  
-On update v5.0.0 the field `target` was replaced by `targetNetId` and `targetIds`.  
+Broadcasted when a player is banned through the panel.  
 Event Data:
 - `author`: The name of the admin.
 - `reason`: The reason of the ban.
 - `actionId`: The ID of this action.
-- `expiration`: The timestamp for this ban expiration, for `false` if permanent. Added in txAdmin v4.9.
-- `durationInput`: xxx. Added in v5.0.
-- `durationTranslated`: xxx or `null`. Added in v5.0.
-- `targetNetId`: The netid of the player that was banned, or `null` if a ban was applied to identifiers only. Added in v5.0.
-- `targetIds`: The identifiers that were banned. Added in v5.0.
-- `targetHwids`: The hardware identifiers that were banned. Might be an empty array. Added in v6.0.
-- `targetName`: The clean name of the banned player, or `identifiers` if ban was applied to ids only (legacy ban). Added in v5.0.
-- `kickMessage`: The message to show the player as a kick reason. Added in v5.0.
+- `expiration`: The timestamp for this ban expiration, or `false` if permanent.
+- `durationInput`: The raw duration as entered by the admin.
+- `durationTranslated`: The translated, human-readable duration, or `null` if permanent.
+- `targetNetId`: The netid of the player that was banned, or `null` if a ban was applied to identifiers only.
+- `targetIds`: The identifiers that were banned.
+- `targetHwids`: The hardware identifiers that were banned. Might be an empty array.
+- `targetName`: The clean name of the banned player, or `identifiers` if the ban was applied to ids only.
+- `kickMessage`: The message to show the player as a kick reason.
 
 ### txAdmin:events:playerDirectMessage
 Broadcasted when an admin DMs a player.
-If you want to hide the default notification, you can do that in `txAdmin -> Settings -> Game -> Notifications`.   
+If you want to hide the default notification, you can do that in `Settings > Game > Notifications`.  
 Event Data:
 - `target`: The id of the player to receive the DM.
 - `author`: The name of the admin.
@@ -92,8 +94,7 @@ Event Data:
 - `author`: The name of the admin that triggered the heal.
 
 ### txAdmin:events:playerKicked
-Broadcasted when a player is kicked using txAdmin.  
-Note: starting on v8.0, the `target` parameter might be `-1`, and `dropMessage` was introduced.
+Broadcasted when a player is kicked through the panel.  
 Event Data:
 - `target`: The ID of the player that was kicked, or `-1` if kicking everyone.
 - `author`: The name of the admin.
@@ -101,16 +102,15 @@ Event Data:
 - `dropMessage`: The translated message the players will see when kicked.
 
 ### txAdmin:events:playerWarned
-Broadcasted when a player is warned using txAdmin.  
-If you want to hide the default notification, you can do that in `txAdmin -> Settings -> Game -> Notifications`.  
-Note: starting on v7.3, the `target` parameter was replaced by `targetNetId`, `targetIds`, and `targetName` to accomodate offline warns.
+Broadcasted when a player is warned through the panel.  
+If you want to hide the default notification, you can do that in `Settings > Game > Notifications`.  
 Event Data:
 - `author`: The name of the admin.
 - `reason`: The reason of the warn.
 - `actionId`: The ID of this action.
-- `targetNetId`: The netid of the player that was warned, or `null` if the target is not online. Added in v7.3.
-- `targetIds`: The identifiers that were warned. Added in v7.3.
-- `targetName`: The clean name of the player warned. Added in v7.3.
+- `targetNetId`: The netid of the player that was warned, or `null` if the target is not online (offline warn).
+- `targetIds`: The identifiers that were warned.
+- `targetName`: The clean name of the player warned.
 
 
 ## Whitelist-related Events
@@ -155,43 +155,39 @@ Event Data:
 - `actionAuthor`: The name of the admin that issued the action.
 - `playerName`: name of the player that received the action, or `false` if doesn't apply.
 - `playerIds`: Array containing all identifiers (ex. license, discord, etc.) this action applied to.
-- `playerHwids`: Array containing all hardware ID tokens this action applied to. Might be an empty array. Added in v6.0.
+- `playerHwids`: Array containing all hardware ID tokens this action applied to. Might be an empty array.
 - `revokedBy`: The name of the admin that revoked the action.
 
 ### txAdmin:events:adminAuth
 Broadcasted whenever an admin is authenticated in game, or loses the admin permissions.  
-This event is particularly useful for anti-cheats to be able to ignore txAdmin admins.  
+This event is particularly useful for anti-cheats to be able to ignore admins.  
 Event Data:
 - `netid` (number): The ID of the player or `-1` when revoking the permission of all admins (forced reauth).
 - `isAdmin` (boolean): If the player is an admin or not.
-- `username?` (string): The txAdmin username of the admin that was just authenticated.
+- `username?` (string): The panel username of the admin that was just authenticated.
 
 ### txAdmin:events:adminsUpdated
 Broadcasted whenever a change happens to the list of admins (including their permissions and identifiers).  
-This event is used by the txAdmin resource to force admins to refresh their auth.    
+This event is used by the `monitor` resource to force admins to refresh their auth.  
 Event Data: array of NetIds of the admins online.
 
 ### txAdmin:events:configChanged
-Broadcasted when the txAdmin settings change in a way that could be relevant for the server.   
+Broadcasted when the panel settings change in a way that could be relevant for the server.  
 Event Data: this event has no data.  
-At the moment, this is only used to signal the txAdmin in-game Menu if the configured language has changed, and can be used to easily test custom language files without requiring a server restart. 
+At the moment, this is only used to signal the in-game menu if the configured language has changed, and can be used to easily test custom language files without requiring a server restart.
 
 ### txAdmin:events:consoleCommand
 Broadcasted whenever an admin sends a command through the Live Console.  
 Event Data:
-- `author`: The txAdmin username of the admin that sent the command.
+- `author`: The panel username of the admin that sent the command.
 - `channel`: For now this will always be `txAdmin`, but in the future it might be `rcon` and `game` as well.
 - `command`: The command that was executed.
 
 ## Deprecated Events
-
-### txAdmin:events:playerWhitelisted
-This event was deprecated on v5.0.0, and on v5.2.0 new events were added to replace this one.
+These are still broadcasted for backwards compatibility, but will stop being triggered in a future release.
 
 ### txAdmin:events:healedPlayer
-This event was deprecated on v8.0, and soon will stop being triggered.  
-Please use `txAdmin:events:playerHealed` instead.
+Use `txAdmin:events:playerHealed` instead.
 
 ### txAdmin:events:skippedNextScheduledRestart
-This event was deprecated on v8.0, and soon will stop being triggered.  
-Please use `txAdmin:events:scheduledRestartSkipped` instead.
+Use `txAdmin:events:scheduledRestartSkipped` instead.

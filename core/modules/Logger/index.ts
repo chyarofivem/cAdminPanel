@@ -43,7 +43,7 @@ export default class Logger {
     async getStorageSize() {
         return await getLogSizes(
             this.basePath,
-            /^(admin|fxserver|server|txadmin)(_\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2}(_\d+)?)?.log$/,
+            /^(fxserver|panel)(_\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2}(_\d+)?)?.log$/,
         );
     }
 };

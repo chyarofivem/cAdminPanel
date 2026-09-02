@@ -23,7 +23,7 @@ export const hostEnvVarSchemas = {
     ),
     GAME_NAME: z.enum(
         ['fivem', 'redm'],
-        { message: 'GAME_NAME must be either "gta5", "rdr3", or undefined' }
+        { message: 'GAME_NAME must be either "fivem", "redm", or undefined' }
     ),
     MAX_SLOTS: z.coerce.number().int().positive(),
     QUIET_MODE: z.preprocess((val) => val === 'true', z.boolean()),
@@ -97,7 +97,7 @@ export const getHostVars = () => {
                 'This is likely a mistake in how you declared this env var.',
                 ['Key', fullKey],
                 ['Value', String(value)],
-                'For more information: https://aka.cfx.re/txadmin-env-config',
+                'For more information: https://github.com/chyarofivem/cAdminPanel/blob/master/docs/env-config.md',
             ]);
         }
         const res = keySchema.safeParse(value);
@@ -106,7 +106,7 @@ export const getHostVars = () => {
                 'Invalid value for a TXHOST environment variable.',
                 ['Key', fullKey],
                 ['Value', String(value)],
-                'For more information: https://aka.cfx.re/txadmin-env-config',
+                'For more information: https://github.com/chyarofivem/cAdminPanel/blob/master/docs/env-config.md',
             ], fromZodError(res.error, { prefix: null }));
         }
         txHostEnv[partialKey] = res.data;

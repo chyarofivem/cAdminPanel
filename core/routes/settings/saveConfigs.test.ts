@@ -118,7 +118,7 @@ describe('settings save access', () => {
         expect(send).toHaveBeenCalledWith(expect.objectContaining({
             type: 'success',
             stored: {
-                discordBot: { token: '[redacted by txAdmin]' },
+                discordBot: { token: '[redacted]' },
             },
         }));
     });

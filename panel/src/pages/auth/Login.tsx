@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { AlertCircle, ArrowRight, CheckCircle2, Fingerprint, Loader2, LogIn, PlugZap } from 'lucide-react';
+import { AlertCircle, ArrowRight, CheckCircle2, Loader2, LogIn, ShieldCheck } from 'lucide-react';
 import PanelBrand from '@/components/PanelBrand';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,25 +8,16 @@ import { fetchWithTimeout } from '@/hooks/fetch';
 import { t } from '@/lib/i18n';
 import { isValidRedirectPath, LogoutReasonHash, navigatePanel } from '@/lib/navigation';
 import { useAuth } from '@/hooks/auth';
-import type { ApiVerifyPasswordReq, ApiVerifyPasswordResp } from '@shared/authApiTypes';
+import type {
+    ApiVerifyPasswordReq,
+    ApiVerifyPasswordResp,
+    ReactAuthDataType,
+} from '@shared/authApiTypes';
 
-type SetupResponse = {
-    success: boolean;
-    message?: string;
-    identities?: string[];
-    saved?: boolean;
-    authorized?: boolean;
-};
-
-type SetupRequest = {
-    action: 'test' | 'save';
-    apiUrl: string;
-    apiKey: string;
-    panelUrl: string;
-    bootstrapPin: string;
-} | {
-    action: 'authorize';
-    bootstrapPin: string;
+type BootstrapRequest = {
+    pin: string;
+    username: string;
+    password: string;
 };
 
 type Feedback = {
@@ -42,13 +33,10 @@ const feedbackStyles: Record<Feedback['tone'], string> = {
 
 export default function Login() {
     const { setAuthData } = useAuth();
-    const [apiUrl, setApiUrl] = useState(window.txConsts.chyaroUrl);
-    const [apiKey, setApiKey] = useState('');
-    const [panelUrl, setPanelUrl] = useState(() => window.location.protocol === 'https:' ? window.location.origin : 'https://');
     const [bootstrapPin, setBootstrapPin] = useState('');
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
-    const [connectionOk, setConnectionOk] = useState(false);
+    const [passwordConfirmation, setPasswordConfirmation] = useState('');
     const [isFetching, setIsFetching] = useState(false);
     const [feedback, setFeedback] = useState<Feedback>();
     const [redirectPath] = useState(() => {
@@ -56,7 +44,6 @@ export default function Login() {
         return isValidRedirectPath(candidate) ? candidate : undefined;
     });
     const needsBootstrap = !window.txConsts.hasMasterAccount;
-    const needsProviderSetup = needsBootstrap && !window.txConsts.chyaroConfigured;
     const serverName = window.txConsts.server?.name;
 
     useEffect(() => {
@@ -77,15 +64,16 @@ export default function Login() {
         window.history.replaceState(null, '', `${window.location.pathname}${window.location.search}`);
     }, []);
 
-    const updateConnectionField = (setter: (value: string) => void, value: string) => {
-        setter(value);
-        setConnectionOk(false);
-        setFeedback(current => current?.tone === 'success' ? undefined : current);
+    const finishSignIn = (data: ReactAuthDataType) => {
+        setAuthData(data);
+        navigatePanel(redirectPath ?? '/');
     };
 
-    const startLogin = () => {
-        const suffix = redirectPath ? `?r=${encodeURIComponent(redirectPath)}` : '';
-        navigatePanel(`/auth/chyaro/login${suffix}`);
+    const handleError = (error: unknown, fallback: string) => {
+        setFeedback({
+            tone: 'error',
+            text: t(error instanceof Error ? error.message : fallback),
+        });
     };
 
     const passwordLogin = async () => {
@@ -105,47 +93,36 @@ export default function Login() {
                     ? t('No administrators are configured yet.')
                     : data.error);
             }
-            setAuthData(data);
-            navigatePanel(redirectPath ?? '/');
+            finishSignIn(data);
         } catch (error) {
-            setFeedback({
-                tone: 'error',
-                text: t(error instanceof Error ? error.message : 'Sign-in failed.'),
-            });
+            handleError(error, 'Sign-in failed.');
         } finally {
             setIsFetching(false);
         }
     };
 
-    const runSetup = async (action: 'test' | 'save' | 'authorize') => {
+    const createMasterAccount = async () => {
+        if (password !== passwordConfirmation) {
+            setFeedback({ tone: 'error', text: t('The two passwords do not match.') });
+            return;
+        }
         setIsFetching(true);
         setFeedback(undefined);
         try {
-            const body: SetupRequest = action === 'authorize'
-                ? { action, bootstrapPin }
-                : { action, apiUrl, apiKey, panelUrl, bootstrapPin };
-            const data = await fetchWithTimeout<SetupResponse, SetupRequest>(
-                '/auth/chyaro/setup',
-                { method: 'POST', body },
+            const data = await fetchWithTimeout<ApiVerifyPasswordResp, BootstrapRequest>(
+                `/auth/bootstrap?uiVersion=${encodeURIComponent(window.txConsts.txaVersion)}`,
+                { method: 'POST', body: { pin: bootstrapPin, username, password } },
             );
-            if (!data.success) throw new Error(data.message || t('Connection failed.'));
-            setConnectionOk(true);
-            if (data.saved || data.authorized) {
-                startLogin();
-                return;
+            if ('error' in data) {
+                if (data.error === 'refreshToUpdate') {
+                    navigatePanel(`/login${LogoutReasonHash.UPDATED}`);
+                    return;
+                }
+                throw new Error(data.error);
             }
-            setFeedback({
-                tone: 'success',
-                text: `${t('Connection successful.')} ${data.identities?.length
-                    ? t('Verified identities found: {identities}.', { identities: data.identities.join(', ') })
-                    : t('No identities were returned yet.')}`,
-            });
+            finishSignIn(data);
         } catch (error) {
-            setConnectionOk(false);
-            setFeedback({
-                tone: 'error',
-                text: t(error instanceof Error ? error.message : 'Connection failed.'),
-            });
+            handleError(error, 'Could not create the master account.');
         } finally {
             setIsFetching(false);
         }
@@ -163,10 +140,10 @@ export default function Login() {
         </header>
 
         <section className="pt-6">
-            <h1 className="text-2xl font-semibold tracking-tight text-white">{needsProviderSetup ? t('Connect chyarologin') : needsBootstrap ? t('Authorize first sign-in') : t('Sign in')}</h1>
+            <h1 className="text-2xl font-semibold tracking-tight text-white">{needsBootstrap ? t('Create the master account') : t('Sign in')}</h1>
             <p className="mt-2 text-sm leading-6 text-zinc-400">{needsBootstrap
-                ? t('Enter the one-time PIN shown in the txAdmin console to create the first master account.')
-                : t('Use your local credentials or continue with chyarologin.')}</p>
+                ? t('Enter the one-time PIN shown in the server console, then pick the username and password of the master account.')
+                : t('Sign in with your panel username and password.')}</p>
 
             {feedback && <div aria-live="polite" className={`mt-5 flex items-start gap-3 rounded-xl border p-3 text-sm ${feedbackStyles[feedback.tone]}`}>
                 {feedback.tone === 'success'
@@ -175,64 +152,45 @@ export default function Login() {
                 <span className="whitespace-pre-wrap">{feedback.text}</span>
             </div>}
 
-            {needsBootstrap ? <form className="mt-6 space-y-4" onSubmit={(event) => { event.preventDefault(); void runSetup(needsProviderSetup ? 'test' : 'authorize'); }}>
+            {needsBootstrap ? <form className="mt-6 space-y-4" onSubmit={(event) => { event.preventDefault(); void createMasterAccount(); }}>
                 <div className="space-y-2 text-left">
                     <Label htmlFor="bootstrap-pin">{t('One-time bootstrap PIN')}</Label>
-                    <Input id="bootstrap-pin" value={bootstrapPin} required autoComplete="one-time-code" onChange={event => updateConnectionField(setBootstrapPin, event.target.value)} />
-                    <p className="text-xs text-zinc-500">{t('The PIN is printed in the txAdmin server console and expires when txAdmin restarts.')}</p>
+                    <Input id="bootstrap-pin" value={bootstrapPin} required autoComplete="one-time-code" disabled={isFetching} onChange={event => setBootstrapPin(event.target.value)} />
+                    <p className="text-xs text-zinc-500">{t('The PIN is printed in the server console and changes every time the panel restarts.')}</p>
                 </div>
-                {needsProviderSetup && <div className="space-y-2 text-left">
-                    <Label htmlFor="chyaro-url">{t('chyarologin URL')}</Label>
-                    <Input id="chyaro-url" type="url" value={apiUrl} required autoComplete="url" onChange={event => updateConnectionField(setApiUrl, event.target.value)} />
-                </div>}
-                {needsProviderSetup && <div className="space-y-2 text-left">
-                    <Label htmlFor="chyaro-key">{t('API key')}</Label>
-                    <Input id="chyaro-key" type="password" value={apiKey} required autoComplete="off" onChange={event => updateConnectionField(setApiKey, event.target.value)} />
-                </div>}
-                {needsProviderSetup && <div className="space-y-2 text-left">
-                    <Label htmlFor="panel-url">{t('Public panel URL')}</Label>
-                    <Input id="panel-url" type="url" inputMode="url" placeholder="https://panel.example.com" value={panelUrl} required pattern="https://.*" autoComplete="url" onChange={event => updateConnectionField(setPanelUrl, event.target.value)} />
-                    <p className="text-xs text-zinc-500">{t('This HTTPS address is used for secure chyarologin callbacks.')}</p>
-                </div>}
-                {needsProviderSetup ? <div className="grid grid-cols-1 gap-2 pt-1 sm:grid-cols-2">
-                    <Button type="submit" variant="outline" disabled={isFetching}>
-                        {isFetching ? <Loader2 className="mr-2 size-4 animate-spin" /> : <PlugZap className="mr-2 size-4" />}{t('Test connection')}
-                    </Button>
-                    <Button type="button" disabled={!connectionOk || isFetching} onClick={() => void runSetup('save')}>
-                        <CheckCircle2 className="mr-2 size-4" />{t('Save & Sign In')}
-                    </Button>
-                </div> : <Button type="submit" className="h-11 w-full justify-between" disabled={isFetching}>
-                    <span className="flex items-center gap-2">{isFetching ? <Loader2 className="size-4 animate-spin" /> : <Fingerprint className="size-4" />}{t('Authorize & Sign In')}</span>
+                <div className="space-y-2 text-left">
+                    <Label htmlFor="master-username">{t('Username')}</Label>
+                    <Input id="master-username" value={username} required autoCapitalize="off" autoComplete="username" disabled={isFetching} onChange={event => setUsername(event.target.value)} />
+                </div>
+                <div className="space-y-2 text-left">
+                    <Label htmlFor="master-password">{t('Password')}</Label>
+                    <Input id="master-password" type="password" value={password} required autoComplete="new-password" disabled={isFetching} onChange={event => setPassword(event.target.value)} />
+                </div>
+                <div className="space-y-2 text-left">
+                    <Label htmlFor="master-password-confirmation">{t('Repeat password')}</Label>
+                    <Input id="master-password-confirmation" type="password" value={passwordConfirmation} required autoComplete="new-password" disabled={isFetching} onChange={event => setPasswordConfirmation(event.target.value)} />
+                </div>
+                <Button type="submit" className="h-11 w-full justify-between" disabled={isFetching}>
+                    <span className="flex items-center gap-2">{isFetching ? <Loader2 className="size-4 animate-spin" /> : <ShieldCheck className="size-4" />}{t('Create & Sign In')}</span>
                     <ArrowRight className="size-4" />
-                </Button>}
-            </form> : <div className="mt-6 space-y-4">
-                <form className="space-y-4" onSubmit={(event) => { event.preventDefault(); void passwordLogin(); }}>
-                    <div className="space-y-2 text-left">
-                        <Label htmlFor="local-username">{t('Username')}</Label>
-                        <Input id="local-username" value={username} required autoCapitalize="off" autoComplete="username" disabled={isFetching} onChange={event => setUsername(event.target.value)} />
-                    </div>
-                    <div className="space-y-2 text-left">
-                        <Label htmlFor="local-password">{t('Password')}</Label>
-                        <Input id="local-password" type="password" value={password} required autoComplete="current-password" disabled={isFetching} onChange={event => setPassword(event.target.value)} />
-                    </div>
-                    <Button type="submit" className="h-11 w-full justify-between" disabled={isFetching}>
-                        <span className="flex items-center gap-2">{isFetching ? <Loader2 className="size-4 animate-spin" /> : <LogIn className="size-4" />}{t('Sign in')}</span>
-                        <ArrowRight className="size-4" />
-                    </Button>
-                </form>
-
-                {window.txConsts.chyaroConfigured && <>
-                    <div className="flex items-center gap-3 py-1"><span className="h-px flex-1 bg-white/5" /><span className="text-[10px] uppercase tracking-widest text-zinc-600">{t('or')}</span><span className="h-px flex-1 bg-white/5" /></div>
-                    <Button type="button" variant="outline" className="h-11 w-full justify-between" disabled={isFetching} onClick={startLogin}>
-                        <span className="flex items-center gap-2"><Fingerprint className="size-4" />{t('Continue with chyarologin')}</span>
-                        <ArrowRight className="size-4" />
-                    </Button>
-                </>}
-                {!window.txConsts.chyaroConfigured && <p className="text-center text-xs leading-5 text-zinc-600">{t('chyarologin is not configured; local sign-in remains available.')}</p>}
-            </div>}
+                </Button>
+            </form> : <form className="mt-6 space-y-4" onSubmit={(event) => { event.preventDefault(); void passwordLogin(); }}>
+                <div className="space-y-2 text-left">
+                    <Label htmlFor="local-username">{t('Username')}</Label>
+                    <Input id="local-username" value={username} required autoCapitalize="off" autoComplete="username" disabled={isFetching} onChange={event => setUsername(event.target.value)} />
+                </div>
+                <div className="space-y-2 text-left">
+                    <Label htmlFor="local-password">{t('Password')}</Label>
+                    <Input id="local-password" type="password" value={password} required autoComplete="current-password" disabled={isFetching} onChange={event => setPassword(event.target.value)} />
+                </div>
+                <Button type="submit" className="h-11 w-full justify-between" disabled={isFetching}>
+                    <span className="flex items-center gap-2">{isFetching ? <Loader2 className="size-4 animate-spin" /> : <LogIn className="size-4" />}{t('Sign in')}</span>
+                    <ArrowRight className="size-4" />
+                </Button>
+            </form>}
 
             <p className="mt-6 border-t border-white/5 pt-4 text-xs leading-5 text-zinc-500">
-                {t("This server's local administrator list controls access for both sign-in methods.")}
+                {t("This server's local administrator list controls who can sign in.")}
             </p>
         </section>
     </main>;

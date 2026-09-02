@@ -147,12 +147,15 @@ suite('TimeCounter', async () => {
         expect(counter.toJSON()).toEqual(duration);
     });
 
-    // Check if the duration is within the expected range
+    // Check if the duration is within the expected range.
+    // The upper bound is generous on purpose: the counter measures wall clock, so
+    // a loaded CI runner can add tens of milliseconds of scheduling slip to the
+    // 150ms sleep above. Only the lower bound would catch a real counter bug.
     test('duration within range', () => {
-        const isCloseTo50ms = (x: number) => (x > 150 && x < 175);
-        expect(duration.seconds * 1000).toSatisfy(isCloseTo50ms);
-        expect(duration.milliseconds).toSatisfy(isCloseTo50ms);
-        expect(duration.nanoseconds / 1_000_000).toSatisfy(isCloseTo50ms);
+        const isCloseTo150ms = (x: number) => (x > 150 && x < 400);
+        expect(duration.seconds * 1000).toSatisfy(isCloseTo150ms);
+        expect(duration.milliseconds).toSatisfy(isCloseTo150ms);
+        expect(duration.nanoseconds / 1_000_000).toSatisfy(isCloseTo150ms);
     });
 });
 

@@ -15,6 +15,10 @@ scripts/**/*.local.*
 *.tsbuildinfo
 *.timestamp-*.mjs
 .vite/
+# Runtime profile data. Holds config.json (bot token, database password) and
+# admins.json (password hashes), so it must never be committed by a contributor
+# who points TXHOST_DATA_PATH inside their checkout.
+txData/
 
 # IDE Specific
 .idea
@@ -90,3 +94,4 @@ yarn.lock
 
 # next.js build output
 .next
+monitor.zip

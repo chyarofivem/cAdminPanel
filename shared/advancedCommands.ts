@@ -1,10 +1,15 @@
 import type { GenericApiErrorResp } from "./genericApiTypes";
 
-export type {
-    RunAdvancedCommandResp,
-    RunAdvancedCommandRespSuccess,
-    RunAdvancedCommandReq,
-} from '@shared/advancedCommands';
+//NOTE: these live here and not in the route because the panel cannot import from
+//core. The route asserts its zod schema against RunAdvancedCommandReq.
+export type RunAdvancedCommandReq = {
+    cmd: string;
+}
+export type RunAdvancedCommandRespSuccess = {
+    type: 'md' | 'json';
+    data: string;
+}
+export type RunAdvancedCommandResp = RunAdvancedCommandRespSuccess | GenericApiErrorResp;
 
 
 type AdvancedCommand = {
@@ -16,13 +21,12 @@ export const advancedCommands: AdvancedCommand[] = [
     //txAdmin
     {
         name: 'verbose',
-        // desc: 'Sets the verbosity of the txAdmin console.',
-        desc: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.',
+        desc: 'Sets the verbosity of the panel console.',
         args: ['true/false'],
     },
     {
         name: 'set',
-        desc: 'Sets a txAdmin config value.',
+        desc: 'Sets a panel config value.',
         args: ['scope.key', 'json-encoded value'],
     },
     {
@@ -63,7 +67,7 @@ export const advancedCommands: AdvancedCommand[] = [
     //Server
     {
         name: 'forceUpdateMutableConvars',
-        desc: 'Force update the server mutable txAdmin convars.',
+        desc: 'Force update the server mutable panel convars.',
     },
     {
         name: 'safelyRestartMonitorResource',

@@ -5,6 +5,7 @@ import { txHostConfig } from '@core/globalData';
 import { MonitorState, getMonitorTimeTags, HealthEventMonitor, MonitorIssue, Stopwatch, fetchDynamicJson, fetchInfoJson, cleanMonitorIssuesArray, type VerboseErrorData } from './utils';
 import consoleFactory from '@lib/console';
 import { SYM_SYSTEM_AUTHOR } from '@lib/symbols';
+import { panelDisplayName } from '@lib/branding';
 import { ChildProcessState } from '@modules/FxRunner/ProcessManager';
 import { secsToShortestDuration } from '@lib/misc';
 import { setRuntimeFile } from '@lib/fxserver/runtimeFiles';
@@ -254,11 +255,11 @@ export default class FxMonitor {
 
         //Check if process was frozen
         if (this.swLastStatusUpdate.isOver(10)) {
-            console.error(`txAdmin was frozen for ${this.swLastStatusUpdate.elapsed - 1} seconds for unknown reason (random issue, VPS Lag, DDoS, etc).`);
+            console.error(`The panel was frozen for ${this.swLastStatusUpdate.elapsed - 1} seconds for unknown reason (random issue, VPS Lag, DDoS, etc).`);
             this.swLastStatusUpdate.restart();
             return {
                 action: 'SKIP',
-                reason: 'txAdmin was frozen',
+                reason: 'The panel was frozen',
             }
         }
         this.swLastStatusUpdate.restart();
@@ -452,7 +453,7 @@ export default class FxMonitor {
 
             // Dispatch `txAdmin:events:announcement`
             txCore.fxRunner.sendEvent('announcement', {
-                author: 'txAdmin',
+                author: panelDisplayName(),
                 message: txCore.translator.t('restarter.partial_hang_warn'),
             });
         }

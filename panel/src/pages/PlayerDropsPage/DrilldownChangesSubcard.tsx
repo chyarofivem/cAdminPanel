@@ -4,6 +4,7 @@ import type { PDLChangeEventType } from "@shared/otherTypes";
 import { processResourceChanges } from "./utils";
 import { cn } from "@/lib/utils";
 import { tsToLocaleDateString, tsToLocaleDateTimeString, tsToLocaleTimeString } from "@/lib/dateTime";
+import { t } from "@/lib/i18n";
 
 
 function DiffOld({ children }: { children: React.ReactNode }) {
@@ -28,18 +29,26 @@ function DiffUpdated({ children }: { children: React.ReactNode }) {
     );
 }
 
+//The two version badges are spliced into the translated sentence so the whole
+//phrase stays one dictionary key and translators can reorder it.
+function SwitchedVersions({ oldVersion, newVersion }: { oldVersion: string; newVersion: string }) {
+    return <>{t('Switched from {oldVersion} to {newVersion}')
+        .split(/(\{oldVersion\}|\{newVersion\})/)
+        .map((part, index) => {
+            if (part === '{oldVersion}') return <DiffOld key={index}>{oldVersion}</DiffOld>;
+            if (part === '{newVersion}') return <DiffNew key={index}>{newVersion}</DiffNew>;
+            return part;
+        })}</>;
+}
+
 type ChangedFxsEventProps = { change: Extract<PDLChangeEventType, { type: "fxsChanged" }> };
 function ChangedFxsEvent({ change }: ChangedFxsEventProps) {
-    return (<>
-        Switched from <DiffOld>{change.oldVersion}</DiffOld> to <DiffNew>{change.newVersion}</DiffNew>
-    </>);
+    return <SwitchedVersions oldVersion={change.oldVersion} newVersion={change.newVersion} />;
 }
 
 type ChangedGameEventProps = { change: Extract<PDLChangeEventType, { type: "gameChanged" }> };
 function ChangedGameEvent({ change }: ChangedGameEventProps) {
-    return (<>
-        Switched from <DiffOld>{change.oldVersion}</DiffOld> to <DiffNew>{change.newVersion}</DiffNew>
-    </>);
+    return <SwitchedVersions oldVersion={change.oldVersion} newVersion={change.newVersion} />;
 }
 
 type ChangedResourcesEventProps = { change: Extract<PDLChangeEventType, { type: "resourcesChanged" }> };
@@ -51,7 +60,7 @@ function ChangedResourcesEvent({ change }: ChangedResourcesEventProps) {
     let removedNode = null;
     if (processedChanges.removed.length) {
         removedNode = (<p>
-            Removed: {
+            {t('Removed:')} {
                 processedChanges.removed.map((item, index, array) => (
                     <Fragment key={item}>
                         <DiffOld>{item}</DiffOld>{index < array.length - 1 ? ', ' : '.'}
@@ -64,7 +73,7 @@ function ChangedResourcesEvent({ change }: ChangedResourcesEventProps) {
     let addedNode = null;
     if (processedChanges.added.length) {
         addedNode = (<p>
-            Added: {
+            {t('Added:')} {
                 processedChanges.added.map((item, index, array) => (
                     <Fragment key={item}>
                         <DiffNew>{item}</DiffNew>{index < array.length - 1 ? ', ' : '.'}
@@ -77,7 +86,7 @@ function ChangedResourcesEvent({ change }: ChangedResourcesEventProps) {
     let updatedNode = null;
     if (processedChanges.updated.length) {
         updatedNode = (<p>
-            Updated: {
+            {t('Updated:')} {
                 processedChanges.updated.map((item, index, array) => (
                     <Fragment key={index}>
                         <DiffUpdated>{item.resName} {item.oldVer} -&gt; {item.newVer}</DiffUpdated>{index < array.length - 1 ? ', ' : '.'}
@@ -101,9 +110,9 @@ type DrilldownChangesSubcardProps = {
 
 export default function DrilldownChangesSubcard({ changes }: DrilldownChangesSubcardProps) {
     const eventTitles: Record<string, string> = {
-        fxsChanged: 'Changed FXServer version',
-        gameChanged: 'Changed game version',
-        resourcesChanged: 'Changed boot resources',
+        fxsChanged: t('Changed FXServer version'),
+        gameChanged: t('Changed game version'),
+        resourcesChanged: t('Changed boot resources'),
     };
 
     const sortedChanges = useMemo(() => {
@@ -111,7 +120,7 @@ export default function DrilldownChangesSubcard({ changes }: DrilldownChangesSub
     }, [changes]);
 
     if (!changes.length) {
-        return <PlayerDropsMessage message="No environmental changes within this time window." />;
+        return <PlayerDropsMessage message={t('No environmental changes within this time window.')} />;
     }
 
     return (

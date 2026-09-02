@@ -188,7 +188,7 @@ function handlers.job(fw, body)
     return { applied = true }
 end
 
--- Direct group management from the panel; chyarologin roles never reach here.
+-- Direct group management from the panel; panel permissions never reach here.
 function handlers.group(fw, body)
     local identifier = requireCharacterId(body)
     local group = util.str(body.group, 32)
@@ -205,7 +205,12 @@ function handlers.group(fw, body)
     if not ok then error(err or 'The group change did not apply.', 0) end
 
     util.log('group %s -> %s', identifier, group)
-    return { applied = true }
+    -- What the character effectively holds now, which is not always what was
+    -- saved: on Qbox a group granted by server.cfg is not this panel's to
+    -- revoke, so a demotion that leaves an inherited ACE principal in place is
+    -- reported back rather than hidden behind a success message.
+    local effective = fw.getGroup and fw.getGroup(identifier) or nil
+    return { applied = true, group = group, effective = effective or group }
 end
 
 function handlers.giveItem(fw, body)

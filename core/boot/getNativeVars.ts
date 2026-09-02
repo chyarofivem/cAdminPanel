@@ -65,7 +65,7 @@ export const getNativeVars = (ignoreDeprecatedConfigs: boolean) => {
     }
 
     if (anyWarnSent) {
-        console.warn(`WARNING: For more information: https://aka.cfx.re/txadmin-env-config`);
+        console.warn(`WARNING: For more information: https://github.com/chyarofivem/cAdminPanel/blob/master/docs/env-config.md`);
     }
 
     //Final object

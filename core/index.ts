@@ -9,19 +9,18 @@ import fatalError from '@lib/fatalError';
 import { ensureProfileStructure, setupProfile } from './boot/setup';
 import setupProcessHandlers from './boot/setupProcessHandlers';
 import bootTxAdmin from './txAdmin';
-import { initializeUpdateState } from '@lib/updateSetup';
 const console = consoleFactory();
 
 
 //Early process stuff
 try {
-    process.title = 'txAdmin'; //doesn't work for now
+    process.title = 'cAdminPanel'; //doesn't work for now
     setupProcessHandlers();
     checkPreRelease();
 } catch (error) {
     fatalError.Boot(0, 'Failed early process setup.', error);
 }
-console.log(`Starting txAdmin v${txEnv.txaVersion}/b${txEnv.fxsVersionTag}...`);
+console.log(`Starting cAdminPanel v${txEnv.txaVersion}...`);
 
 
 //Setting up txData & Profile
@@ -45,7 +44,7 @@ try {
     }
 } catch (error) {
     fatalError.Boot(2, [
-        `Failed to check or create the txAdmin profile folder.`,
+        `Failed to check or create the profile folder.`,
         ['Data Path', txHostConfig.dataPath],
         ['Profile Name', txEnv.profileName],
         ['Profile Path', txEnv.profilePath],
@@ -54,14 +53,13 @@ try {
 if (isNewProfile && txEnv.profileName !== 'default') {
     console.log(`Profile path: ${txEnv.profilePath}`);
 }
-initializeUpdateState(isNewProfile);
 
 
-//Start txAdmin (have fun 😀)
+//Start the panel (have fun 😀)
 try {
     bootTxAdmin();
 } catch (error) {
-    fatalError.Boot(3, 'Failed to start txAdmin.', error);
+    fatalError.Boot(3, 'Failed to start cAdminPanel.', error);
 }
 
 
@@ -76,7 +74,7 @@ setTimeout(() => {
         if (now - hdTimer > loopElapsedLimit) {
             console.majorMultilineError([
                 'Major VPS freeze/lag detected!',
-                'THIS IS NOT AN ERROR CAUSED BY TXADMIN!',
+                'THIS IS NOT AN ERROR CAUSED BY THE PANEL!',
             ]);
         }
         hdTimer = now;

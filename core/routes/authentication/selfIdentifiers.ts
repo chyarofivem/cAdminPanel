@@ -10,9 +10,8 @@ const console = consoleFactory(modulename);
 const cfxHttpReqOptions = { timeout: { request: 6000 } };
 const bodySchema = z.object({
     cfxIdentifier: z.string(),
-    //Omitting this field means "leave Discord untouched". This lets a
-    //chyarologin-linked account still update its cfx.re identifier while the
-    //server rejects any attempt to manually manage Discord.
+    //Omitting this field means "leave Discord untouched", so a client that only
+    //edits the cfx.re identifier does not have to send the Discord one back.
     discordIdentifier: z.string().optional(),
 });
 type ProviderData = { id: string, identifier: string };
@@ -23,12 +22,6 @@ export default async function AuthSelfIdentifiers(ctx: AuthedCtx) {
 
     const vaultAdmin = txCore.adminStore.getAdminByName(ctx.admin.name);
     if (!vaultAdmin) throw new Error('Authenticated admin is no longer present in AdminStore.');
-    const chyaroLinked = !!vaultAdmin.providers?.chyarologin;
-    if (chyaroLinked && parsed.data.discordIdentifier !== undefined) {
-        return ctx.send<ApiSelfIdentifiersResp>({
-            error: 'Discord must be connected or disconnected through chyarologin for this account.',
-        });
-    }
 
     const cfxIdentifier = parsed.data.cfxIdentifier.trim();
     const currentCfxIdentifier = vaultAdmin.providers?.citizenfx?.identifier;
@@ -66,7 +59,7 @@ export default async function AuthSelfIdentifiers(ctx: AuthedCtx) {
     }
 
     let discordData: ProviderData | false | undefined;
-    if (!chyaroLinked && parsed.data.discordIdentifier !== undefined) {
+    if (parsed.data.discordIdentifier !== undefined) {
         const rawDiscord = parsed.data.discordIdentifier.trim();
         const discordId = rawDiscord.replace(/^discord:/i, '');
         if (!rawDiscord.length) {
@@ -96,9 +89,7 @@ export default async function AuthSelfIdentifiers(ctx: AuthedCtx) {
         await txCore.adminStore.editAdmin(ctx.admin.name, citizenfxData, discordData);
         const savedAdmin = txCore.adminStore.getAdminByName(ctx.admin.name);
         const savedCfx = savedAdmin?.providers?.citizenfx?.identifier;
-        const savedDiscordId = chyaroLinked
-            ? savedAdmin?.providers?.chyarologin?.data?.discordId
-            : savedAdmin?.providers?.discord?.id;
+        const savedDiscordId = savedAdmin?.providers?.discord?.id;
         const savedDiscord = savedDiscordId ? `discord:${savedDiscordId}` : undefined;
         ctx.admin.logAction(`Changing own identifiers to ${savedCfx || 'no cfx.re ID'}, ${savedDiscord || 'no Discord ID'}`);
         return ctx.send<ApiSelfIdentifiersResp>({

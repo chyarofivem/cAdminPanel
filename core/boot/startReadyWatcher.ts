@@ -40,7 +40,7 @@ export const getPublicIp = async () => {
 
 const getOSMessage = async () => {
     const serverMessage = [
-        `To be able to access txAdmin from the internet open port ${txHostConfig.txaPort}`,
+        `To be able to access the panel from the internet open port ${txHostConfig.txaPort}`,
         'on your OS Firewall as well as in the hosting provider.',
     ];
     const winWorkstationMessage = [
@@ -142,7 +142,8 @@ export const startReadyWatcher = async (cb: () => void) => {
         console.multiline(msgRes.value, chalk.bgBlue);
     }
 
-    //Open the SSO bootstrap/login page on a fresh Windows installation.
+    //Open the login page on a fresh Windows installation, so the owner can
+    //create the first master account with the PIN printed in the console.
     if (txEnv.isWindows && !txCore.adminStore.hasAdmins() && bannerUrls[0]) {
         const linkUrl = new URL(bannerUrls[0]);
         linkUrl.pathname = '/login';

@@ -36,7 +36,7 @@ describe('settings config visibility', () => {
             storedConfigs: expect.objectContaining({
                 discordBot: {
                     enabled: true,
-                    token: '[redacted by txAdmin]',
+                    token: '[redacted]',
                     guild: '123456789012345678',
                 },
             }),

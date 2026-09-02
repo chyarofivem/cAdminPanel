@@ -1,11 +1,11 @@
 -- Modifying or rewriting this resource for local use only is strongly discouraged.
 -- Feel free to open an issue or pull request in our GitHub.
 
-author 'Tabarra'
-description 'The official FiveM/RedM server web/in-game management platform.'
-repository 'https://github.com/tabarra/txAdmin'
+author 'chyarogroup'
+description 'FiveM/RedM server web/in-game management panel.'
+repository 'https://github.com/chyarofivem/cAdminPanel'
 version 'REPLACE-VERSION'
-ui_label 'txAdmin'
+ui_label 'cAdminPanel'
 
 fx_version 'cerulean'
 game 'common'

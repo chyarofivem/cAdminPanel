@@ -8,6 +8,7 @@ import { createHash, timingSafeEqual } from 'node:crypto';
 import consoleFactory from '@lib/console';
 import fatalError from '@lib/fatalError';
 import { chalkInversePad } from '@lib/misc';
+import { panelDisplayName } from '@lib/branding';
 import { ACCENTS } from '@lib/theme';
 const console = consoleFactory(modulename);
 
@@ -17,22 +18,17 @@ const console = consoleFactory(modulename);
 const ADMIN_SCHEMA_VERSION = 1;
 
 
-//Helpers
-const migrateProviderIdentifiers = (providerName, providerData) => {
-    if (providerName === 'citizenfx') {
-        // data may be empty, or nameid may be invalid
-        try {
-            const res = /\/user\/(\d{1,8})/.exec(providerData.data.nameid);
-            providerData.identifier = `fivem:${res[1]}`;
-        } catch (error) {
-            providerData.identifier = 'fivem:00000000';
-        }
-    } else if (providerName === 'discord') {
-        providerData.identifier = `discord:${providerData.id}`;
-    } else if (providerName === 'chyarologin') {
-        providerData.identifier = providerData.id.trim().toLowerCase();
-    }
-};
+/**
+ * One admin record as stored in admins.json.
+ * @typedef {object} StoredAdminType
+ * @property {number} $schema
+ * @property {string} name
+ * @property {boolean} [master]
+ * @property {string} password_hash
+ * @property {boolean|undefined} [password_temporary]
+ * @property {Record<string, {id: string, identifier: string, data: object}>} providers
+ * @property {string[]} permissions
+ */
 
 
 /**
@@ -63,7 +59,7 @@ export default class AdminStore {
             'control.server': 'Start/Stop Server + Scheduler', //FIXME: horrible name
             'announcement': 'Send Announcements',
             'commands.resources': 'Start/Stop Resources',
-            'txadmin.log.combined': 'View txAdmin Log',
+            'panel.log.view': 'View Panel Log',
             'players.remove_ids': 'Remove Player IDs',
             'cadmin.players.view': 'Character Management: View Players',
             'cadmin.players.search_offline': 'Character Management: Search Offline Players',
@@ -101,7 +97,6 @@ export default class AdminStore {
             this.providers = {
                 discord: false,
                 citizenfx: false,
-                chyarologin: false,
             };
         } catch (error) {
             throw new Error(`Failed to load providers with error: ${error.message}`);
@@ -121,7 +116,7 @@ export default class AdminStore {
         }
 
         //Create the hosting-provided local account when present. Profiles
-        //without one keep the chyarologin bootstrap flow and console PIN.
+        //without one are set up from the login page using the console PIN.
         if (!adminFileExists) {
             if (txHostConfig.defaults.account) {
                 const { username, fivemId, password } = txHostConfig.defaults.account;
@@ -132,7 +127,6 @@ export default class AdminStore {
                     undefined,
                     password ?? temporaryPassword,
                     temporaryPassword ? true : false,
-                    undefined,
                     !!temporaryPassword,
                 );
                 console.ok(`Created master account ${chalkInversePad(username)} with credentials provided by ${txHostConfig.sourceName}.`);
@@ -140,8 +134,8 @@ export default class AdminStore {
                     console.warn(`Temporary password for ${username}: ${chalkInversePad(temporaryPassword)} (change it after signing in).`);
                 }
             } else {
-                //This never leaves the server process. It binds first-run identity-provider
-                //setup and the first OAuth callback to someone who can see the txAdmin console.
+                //This never leaves the server process. It binds the creation of the
+                //first master account to someone who can see the server console.
                 this.addMasterPin = nanoid(16);
                 this.admins = false;
             }
@@ -169,11 +163,10 @@ export default class AdminStore {
      * @param {string|undefined} discordId with the discord: prefix
      * @param {string|undefined} password backup password
      * @param {boolean|undefined} isPlainTextPassword
-     * @param {object|undefined} chyaroData verified chyarologin profile
      * @param {boolean|undefined} isTemporaryPassword
-     * @returns {(boolean)} true or throws an error
+     * @returns {StoredAdminType} the created admin, or throws an error
      */
-    createAdminsFile(username, fivemId, discordId, password, isPlainTextPassword, chyaroData, isTemporaryPassword) {
+    createAdminsFile(username, fivemId, discordId, password, isPlainTextPassword, isTemporaryPassword) {
         //Sanity check
         if (this.admins !== false && this.admins !== null) throw new Error('Admins file already exists.');
         if (typeof username !== 'string' || username.length < 3) throw new Error('Invalid username parameter.');
@@ -186,7 +179,7 @@ export default class AdminStore {
         } else {
             const veryRandomString = `${username}-password-not-meant-to-be-used-${nanoid()}`;
             password_hash = GetPasswordHash(veryRandomString);
-            password_temporary = chyaroData ? undefined : true;
+            password_temporary = true;
         }
 
         //Handling third party providers
@@ -202,21 +195,7 @@ export default class AdminStore {
             providers.discord = {
                 id: discordId,
                 identifier: `discord:${discordId}`,
-                data: chyaroData ? { source: 'chyarologin' } : {},
-            };
-        }
-        if (chyaroData) {
-            const email = chyaroData.email.trim().toLowerCase();
-            providers.chyarologin = {
-                id: email,
-                identifier: email,
-                data: {
-                    userId: String(chyaroData.id),
-                    email,
-                    discordAvatar: chyaroData.discordAvatar || null,
-                    discordUsername: chyaroData.discordUsername || null,
-                    discordId: chyaroData.discordId || null,
-                },
+                data: {},
             };
         }
 
@@ -228,14 +207,14 @@ export default class AdminStore {
             password_hash,
             password_temporary,
             providers,
-            permissions: chyaroData ? ['all_permissions'] : [],
+            permissions: [],
         };
         this.admins = [newAdmin];
         //Saving admin file
         try {
             const jsonData = JSON.stringify(this.admins);
             this.adminsFileHash = createHash('sha1').update(jsonData).digest('hex');
-            fs.writeFileSync(this.adminsFile, jsonData, { encoding: 'utf8', flag: 'wx' });
+            fs.writeFileSync(this.adminsFile, jsonData, { encoding: 'utf8', flag: 'wx', mode: 0o600 });
             this.addMasterPin = undefined;
             this.setupRefreshRoutine();
             return newAdmin;
@@ -336,85 +315,6 @@ export default class AdminStore {
     }
 
 
-    /** Resolve a verified chyarologin identity. Permissions always remain local. */
-    async resolveChyaroUser(user, allowBootstrap = false) {
-        const email = user.email.trim().toLowerCase();
-        const chyaroProvider = {
-            id: email,
-            identifier: email,
-            data: {
-                userId: String(user.id),
-                email,
-                discordAvatar: user.discordAvatar || null,
-                discordUsername: user.discordUsername || null,
-                discordId: user.discordId || null,
-            },
-        };
-
-        if (!this.hasAdmins()) {
-            if (!allowBootstrap) return false;
-            let username = (user.fivemName || email.split('@')[0] || 'admin')
-                .trim()
-                .replace(/[\x00-\x1f\x7f]/g, '')
-                .slice(0, 64);
-            if (username.length < 3) username = `admin-${String(user.id).slice(-8)}`;
-            const fivemIdentifier = user.fivemLicense?.trim() || undefined;
-            const discordId = user.discordId?.trim() || undefined;
-            return this.createAdminsFile(
-                username,
-                fivemIdentifier,
-                discordId,
-                undefined,
-                undefined,
-                user,
-            );
-        }
-
-        const fivemIdentifier = user.fivemLicense?.trim().toLowerCase();
-        const discordIdentifier = user.discordId ? `discord:${user.discordId.trim()}`.toLowerCase() : undefined;
-        const adminIndex = this.admins.findIndex((admin) => {
-            const configuredEmail = admin.providers.chyarologin?.identifier?.toLowerCase();
-            const configuredId = admin.providers.chyarologin?.id?.toLowerCase();
-            if (configuredEmail === email || configuredId === email || admin.email?.toLowerCase() === email) return true;
-            const identifiers = Object.values(admin.providers)
-                .map(provider => provider.identifier?.toLowerCase())
-                .filter(Boolean);
-            return (fivemIdentifier && identifiers.includes(fivemIdentifier))
-                || (discordIdentifier && identifiers.includes(discordIdentifier));
-        });
-        if (adminIndex === -1) return false;
-
-        const admin = this.admins[adminIndex];
-        admin.providers.chyarologin = chyaroProvider;
-        if (user.fivemLicense) {
-            admin.providers.citizenfx = {
-                id: admin.providers.citizenfx?.id || admin.name,
-                identifier: user.fivemLicense,
-                data: admin.providers.citizenfx?.data || {},
-            };
-        }
-        if (user.discordId) {
-            admin.providers.discord = {
-                id: user.discordId,
-                identifier: `discord:${user.discordId}`,
-                data: { source: 'chyarologin' },
-            };
-        } else {
-            //A linked chyarologin account is authoritative for Discord. Do not
-            //retain a manual/stale Discord identifier when the verified profile
-            //is no longer linked to Discord.
-            delete admin.providers.discord;
-        }
-        try {
-            await this.writeAdminsFile();
-            this.refreshOnlineAdmins().catch(() => {});
-        } catch (error) {
-            throw new Error(`Failed to update chyarologin identity: ${error.message}`);
-        }
-        return cloneDeep(admin);
-    }
-
-
     /**
      * Returns a list with all registered permissions
      */
@@ -425,11 +325,12 @@ export default class AdminStore {
 
     /**
      * Writes to storage the admins file
+     * NOTE: the file holds password hashes, so it is kept owner-only
      */
     async writeAdminsFile() {
         const jsonData = JSON.stringify(this.admins, null, 2);
         this.adminsFileHash = createHash('sha1').update(jsonData).digest('hex');
-        await fsp.writeFile(this.adminsFile, jsonData, 'utf8');
+        await fsp.writeFile(this.adminsFile, jsonData, { encoding: 'utf8', mode: 0o600 });
         return true;
     }
 
@@ -451,7 +352,7 @@ export default class AdminStore {
             const jsonData = await fsp.readFile(this.adminsFile, 'utf8');
             const inboundHash = createHash('sha1').update(jsonData).digest('hex');
             if (this.adminsFileHash !== inboundHash) {
-                console.warn('The admins.json file was modified or deleted by an external source, txAdmin will try to restore it.');
+                console.warn('The admins.json file was modified or deleted by an external source, it will be restored.');
                 restore();
             }
         } catch (error) {
@@ -466,11 +367,10 @@ export default class AdminStore {
      * @param {string} name
      * @param {object|false} citizenfxData or false
      * @param {object|false} discordData or false
-     * @param {string} chyaroEmail
      * @param {array} permissions
      * @param {string|undefined} password initial local password
      */
-    async addAdmin(name, citizenfxData, discordData, chyaroEmail, permissions, password) {
+    async addAdmin(name, citizenfxData, discordData, permissions, password) {
         if (this.admins == false) throw new Error('Admins not set');
 
         //Check if username is already taken
@@ -501,22 +401,12 @@ export default class AdminStore {
                 data: {},
             };
         }
-        if (discordData && !chyaroEmail) {
+        if (discordData) {
             const existingDiscord = this.getAdminByProviderUID(discordData.id);
             if (existingDiscord) throw new Error('Discord ID already taken');
             admin.providers.discord = {
                 id: discordData.id,
                 identifier: discordData.identifier,
-                data: {},
-            };
-        }
-        if (chyaroEmail) {
-            const email = chyaroEmail.trim().toLowerCase();
-            const existingChyaro = this.getAdminByProviderUID(email);
-            if (existingChyaro) throw new Error('chyarologin email already taken');
-            admin.providers.chyarologin = {
-                id: email,
-                identifier: email,
                 data: {},
             };
         }
@@ -537,10 +427,9 @@ export default class AdminStore {
      * @param {string} name
      * @param {object|false} [citizenfxData] or false
      * @param {object|false} [discordData] or false
-     * @param {string} [chyaroEmail]
      * @param {string[]} [permissions]
      */
-    async editAdmin(name, citizenfxData, discordData, chyaroEmail, permissions) {
+    async editAdmin(name, citizenfxData, discordData, permissions) {
         if (this.admins == false) throw new Error('Admins not set');
 
         //Find admin index
@@ -564,10 +453,6 @@ export default class AdminStore {
         };
         assertProviderAvailable(citizenfxData, 'CitizenFX ID');
         assertProviderAvailable(discordData, 'Discord ID');
-        if (typeof chyaroEmail === 'string' && chyaroEmail.trim().length) {
-            const normalizedEmail = chyaroEmail.trim().toLowerCase();
-            assertProviderAvailable({ id: normalizedEmail, identifier: normalizedEmail }, 'chyarologin email');
-        }
 
         //Editing admin
         if (typeof citizenfxData !== 'undefined') {
@@ -590,39 +475,6 @@ export default class AdminStore {
                     identifier: discordData.identifier,
                     data: {},
                 };
-            }
-        }
-        if (typeof chyaroEmail !== 'undefined') {
-            const email = chyaroEmail.trim().toLowerCase();
-            if (!email.length) {
-                delete this.admins[adminIndex].providers.chyarologin;
-            } else {
-                const existingChyaro = this.getAdminByProviderUID(email);
-                if (existingChyaro && existingChyaro.name.toLowerCase() !== username) {
-                    throw new Error('chyarologin email already taken');
-                }
-                const currentChyaro = this.admins[adminIndex].providers.chyarologin;
-                const chyaroData = currentChyaro?.identifier?.toLowerCase() === email
-                    ? currentChyaro.data ?? {}
-                    : {};
-                this.admins[adminIndex].providers.chyarologin = {
-                    id: email,
-                    identifier: email,
-                    data: chyaroData,
-                };
-
-                //Linking chyarologin atomically removes any manually managed
-                //Discord provider. A previously verified Chyaro Discord link is
-                //rebuilt from Chyaro's stored profile data instead.
-                if (chyaroData.discordId) {
-                    this.admins[adminIndex].providers.discord = {
-                        id: chyaroData.discordId,
-                        identifier: `discord:${chyaroData.discordId}`,
-                        data: { source: 'chyarologin' },
-                    };
-                } else {
-                    delete this.admins[adminIndex].providers.discord;
-                }
             }
         }
         if (typeof permissions !== 'undefined') this.admins[adminIndex].permissions = permissions;
@@ -673,22 +525,21 @@ export default class AdminStore {
 
     /**
      * Loads the admins.json file into the admins list
-     * NOTE: The verbosity here is driving me insane.
-     *       But still seems not to be enough for people that don't read the README.
+     * NOTE: The file is never migrated. Anything that does not match the current
+     *       schema is a hard failure, so a broken file is never silently rewritten.
      */
     async loadAdminsFile() {
         let raw = null;
         let jsonData = null;
-        let hasMigration = false;
 
         const callError = (reason) => {
             let details;
             if (reason === 'cannot read file') {
-                details = ['This means the file  doesn\'t exist or txAdmin doesn\'t have permission to read it.'];
+                details = ['This means the file doesn\'t exist or cAdminPanel doesn\'t have permission to read it.'];
             } else {
                 details = [
                     'This likely means the file got somehow corrupted.',
-                    'You can try restoring it or you can delete it and let txAdmin create a new one.',
+                    'You can try restoring it or you can delete it and let cAdminPanel create a new one.',
                 ];
             }
             fatalError.AdminStore(0, [
@@ -724,20 +575,17 @@ export default class AdminStore {
         }
 
         const structureIntegrityTest = jsonData.some((x) => {
+            if (x?.$schema !== ADMIN_SCHEMA_VERSION) return true;
             if (typeof x.name !== 'string' || x.name.length < 3) return true;
             if (typeof x.master !== 'boolean') return true;
             if (typeof x.password_hash !== 'string' || !x.password_hash.startsWith('$2')) return true;
-            if (typeof x.providers !== 'object') return true;
+            if (typeof x.providers !== 'object' || x.providers === null) return true;
             const providersTest = Object.keys(x.providers).some((y) => {
                 if (!Object.keys(this.providers).includes(y)) return true;
                 if (typeof x.providers[y].id !== 'string' || x.providers[y].id.length < 3) return true;
                 if (typeof x.providers[y].data !== 'object') return true;
-                if (typeof x.providers[y].identifier === 'string') {
-                    if (x.providers[y].identifier.length < 3) return true;
-                } else {
-                    migrateProviderIdentifiers(y, x.providers[y]);
-                    hasMigration = true;
-                }
+                if (typeof x.providers[y].identifier !== 'string' || x.providers[y].identifier.length < 3) return true;
+                return false;
             });
             if (providersTest) return true;
             if (!Array.isArray(x.permissions)) return true;
@@ -752,56 +600,7 @@ export default class AdminStore {
             return callError('must have exactly 1 master account');
         }
 
-        //Migrate admin stuff
-        jsonData.forEach((admin) => {
-            //Migration (tx v7.3.0)
-            if (admin.$schema === undefined) {
-                //adding schema version
-                admin.$schema = ADMIN_SCHEMA_VERSION;
-                hasMigration = true;
-
-                //separate DM and Announcement permissions
-                if (admin.permissions.includes('players.message')) {
-                    hasMigration = true;
-                    admin.permissions = admin.permissions.filter((perm) => perm !== 'players.message');
-                    admin.permissions.push('players.direct_message');
-                    admin.permissions.push('announcement');
-                }
-
-            }
-
-            // Remove the retired game menu permission from existing accounts.
-            if (admin.permissions.includes('players.troll')) {
-                admin.permissions = admin.permissions.filter((perm) => perm !== 'players.troll');
-                hasMigration = true;
-            }
-
-            // The combined log exposes both administrator actions and server
-            // events. Only preserve access automatically when the account was
-            // explicitly allowed to see both old channels; narrower grants must
-            // be reviewed by a master instead of being silently broadened.
-            const legacyLogPermissions = ['txadmin.log.view', 'server.log.view', 'cadmin.logs.view'];
-            const hadActionLog = admin.permissions.includes('txadmin.log.view');
-            const hadServerLog = admin.permissions.includes('server.log.view');
-            if (admin.permissions.some((perm) => legacyLogPermissions.includes(perm))) {
-                admin.permissions = admin.permissions.filter((perm) => !legacyLogPermissions.includes(perm));
-                if (hadActionLog && hadServerLog && !admin.permissions.includes('txadmin.log.combined')) {
-                    admin.permissions.push('txadmin.log.combined');
-                }
-                hasMigration = true;
-            }
-        });
-
         this.admins = jsonData;
-        if (hasMigration) {
-            try {
-                await this.writeAdminsFile();
-                console.ok('The admins.json file was migrated to a new version.');
-            } catch (error) {
-                console.error(`Failed to migrate admins.json with error: ${error.message}`);
-            }
-        }
-
         return true;
     }
 
@@ -888,8 +687,9 @@ export default class AdminStore {
 
 
     /**
-     * Checks the one-time console PIN used to authorize first-run SSO setup.
-     * A timing-safe comparison avoids leaking a valid prefix over repeated requests.
+     * Checks the one-time console PIN used to authorize the creation of the first
+     * master account. A timing-safe comparison avoids leaking a valid prefix over
+     * repeated requests.
      */
     validateAddMasterPin(pin) {
         if (typeof pin !== 'string' || typeof this.addMasterPin !== 'string') return false;
@@ -922,7 +722,7 @@ export default class AdminStore {
      */
     getAdminPublicName(name, purpose) {
         if (!name || !purpose) throw new Error('Invalid parameters');
-        const replacer = txConfig.general.serverName ?? 'txAdmin';
+        const replacer = txConfig.general.serverName ?? panelDisplayName();
 
         if (purpose === 'punishment') {
             return txConfig.gameFeatures.hideAdminInPunishments ? replacer : name;

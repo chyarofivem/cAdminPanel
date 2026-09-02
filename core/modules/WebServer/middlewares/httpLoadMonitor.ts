@@ -44,7 +44,7 @@ const checkHttpLoad = () => {
 
         if (requestsPerMinute > HIGH_LOAD_RPM) {
             isUnderHighLoad = true;
-            console.warn(`txAdmin is under high HTTP load: ~${Math.round(requestsPerMinute / 1000)}k reqs/min.`);
+            console.warn(`The panel is under high HTTP load: ~${Math.round(requestsPerMinute / 1000)}k reqs/min.`);
         } else {
             isUnderHighLoad = false;
             // console.debug(`${requestsPerMinute.toLocaleString()} rpm`);

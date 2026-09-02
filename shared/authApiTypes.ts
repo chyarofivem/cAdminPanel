@@ -2,20 +2,16 @@ import type { ApiAuthErrorResp } from './genericApiTypes';
 
 export type ReactAuthDataType = {
     name: string;
-    email?: string;
-    chyaroLinked: boolean;
     permissions: string[];
     isMaster: boolean;
     isTempPassword: boolean;
     profilePicture?: string;
-    discordAvatar?: string;
     discordIdentifier?: string;
     cfxIdentifier?: string;
     locale?: string;
     accent?: string;
     accentColor?: string;
     csrfToken?: string;
-    pendingUpdate: boolean;
 };
 
 export type ApiSelfResp = ApiAuthErrorResp | ReactAuthDataType;

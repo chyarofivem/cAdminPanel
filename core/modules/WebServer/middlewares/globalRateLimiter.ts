@@ -37,7 +37,7 @@ setInterval(() => {
         const numberFormatter = new Intl.NumberFormat('en-US');
         console.majorMultilineError([
             'You might be under a DDoS attack!',
-            `txAdmin got ${numberFormatter.format(httpRequestsCounter)} HTTP requests in the last minute.`,
+            `The panel got ${numberFormatter.format(httpRequestsCounter)} HTTP requests in the last minute.`,
             `The attacker IP addresses have been blocked until ${DDOS_COOLDOWN_MINUTES} mins after the attack stops.`,
             'Make sure you have a proper firewall setup and/or a reverse proxy with rate limiting.'
         ]);

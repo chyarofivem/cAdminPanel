@@ -20,8 +20,9 @@ const serverInitiatedRules = [
     //NOTE: Happens only when doing "quit xxxxxx" in live console
     `server shutting down:`,
 
-    //NOTE: Happens when txAdmin players - but soon specific player kicks (instead of kick all)
-    // will not fall under this category anymore
+    //NOTE: legacy prefix, only reachable for drops recorded before the rebrand or by
+    //an FXServer old enough to omit the structured drop payload. Current monitor drops
+    //arrive with a category and resource and are classified by classifyDrop below.
     `[txadmin]`,
 ];
 const timeoutRules = [
@@ -108,7 +109,7 @@ const truncateReason = (reason: string, maxLength: number, prefix?: string) => {
     }
     const truncationSuffix = '[truncated]';
     if (!reason.length) {
-        return prefix + '[tx:empty-reason]';
+        return prefix + '[panel:empty-reason]';
     }else if (reason.length > maxLength) {
         return prefix + reason.slice(0, maxLength - truncationSuffix.length) + truncationSuffix;
     } else {
@@ -135,7 +136,7 @@ const guessDropReasonCategory = (reason: string): ClassifyDropReasonResponse => 
     if (typeof reason !== 'string') {
         return {
             category: 'unknown' as const,
-            cleanReason: '[tx:invalid-reason]',
+            cleanReason: '[panel:invalid-reason]',
         };
     }
     const reasonToMatch = reason.trim().toLocaleLowerCase();
@@ -143,7 +144,7 @@ const guessDropReasonCategory = (reason: string): ClassifyDropReasonResponse => 
     if (!reasonToMatch.length) {
         return {
             category: 'unknown' as const,
-            cleanReason: '[tx:empty-reason]',
+            cleanReason: '[panel:empty-reason]',
         };
     } else if (playerInitiatedRules.some((rule) => reasonToMatch.startsWith(rule))) {
         return { category: 'player' };
@@ -218,7 +219,7 @@ export const classifyDrop = (payload: PlayerDropEvent): ClassifyDropReasonRespon
     if (typeof payload.reason !== 'string') {
         return {
             category: 'unknown',
-            cleanReason: '[tx:invalid-reason]',
+            cleanReason: '[panel:invalid-reason]',
         };
     } else if (payload.category === undefined || payload.resource === undefined) {
         return guessDropReasonCategory(payload.reason);
@@ -230,7 +231,7 @@ export const classifyDrop = (payload: PlayerDropEvent): ClassifyDropReasonRespon
             cleanReason: truncateReason(
                 payload.reason,
                 PDL_UNKNOWN_REASON_CHAR_LIMIT,
-                '[tx:invalid-category]'
+                '[panel:invalid-category]'
             ),
         };
     } else if (payload.category === FxsDropReasonGroups.RESOURCE) {
@@ -241,7 +242,7 @@ export const classifyDrop = (payload: PlayerDropEvent): ClassifyDropReasonRespon
             } else {
                 return {
                     category: 'resource',
-                    resource: 'txAdmin'
+                    resource: 'cAdminPanel'
                 };
             }
         } else {
@@ -273,7 +274,7 @@ export const classifyDrop = (payload: PlayerDropEvent): ClassifyDropReasonRespon
             cleanReason: truncateReason(
                 payload.reason,
                 PDL_UNKNOWN_REASON_CHAR_LIMIT,
-                '[tx:unknown-category]'
+                '[panel:unknown-category]'
             ),
         };
     }

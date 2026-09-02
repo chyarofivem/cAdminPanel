@@ -1,7 +1,7 @@
 export const defaultEmbedJson = JSON.stringify({
     "title": "{{serverName}}",
     "url": "{{serverBrowserUrl}}",
-    "description": "You can configure this embed in `cAdminPanel > Settings > Appearance`.",
+    "description": "You can configure this embed in `Settings > Appearance`.",
     "fields": [
         {
             "name": "> STATUS",
@@ -27,10 +27,7 @@ export const defaultEmbedJson = JSON.stringify({
             "value": "```\n{{uptime}}\n```",
             "inline": true
         }
-    ],
-    "image": {
-        "url": "https://forum-cfx-re.akamaized.net/original/5X/e/e/c/b/eecb4664ee03d39e34fcd82a075a18c24add91ed.png"
-    }
+    ]
 });
 
 export const defaultEmbedConfigJson = JSON.stringify({
@@ -42,7 +39,7 @@ export const defaultEmbedConfigJson = JSON.stringify({
     "offlineColor": "#A70B28",
     "buttons": [
         {
-            "emoji": "1062338355909640233",
+            "emoji": "🎮",
             "label": "Connect",
             "url": "{{serverJoinUrl}}"
         },

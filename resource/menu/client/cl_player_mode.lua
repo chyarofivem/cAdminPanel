@@ -67,13 +67,20 @@ local function disableRagdollingWhileFall()
         end
 
         -- Disable ragdolling
+        -- The FiveM native does not exist on rdr3, and the RedM flag has to be
+        -- cleared on every exit path, so both games go through one helper
         local pid = PlayerId()
-        SetEntityInvincible(ped, true)
-        if IS_FIVEM then
-            SetPlayerFallDistance(pid, 9000.0)
-        else
-            SetRagdollBlockingFlags(ped, (1 << 9)) --RBF_FALLING 
+        local function setFallBlocked(blocked)
+            if IS_FIVEM then
+                SetPlayerFallDistance(pid, blocked and 9000.0 or -1)
+            elseif blocked then
+                SetRagdollBlockingFlags(ped, (1 << 9)) --RBF_FALLING
+            else
+                ClearRagdollBlockingFlags(ped, (1 << 9)) --RBF_FALLING
+            end
         end
+        SetEntityInvincible(ped, true)
+        setFallBlocked(true)
 
         -- Fall from big heights take forever, so force the ped down
         -- Note, force is clamped to -250.0 by the engine
@@ -102,7 +109,7 @@ local function disableRagdollingWhileFall()
             if fallAwaitElapsed >= fallAwaitLimit then
                 debugPrint('Ped did not fall, returning')
                 SetEntityInvincible(ped, false)
-                SetPlayerFallDistance(pid, -1)
+                setFallBlocked(false)
                 return
             end
             fallAwaitElapsed = fallAwaitElapsed + fallAwaitStep
@@ -120,17 +127,22 @@ local function disableRagdollingWhileFall()
         Wait(750) --Probably not needed, but just in case
         debugPrint('Re-enabling ragdolling')
         SetEntityInvincible(ped, false)
-        if IS_FIVEM then
-            SetPlayerFallDistance(pid, -1)
-        else
-            ClearRagdollBlockingFlags(ped, (1 << 9)) --RBF_FALLING 
-        end
+        setFallBlocked(false)
     end)
 end
 
 local freecamVeh = 0
 local isVehAHorse = false
 local setLocallyInvisibleFunc = IS_FIVEM and SetEntityLocallyInvisible or SetPlayerInvisibleLocally
+--RedM renamed this native (NetworkSetEntityOnlyExistsForParticipants) and does not
+--alias the FiveM name, so resolve whichever the runtime exposes. Calling the missing
+--one would kill the handler mid-toggle and leave the admin frozen and invisible.
+local setInvisibleToNetworkFunc = NetworkSetEntityInvisibleToNetwork or NetworkSetEntityOnlyExistsForParticipants
+local function setEntityInvisibleToNetwork(entity, toggle)
+    if setInvisibleToNetworkFunc then
+        setInvisibleToNetworkFunc(entity, toggle)
+    end
+end
 local function toggleFreecam(enabled)
     noClipEnabled = enabled
     local ped = PlayerPedId()
@@ -145,7 +157,7 @@ local function toggleFreecam(enabled)
             freecamVeh = GetMount(ped)
         end
         if freecamVeh > 0 then
-            NetworkSetEntityInvisibleToNetwork(freecamVeh, true)
+            setEntityInvisibleToNetwork(freecamVeh, true)
             SetEntityCollision(freecamVeh, false, false)
             SetEntityVisible(freecamVeh, false)
             FreezeEntityPosition(freecamVeh, true)
@@ -177,7 +189,7 @@ local function toggleFreecam(enabled)
 
             if freecamVeh > 0 and DoesEntityExist(freecamVeh) then
                 local coords = GetEntityCoords(ped)
-                NetworkSetEntityInvisibleToNetwork(freecamVeh, false)
+                setEntityInvisibleToNetwork(freecamVeh, false)
                 SetEntityCoords(freecamVeh, coords[1], coords[2], coords[3], false, false, false, false)
                 SetVehicleOnGroundProperly(freecamVeh)
                 SetEntityCollision(freecamVeh, true, true)

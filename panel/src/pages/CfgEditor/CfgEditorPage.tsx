@@ -12,6 +12,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { useOpenConfirmDialog } from '@/hooks/dialogs';
 import { useAuthedFetcher } from '@/hooks/fetch';
 import { t } from '@/lib/i18n';
+import { editorThemeColors } from '@/lib/monacoTheme';
 
 self.MonacoEnvironment = {
     getWorker: () => new EditorWorker(),
@@ -83,14 +84,7 @@ const configureMonaco: BeforeMount = (monacoApi) => {
             { token: 'variable.predefined', foreground: '22d3ee' },
             { token: 'string', foreground: '86efac' },
         ],
-        colors: {
-            'editor.background': '#0b0d11',
-            'editorGutter.background': '#0f1116',
-            'editorLineNumber.foreground': '#4f515b',
-            'editorLineNumber.activeForeground': '#a1a1aa',
-            'editor.selectionBackground': '#3b82f633',
-            'editor.lineHighlightBackground': '#ffffff08',
-        },
+        colors: editorThemeColors,
     });
 };
 

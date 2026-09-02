@@ -9,7 +9,6 @@ import { getDateHourEnc, parseDateHourEnc } from './playerDropUtils';
 import { MultipleCounter } from '../statsUtils';
 import { throttle } from 'throttle-debounce';
 import { PlayerDropsDetailedWindow, PlayerDropsSummaryHour } from '@routes/playerDrops';
-import { migratePlayerDropsFile } from './playerDropMigrations';
 import { parseFxserverVersion } from '@lib/fxserver/fxsVersionParser';
 import { PlayerDropEvent } from '@modules/FxPlayerlist';
 import { txEnv } from '@core/globalData';
@@ -256,11 +255,7 @@ export default class PlayerDropMetrics {
             if (fileData.version === LOG_DATA_FILE_VERSION) {
                 statsData = PDLFileSchema.parse(fileData);
             } else {
-                try {
-                    statsData = await migratePlayerDropsFile(fileData);
-                } catch (error) {
-                    throw new Error(`Failed to migrate ${LOG_DATA_FILE_NAME} from ${fileData?.version} to ${LOG_DATA_FILE_VERSION}: ${(error as Error).message}`);
-                }
+                throw new Error(`Unsupported ${LOG_DATA_FILE_NAME} version: ${fileData?.version}`);
             }
             this.lastGameVersion = statsData.lastGameVersion;
             this.lastServerVersion = statsData.lastServerVersion;

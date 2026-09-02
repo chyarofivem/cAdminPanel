@@ -7,6 +7,7 @@ import consoleFactory from '@lib/console';
 import { resolveCFGFilePath, validateFixServerConfig } from '@lib/fxserver/fxsConfigHelper';
 import { msToShortishDuration } from '@lib/misc';
 import { SYM_SYSTEM_AUTHOR } from '@lib/symbols';
+import { panelDisplayName } from '@lib/branding';
 import { UpdateConfigKeySet } from '@modules/ConfigStore/utils';
 import { childProcessEventBlackHole, getFxSpawnVariables, getMutableConvars, isValidChildProcess, mutableConvarConfigDependencies, setupCustomLocaleFile, stringifyConsoleArgs } from './utils';
 import ProcessManager, { ChildProcessStateInfo } from './ProcessManager';
@@ -66,7 +67,7 @@ export default class FxRunner {
         if (!txConfig.server.autoStart) return;
 
         if (!this.isConfigured) {
-            return console.warn('Please open txAdmin on the browser to configure your server.');
+            return console.warn('Please open the panel on the browser to configure your server.');
         }
 
         if (!txCore.adminStore.hasAdmins()) {
@@ -109,9 +110,9 @@ export default class FxRunner {
      * NOTE: Don't use txConfig in here to avoid race conditions.
      */
     public async spawnServer(shouldAnnounce = false) {
-        //If txAdmin is shutting down
+        //If the panel is shutting down
         if(txManager.isShuttingDown) {
-            const msg = `Cannot start the server while txAdmin is shutting down.`;
+            const msg = `Cannot start the server while the panel is shutting down.`;
             console.error(msg);
             return msg;
         }
@@ -171,7 +172,7 @@ export default class FxRunner {
             if ((error as any).message.includes('unreadable')) {
                 console.error('That is the file where you configure your server and start resources.');
                 console.error('You likely moved/deleted your server files or copied the txData folder from another server.');
-                console.error('To fix this issue, open the txAdmin web interface then go to "Settings > FXServer" and fix the "Server Data Folder" and "CFG File Path".');
+                console.error('To fix this issue, open the panel web interface then go to "Settings > FXServer" and fix the "Server Data Folder" and "CFG File Path".');
             }
             return errMsg;
         }
@@ -323,7 +324,7 @@ export default class FxRunner {
             if (this.proc.isAlive) {
                 this.sendEvent('serverShuttingDown', {
                     delay: txConfig.server.shutdownNoticeDelayMs,
-                    author: typeof author === 'string' ? author : 'txAdmin',
+                    author: typeof author === 'string' ? author : panelDisplayName(),
                     message: txCore.translator.t(`server_actions.${messageType}`, tOptions),
                 });
                 this.isAwaitingShutdownNoticeDelay = true;

@@ -5,7 +5,6 @@ import consoleFactory from '@lib/console';
 import { AuthedCtx } from '@modules/WebServer/ctxTypes';
 import { checkRateLimit } from '@lib/rateLimiters/actionLimiter';
 import { nanoid } from 'nanoid';
-import { fetchChyaroUsers } from '@lib/chyaroApi';
 const console = consoleFactory(modulename);
 
 //Helpers
@@ -57,8 +56,6 @@ async function handleAdd(ctx: AuthedCtx) {
     //Sanity check
     if (
         typeof ctx.request.body.name !== 'string'
-        || (ctx.request.body.chyaroEmail !== undefined && typeof ctx.request.body.chyaroEmail !== 'string')
-        || (ctx.request.body.password !== undefined && typeof ctx.request.body.password !== 'string')
         || typeof ctx.request.body.citizenfxID !== 'string'
         || typeof ctx.request.body.discordID !== 'string'
         || ctx.request.body.permissions === undefined
@@ -68,8 +65,6 @@ async function handleAdd(ctx: AuthedCtx) {
 
     //Prepare and filter variables
     const name = ctx.request.body.name.trim();
-    const chyaroEmail = (ctx.request.body.chyaroEmail ?? '').trim().toLowerCase();
-    let password = ctx.request.body.password ?? '';
     const citizenfxID = ctx.request.body.citizenfxID.trim();
     const discordID = ctx.request.body.discordID.trim();
     let permissions = (Array.isArray(ctx.request.body.permissions)) ? ctx.request.body.permissions : [];
@@ -81,37 +76,10 @@ async function handleAdd(ctx: AuthedCtx) {
     if (!consts.regexValidFivemUsername.test(name)) {
         return ctx.send({ type: 'danger', markdown: true, message: `**Invalid username, it must follow the rule:**\n${nameRegexDesc}` });
     }
-    if (chyaroEmail.length && (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(chyaroEmail) || chyaroEmail.length > 254)) {
-        return ctx.send({ type: 'danger', message: 'Enter a valid chyarologin email address.' });
-    }
-    if (chyaroEmail.length) {
-        try {
-            const users = await fetchChyaroUsers();
-            if (!users.some(user => user.email.trim().toLowerCase() === chyaroEmail)) {
-                return ctx.send({ type: 'danger', message: 'No chyarologin account is registered with that email address.' });
-            }
-        } catch (error) {
-            console.warn(`Could not verify chyarologin email '${chyaroEmail}': ${(error as Error).message}`);
-            return ctx.send({ type: 'danger', message: 'Could not verify the chyarologin email. No administrator was created; please try again.' });
-        }
-    } else {
-        password = nanoid(16);
-    }
-    if (password.trim() !== password) {
-        return ctx.send({ type: 'danger', message: 'The password cannot start or end with a space.' });
-    }
-    if (password.length && (password.length < consts.adminPasswordMinLength || password.length > consts.adminPasswordMaxLength)) {
-        return ctx.send({
-            type: 'danger',
-            message: `Password must be between ${consts.adminPasswordMinLength} and ${consts.adminPasswordMaxLength} characters.`,
-        });
-    }
-    if (chyaroEmail.length && discordID.length) {
-        return ctx.send({
-            type: 'danger',
-            message: 'For chyarologin accounts, connect Discord in chyarologin instead of entering it manually.',
-        });
-    }
+
+    //Every new administrator gets a generated temporary password, shown once to
+    //whoever created the account. They are forced to change it on first login.
+    const password = nanoid(16);
 
     //Validate & translate FiveM ID
     let citizenfxData: ProviderDataType | false = false;
@@ -121,7 +89,7 @@ async function handleAdd(ctx: AuthedCtx) {
                 const id = citizenfxID.split(':')[1];
                 const res = await got(`https://policy-live.fivem.net/api/getUserInfo/${id}`, cfxHttpReqOptions).json<any>();
                 if (!res.username || !res.username.length) {
-                    return ctx.send({ type: 'danger', message: 'Invalid CitizenFX ID1' });
+                    return ctx.send({ type: 'danger', message: 'This cfx.re identifier does not exist.' });
                 }
                 citizenfxData = {
                     id: res.username,
@@ -130,14 +98,17 @@ async function handleAdd(ctx: AuthedCtx) {
             } else if (consts.regexValidFivemUsername.test(citizenfxID)) {
                 const res = await got(`https://forum.cfx.re/u/${citizenfxID}.json`, cfxHttpReqOptions).json<any>();
                 if (!res.user || typeof res.user.id !== 'number') {
-                    return ctx.send({ type: 'danger', message: 'Invalid CitizenFX ID2' });
+                    return ctx.send({ type: 'danger', message: 'This cfx.re username does not exist.' });
                 }
                 citizenfxData = {
                     id: citizenfxID,
                     identifier: `fivem:${res.user.id}`,
                 };
             } else {
-                return ctx.send({ type: 'danger', message: 'Invalid CitizenFX ID3' });
+                return ctx.send({
+                    type: 'danger',
+                    message: 'Enter either a cfx.re forum username or an identifier in the `fivem:0000` format.',
+                });
             }
         } catch (error) {
             console.error(`Failed to resolve CitizenFX ID to game identifier with error: ${(error as Error).message}`);
@@ -152,7 +123,7 @@ async function handleAdd(ctx: AuthedCtx) {
     let discordData: ProviderDataType | false = false;
     if (discordID.length) {
         if (!consts.validIdentifierParts.discord.test(discordID)) {
-            return ctx.send({ type: 'danger', message: 'Invalid Discord ID' });
+            return ctx.send({ type: 'danger', message: 'Enter the numeric Discord user ID (17 to 20 digits).' });
         }
         discordData = {
             id: discordID,
@@ -175,20 +146,19 @@ async function handleAdd(ctx: AuthedCtx) {
     const changes = {
         cfxId: citizenfxData ? citizenfxData.identifier : undefined,
         discordId: discordData ? discordData.identifier : undefined,
-        chyaroEmail,
-        localPassword: password.length ? 'temporary password set' : 'not set',
+        localPassword: 'temporary password set',
         permissions: permissions,
     };
 
     //Add admin and give output
     try {
-        await txCore.adminStore.addAdmin(name, citizenfxData, discordData, chyaroEmail, permissions, password || undefined);
+        await txCore.adminStore.addAdmin(name, citizenfxData, discordData, permissions, password);
         ctx.admin.logAction(`Adding user '${name}' with ${JSON.stringify(changes)}`);
         return ctx.send({
             type: 'success',
             message: 'Admin saved.',
             refresh: true,
-            temporaryPassword: chyaroEmail ? undefined : password,
+            temporaryPassword: password,
         });
     } catch (error) {
         return ctx.send({ type: 'danger', message: (error as Error).message });
@@ -203,7 +173,6 @@ async function handleEdit(ctx: AuthedCtx) {
     //Sanity check
     if (
         typeof ctx.request.body.name !== 'string'
-        || (ctx.request.body.chyaroEmail !== undefined && typeof ctx.request.body.chyaroEmail !== 'string')
         || (ctx.request.body.password !== undefined && typeof ctx.request.body.password !== 'string')
         || typeof ctx.request.body.citizenfxID !== 'string'
         || typeof ctx.request.body.discordID !== 'string'
@@ -214,7 +183,6 @@ async function handleEdit(ctx: AuthedCtx) {
 
     //Prepare and filter variables
     const name = ctx.request.body.name.trim();
-    const chyaroEmail = (ctx.request.body.chyaroEmail ?? '').trim().toLowerCase();
     const password = ctx.request.body.password ?? '';
     const citizenfxID = ctx.request.body.citizenfxID.trim();
     const discordID = ctx.request.body.discordID.trim();
@@ -224,23 +192,13 @@ async function handleEdit(ctx: AuthedCtx) {
             message: 'Administrators must change their own local password in User Settings.',
         });
     }
-    if (chyaroEmail.length && (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(chyaroEmail) || chyaroEmail.length > 254)) {
-        return ctx.send({ type: 'danger', message: 'Enter a valid chyarologin email address.' });
-    }
-    if (chyaroEmail.length) {
-        try {
-            const users = await fetchChyaroUsers();
-            if (!users.some(user => user.email.trim().toLowerCase() === chyaroEmail)) {
-                return ctx.send({ type: 'danger', message: 'No chyarologin account is registered with that email address.' });
-            }
-        } catch (error) {
-            console.warn(`Could not verify chyarologin email '${chyaroEmail}': ${(error as Error).message}`);
-            return ctx.send({ type: 'danger', message: 'Could not verify the chyarologin email. No administrator was changed; please try again.' });
-        }
-    }
+
     //Check if editing himself
     if (ctx.admin.name.toLowerCase() === name.toLowerCase()) {
-        return ctx.send({ type: 'danger', message: '(ERR0) You cannot edit yourself.' });
+        return ctx.send({
+            type: 'danger',
+            message: 'You cannot edit your own account here. Change your own identifiers in User Settings.',
+        });
     }
 
     //Validate & translate permissions
@@ -260,7 +218,7 @@ async function handleEdit(ctx: AuthedCtx) {
                 const id = citizenfxID.split(':')[1];
                 const res = await got(`https://policy-live.fivem.net/api/getUserInfo/${id}`, cfxHttpReqOptions).json<any>();
                 if (!res.username || !res.username.length) {
-                    return ctx.send({ type: 'danger', message: '(ERR1) Invalid CitizenFX ID' });
+                    return ctx.send({ type: 'danger', message: 'This cfx.re identifier does not exist.' });
                 }
                 citizenfxData = {
                     id: res.username,
@@ -269,14 +227,17 @@ async function handleEdit(ctx: AuthedCtx) {
             } else if (consts.regexValidFivemUsername.test(citizenfxID)) {
                 const res = await got(`https://forum.cfx.re/u/${citizenfxID}.json`, cfxHttpReqOptions).json<any>();
                 if (!res.user || typeof res.user.id !== 'number') {
-                    return ctx.send({ type: 'danger', message: '(ERR2) Invalid CitizenFX ID' });
+                    return ctx.send({ type: 'danger', message: 'This cfx.re username does not exist.' });
                 }
                 citizenfxData = {
                     id: citizenfxID,
                     identifier: `fivem:${res.user.id}`,
                 };
             } else {
-                return ctx.send({ type: 'danger', message: '(ERR3) Invalid CitizenFX ID' });
+                return ctx.send({
+                    type: 'danger',
+                    message: 'Enter either a cfx.re forum username or an identifier in the `fivem:0000` format.',
+                });
             }
         } catch (error) {
             console.error(`Failed to resolve CitizenFX ID to game identifier with error: ${(error as Error).message}`);
@@ -288,11 +249,12 @@ async function handleEdit(ctx: AuthedCtx) {
     }
 
     //Validate Discord ID
-    //FIXME: you cannot remove a discord id by erasing from the field
-    let discordData: ProviderDataType | false | undefined = chyaroEmail.length ? undefined : false;
-    if (!chyaroEmail.length && discordID.length) {
+    //An empty field is a removal: editAdmin deletes the provider on `false` and
+    //only leaves it untouched on `undefined`.
+    let discordData: ProviderDataType | false | undefined = false;
+    if (discordID.length) {
         if (!consts.validIdentifierParts.discord.test(discordID)) {
-            return ctx.send({ type: 'danger', message: 'Invalid Discord ID' });
+            return ctx.send({ type: 'danger', message: 'Enter the numeric Discord user ID (17 to 20 digits).' });
         }
         discordData = {
             id: discordID,
@@ -352,10 +314,6 @@ async function handleEdit(ctx: AuthedCtx) {
             changes.push(`Changed Discord ID from ${prevDiscordId} to ${discordData.identifier}.`);
         }
     }
-    const prevChyaroEmail = admin.providers?.chyarologin?.identifier;
-    if (prevChyaroEmail !== chyaroEmail) {
-        changes.push(`Changed chyarologin email from ${prevChyaroEmail || 'unset'} to ${chyaroEmail}.`);
-    }
     //Add admin and give output
     try {
         let logMessage = `Editing user '${name}'`;
@@ -364,7 +322,7 @@ async function handleEdit(ctx: AuthedCtx) {
         } else {
             logMessage += '. No changes were made.';
         }
-        await txCore.adminStore.editAdmin(name, citizenfxData, discordData, chyaroEmail, permissions);
+        await txCore.adminStore.editAdmin(name, citizenfxData, discordData, permissions);
         ctx.admin.logAction(logMessage);
         return ctx.send({ type: 'success', refresh: true });
     } catch (error) {

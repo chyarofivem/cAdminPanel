@@ -1,12 +1,10 @@
 import type { AuthedCtx } from '@modules/WebServer/ctxTypes';
 import { cadminRequest } from '@lib/cadminApi';
-import { fetchChyaroUsers } from '@lib/chyaroApi';
 
 export default async function CadminOverview(ctx: AuthedCtx) {
     const result: any = {
         status: { online: false, framework: txConfig.cadmin.framework, version: null, oxInventory: false, error: null },
         players: [],
-        identities: { accounts: 0, fivemLinked: 0, discordLinked: 0, error: null },
         recent: [],
     };
     try {
@@ -38,18 +36,7 @@ export default async function CadminOverview(ctx: AuthedCtx) {
         };
         if (ctx.admin.hasPermission('cadmin.players.view')) result.players = await cadminRequest('GET', '/players');
     } catch (error) { result.status.error = (error as Error).message; }
-    if (ctx.admin.isMaster) {
-        try {
-            const users = await fetchChyaroUsers();
-            result.identities = {
-                accounts: users.length,
-                fivemLinked: users.filter(user => Boolean(user.fivemLicense)).length,
-                discordLinked: users.filter(user => Boolean(user.discordId)).length,
-                error: null,
-            };
-        } catch (error) { result.identities.error = (error as Error).message; }
-    }
-    if (ctx.admin.hasPermission('txadmin.log.combined')) {
+    if (ctx.admin.hasPermission('panel.log.view')) {
         const raw = await txCore.logger.admin.getRecentBuffer();
         result.recent = (raw || '').split(/\r?\n/).filter((line: string) => line.toLowerCase().includes('cadmin:')).slice(-8).reverse();
     }

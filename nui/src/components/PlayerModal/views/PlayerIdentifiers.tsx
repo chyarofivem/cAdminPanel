@@ -12,7 +12,7 @@ import { useTranslate } from "react-polyglot";
 import { useSnackbar } from "notistack";
 import type { PlayerModalViewProps } from "../PlayerModal.types";
 import { copyToClipboard } from "@nui/src/utils/copyToClipboard";
-import { nuiTokens } from "@nui/src/styles/nuiTokens";
+import { fontMono, nuiTokens } from "@nui/src/styles/nuiTokens";
 
 const ViewRoot = styled(Box)({
   width: "100%",
@@ -72,7 +72,7 @@ const IdentifierList: React.FC<IdentifierListProps> = ({
               flex: 1,
               minWidth: 0,
               color: "text.secondary",
-              fontFamily: "monospace",
+              fontFamily: fontMono,
               fontSize: 12.5,
               overflowWrap: "anywhere",
             }}

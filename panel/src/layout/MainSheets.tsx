@@ -69,8 +69,8 @@ export function GlobalMenuSheet() {
                             <MenuNavLink href="/server/console-log" disabled={!hasPerm('console.view')}>
                                 <ListIcon className="mr-2 h-4 w-4" />{t('Console Log')}
                             </MenuNavLink>
-                            <MenuNavLink href="/system/txadmin-log" disabled={!hasPerm('txadmin.log.combined')}>
-                                <ListIcon className="mr-2 h-4 w-4" />{t('txAdmin Log')}
+                            <MenuNavLink href="/system/panel-log" disabled={!hasPerm('panel.log.view')}>
+                                <ListIcon className="mr-2 h-4 w-4" />{t('Panel Log')}
                             </MenuNavLink>
                         </div>
                     </div>

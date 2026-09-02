@@ -11,7 +11,10 @@ const hostConfig = vi.hoisted(() => ({
 }));
 const sendEvent = vi.fn();
 
-vi.mock('@core/globalData', () => ({ txHostConfig: hostConfig }));
+vi.mock('@core/globalData', () => ({
+    txHostConfig: hostConfig,
+    txEnv: { profilePath: '/tmp/cadminpanel-adminstore-profile' },
+}));
 
 import AdminStore from './index.js';
 
@@ -19,7 +22,7 @@ describe('AdminStore first-run account selection', () => {
     beforeEach(async () => {
         vi.useFakeTimers();
         sendEvent.mockClear();
-        hostConfig.root = await fs.mkdtemp(path.join(os.tmpdir(), 'txadmin-adminstore-'));
+        hostConfig.root = await fs.mkdtemp(path.join(os.tmpdir(), 'cadminpanel-adminstore-'));
         hostConfig.defaults.account = undefined;
         vi.stubGlobal('txCore', {
             webServer: { webSocket: { reCheckAdminAuths: vi.fn(async () => undefined) } },
@@ -35,7 +38,7 @@ describe('AdminStore first-run account selection', () => {
         await fs.rm(hostConfig.root, { recursive: true, force: true });
     });
 
-    it('creates the hosting-provided master instead of forcing chyarologin bootstrap', async () => {
+    it('creates the hosting-provided master instead of waiting for the console PIN', async () => {
         hostConfig.defaults.account = {
             username: 'hostadmin',
             fivemId: '271816',
@@ -79,52 +82,36 @@ describe('AdminStore first-run account selection', () => {
         });
     });
 
-    it('retains the console-authorized chyarologin bootstrap without a default account', () => {
+    it('retains the console-authorized master bootstrap without a default account', () => {
         const store = new AdminStore();
 
         expect(store.admins).toBe(false);
         expect(store.addMasterPin).toHaveLength(16);
     });
 
-    it('removes the retired troll permission from stored administrator records', async () => {
+    it('does not register the retired troll permission', () => {
         const store = new AdminStore();
         expect(store.getPermissionsList()).not.toHaveProperty('players.troll');
+    });
+
+    it('loads a stored administrator file without rewriting it', async () => {
+        const store = new AdminStore();
         const adminsPath = path.join(hostConfig.root, 'admins.json');
-        await fs.writeFile(adminsPath, JSON.stringify([{
+        const fileContent = JSON.stringify([{
             $schema: 1,
             name: 'hostadmin',
             master: true,
             password_hash: '$2b$11$K3HwDzkoUfhU6.W.tScfhOLEtR5uNc9qpQ685emtERx3dZ7fmgXCy',
             providers: {},
-            permissions: ['players.kick', 'players.troll'],
-        }]));
+            permissions: ['players.kick'],
+        }]);
+        await fs.writeFile(adminsPath, fileContent);
 
         await store.loadAdminsFile();
 
         if (!Array.isArray(store.admins)) throw new Error('AdminStore did not load administrators.');
         expect(store.admins[0].permissions).toEqual(['players.kick']);
-        const saved = JSON.parse(await fs.readFile(adminsPath, 'utf8'));
-        expect(saved[0].permissions).toEqual(['players.kick']);
-    });
-
-    it('removes a manual Discord provider when chyarologin is linked', async () => {
-        hostConfig.defaults.account = {
-            username: 'hostadmin',
-            password: '$2b$11$K3HwDzkoUfhU6.W.tScfhOLEtR5uNc9qpQ685emtERx3dZ7fmgXCy',
-        };
-        const store = new AdminStore();
-        if (store.refreshRoutine) clearInterval(store.refreshRoutine);
-        if (!Array.isArray(store.admins)) throw new Error('AdminStore did not create the host administrator.');
-        store.admins[0].providers.discord = {
-            id: '272800190639898628',
-            identifier: 'discord:272800190639898628',
-            data: {},
-        };
-
-        await store.editAdmin('hostadmin', undefined, undefined, 'host@example.com');
-
-        expect(store.admins[0].providers.chyarologin.identifier).toBe('host@example.com');
-        expect(store.admins[0].providers.discord).toBeUndefined();
+        expect(await fs.readFile(adminsPath, 'utf8')).toBe(fileContent);
     });
 
     it('preserves a registered administrator password during management edits', async () => {
@@ -139,7 +126,6 @@ describe('AdminStore first-run account selection', () => {
 
         await (store.editAdmin as (...args: any[]) => Promise<boolean>)(
             'hostadmin',
-            undefined,
             undefined,
             undefined,
             [],

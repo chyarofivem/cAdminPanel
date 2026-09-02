@@ -12,7 +12,7 @@ const { txVersion, isPreRelease, preReleaseExpiration } = getPublishVersion(fals
 fs.writeFileSync('.github/.cienv', `TX_IS_PRERELEASE=${isPreRelease}\n`);
 
 //Copy static files
-console.log('Starting txAdmin Prod Builder');
+console.log('Starting cAdminPanel Prod Builder');
 copyStaticFiles('./dist/', txVersion, 'publish');
 //yarn.installed Needs to be older than the package.json
 fs.writeFileSync('./dist/.yarn.installed', '');

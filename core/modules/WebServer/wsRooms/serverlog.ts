@@ -1,10 +1,10 @@
 import type { RoomType } from "../webSocket";
 
 /**
- * Streams normalized entries for the combined txAdmin log page.
+ * Streams normalized entries for the combined panel log page.
  */
 export default {
-    permission: 'txadmin.log.combined',
+    permission: 'panel.log.view',
     eventName: 'logData',
     cumulativeBuffer: true,
     outBuffer: [],

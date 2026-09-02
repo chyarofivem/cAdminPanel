@@ -6,7 +6,6 @@ import consoleFactory from '@lib/console';
 import fatalError from '@lib/fatalError';
 import { txEnv } from '@core/globalData';
 import { ConfigFileData, ConfigSchemas_v2, PartialTxConfigs, PartialTxConfigsToSave, TxConfigs } from './schema';
-import { migrateConfigFile } from './configMigrations';
 import { deepFreeze } from '@lib/misc';
 import { parseConfigFileData, bootstrapConfigProcessor, runtimeConfigProcessor, getConfigDefaults } from './configParser';
 import { ListOf } from './schema/utils';
@@ -25,7 +24,7 @@ type RefreshConfigRegistry = {
 }[];
 
 //Consts
-export const CONFIG_VERSION = 2;
+export const CONFIG_VERSION = 3;
 
 
 /**
@@ -76,20 +75,17 @@ export default class ConfigStore /*does not extend TxModuleBase*/ {
             ]);
         }
 
-        //Check version & migrate if needed
-        let fileMigrated = false;
+        //Check version
+        //NOTE: cAdminPanel does not migrate config files, so anything else is rejected
         if (fileData?.version !== CONFIG_VERSION) {
-            try {
-                fileData = migrateConfigFile(fileData);
-                fileMigrated = true;
-            } catch (error) {
-                fatalError.ConfigStore(25, [
-                    'Unable to migrate configuration file.',
-                    ['Path', this.configFilePath],
-                    ['File version', String(fileData?.version)],
-                    ['Supported version', String(CONFIG_VERSION)],
-                ], error);
-            }
+            fatalError.ConfigStore(20, [
+                'Your config.json file is not compatible with this version of cAdminPanel.',
+                'Configuration files are not migrated between versions or from other panels.',
+                'Rename or delete the file below, then start the panel again to run the setup wizard.',
+                ['Path', this.configFilePath],
+                ['File version', String(fileData?.version ?? 'not set')],
+                ['Supported version', String(CONFIG_VERSION)],
+            ]);
         }
 
         //Parse & validate
@@ -104,18 +100,6 @@ export default class ConfigStore /*does not extend TxModuleBase*/ {
             fatalError.ConfigStore(14, [
                 'Unable to process configuration file.',
             ], error);
-        }
-
-        //If migrated, write the new file
-        if (fileMigrated) {
-            try {
-                this.saveFile(this.storedConfigs);
-            } catch (error) {
-                fatalError.ConfigStore(26, [
-                    'Unable to save the updated config.json file.',
-                    ['Path', this.configFilePath],
-                ], error);
-            }
         }
 
         //Reflect to global
@@ -172,7 +156,7 @@ export default class ConfigStore /*does not extend TxModuleBase*/ {
         this.saveFile(processed.stored);
         this.storedConfigs = processed.stored as PartialTxConfigs;
         this.activeConfigs = processed.active as TxConfigs;
-        this.logChanges(author ?? 'txAdmin', processed.storedKeysChanges.list);
+        this.logChanges(author ?? 'cAdminPanel', processed.storedKeysChanges.list);
         this.updatePublicConfig(); //before callbacks
         this.processCallbacks(processed.activeKeysChanges);
         return processed.storedKeysChanges;

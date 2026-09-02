@@ -193,7 +193,7 @@ const placeholderDescriptions = {
     serverBrowserUrl: 'The FiveM Server browser URL of your server. Example: `https://servers.fivem.net/servers/detail/xxxxxx`.',
     serverClients: 'The number of players online in your server.',
     serverMaxClients: 'The `sv_maxclients` of your server, detected at runtime.',
-    serverName: 'This is the txAdmin-given name for this server. Can be changed in `txAdmin > Settings > Global`.',
+    serverName: 'This is the panel-given name for this server. Can be changed in `Settings > General`.',
     statusColor: 'A hex-encoded color, from the Config JSON.',
     statusString: 'A text to be displayed with the server status, from the Config JSON.',
     uptime: 'For how long is the server online. Example: `1 hr, 50 mins`.',
@@ -220,7 +220,7 @@ export default function TmpJsonEditor() {
                     description={(<>
                         The server status embed is customizable by editing the JSON below. <br />
                         You can use the placeholders to include dynamic server information in the embed. <br />
-                        For information refer to <TxAnchor href="https://github.com/tabarra/txAdmin/blob/master/docs/discord-status.md">our docs</TxAnchor>.
+                        For information refer to <TxAnchor href="https://github.com/chyarofivem/cAdminPanel/blob/master/docs/discord-status.md">our docs</TxAnchor>.
                     </>)}
                 />
             </div>

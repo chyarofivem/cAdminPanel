@@ -53,7 +53,7 @@ export function collectCadminLicenseIdentifiers(primary: unknown, identifiers: u
     if (!normalized.size) throw new Error('That is not a FiveM license identifier.');
     if (normalized.size > MAX_CADMIN_ACCOUNT_LICENSES) {
         throw new Error(
-            `This txAdmin player record has more than ${MAX_CADMIN_ACCOUNT_LICENSES} FiveM license identifiers. Remove stale identifiers before using Character Management.`,
+            `This player record has more than ${MAX_CADMIN_ACCOUNT_LICENSES} FiveM license identifiers. Remove stale identifiers before using Character Management.`,
         );
     }
     return [...normalized];

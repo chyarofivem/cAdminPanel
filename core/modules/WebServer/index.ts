@@ -19,7 +19,7 @@ import consoleFactory from '@lib/console';
 import topLevelMw from './middlewares/topLevelMw';
 import ctxVarsMw from './middlewares/ctxVarsMw';
 import ctxUtilsMw from './middlewares/ctxUtilsMw';
-import { SessionMemoryStorage, koaSessMw, socketioSessMw } from './middlewares/sessionMws';
+import { SessionStorage, koaSessMw, socketioSessMw } from './middlewares/sessionMws';
 import checkRateLimit from './middlewares/globalRateLimiter';
 import checkHttpLoad from './middlewares/httpLoadMonitor';
 import cacheControlMw from './middlewares/cacheControlMw';
@@ -43,7 +43,7 @@ export default class WebServer {
     public luaComToken: string;
     //setupKoa
     private app: Koa;
-    public sessionStore: SessionMemoryStorage;
+    public sessionStore: SessionStorage;
     private koaCallback: (req: any, res: any) => Promise<void>;
     //setupWebSocket
     private io: SocketIO;
@@ -122,7 +122,7 @@ export default class WebServer {
         }));
 
         //Custom stuff
-        this.sessionStore = new SessionMemoryStorage();
+        this.sessionStore = new SessionStorage();
         this.app.use(cacheControlMw);
         this.app.use(koaSessMw(this.sessionCookieName, this.sessionStore));
         this.app.use(ctxVarsMw);
@@ -198,8 +198,8 @@ export default class WebServer {
                 if (error.code !== 'EADDRINUSE') return;
                 fatalError.WebServer(0, [
                     `Failed to start HTTP server, port ${error.port} is already in use.`,
-                    'Maybe you already have another txAdmin running in this port.',
-                    'If you want to run multiple txAdmin instances, check the documentation for the port convar.',
+                    'Maybe you already have another panel instance running in this port.',
+                    'If you want to run multiple instances, check the documentation for the port convar.',
                     'You can also try restarting the host machine.',
                 ]);
             };

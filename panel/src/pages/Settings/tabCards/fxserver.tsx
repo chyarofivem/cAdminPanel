@@ -1,14 +1,12 @@
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import SwitchText from '@/components/SwitchText'
-import InlineCode from '@/components/InlineCode'
 import { AdvancedDivider, SettingItem, SettingItemDesc } from '../settingsItems'
 import { useState, useEffect, useRef, useMemo, useReducer } from "react"
 import { getConfigEmptyState, getConfigAccessors, SettingsCardProps, getPageConfig, configsReducer, getConfigDiff, type PageConfigReducerAction } from "../utils"
 import { PlusIcon, TrashIcon, Undo2Icon, XIcon } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { TimeInputDialog } from "@/components/TimeInputDialog"
-import TxAnchor from "@/components/TxAnchor"
 import { useAutoAnimate } from "@formkit/auto-animate/react"
 import SettingsCardShell from "../SettingsCardShell"
 import { cn } from "@/lib/utils"
@@ -19,6 +17,7 @@ import { useLocation } from "wouter"
 import type { ResetServerDataPathResp } from "@shared/otherTypes"
 import { useOpenConfirmDialog } from "@/hooks/dialogs"
 import { t } from "@/lib/i18n"
+import TransText from "@/components/TransText"
 
 
 // Remove duplicates and sort times
@@ -71,36 +70,36 @@ export function RestartScheduleBox({ restartTimes, setRestartTimes, disabled }: 
                     {restartTimes && restartTimes.length === 0 && (
                         <div className="text-sm text-muted-foreground">
                             <span>
-                                No schedule set. Click on the <strong>+</strong> button to add a time.
+                                <TransText k="No schedule set. Click on the **+** button to add a time." />
                             </span>
                             <p>
-                                {'Presets: '}
+                                {t('Presets')}{': '}
                                 <a
                                     onClick={() => applyPreset(['00:00'])}
                                     className="cursor-pointer text-sm text-primary hover:underline"
                                 >
-                                    1x<span className={presetSpanClasses}>/day</span>
+                                    1x<span className={presetSpanClasses}>{t('/day')}</span>
                                 </a>
                                 {', '}
                                 <a
                                     onClick={() => applyPreset(['00:00', '12:00'])}
                                     className="cursor-pointer text-sm text-primary hover:underline"
                                 >
-                                    2x<span className={presetSpanClasses}>/day</span>
+                                    2x<span className={presetSpanClasses}>{t('/day')}</span>
                                 </a>
                                 {', '}
                                 <a
                                     onClick={() => applyPreset(['00:00', '08:00', '16:00'])}
                                     className="cursor-pointer text-sm text-primary hover:underline"
                                 >
-                                    3x<span className={presetSpanClasses}>/day</span>
+                                    3x<span className={presetSpanClasses}>{t('/day')}</span>
                                 </a>
                                 {', '}
                                 <a
                                     onClick={() => applyPreset(['00:00', '06:00', '12:00', '18:00'])}
                                     className="cursor-pointer text-sm text-primary hover:underline"
                                 >
-                                    4x<span className={presetSpanClasses}>/day</span>
+                                    4x<span className={presetSpanClasses}>{t('/day')}</span>
                                 </a>
                             </p>
                         </div>
@@ -111,7 +110,7 @@ export function RestartScheduleBox({ restartTimes, setRestartTimes, disabled }: 
                             {!disabled && <button
                                 onClick={() => removeTime(index)}
                                 className="ml-2 text-secondary-foreground/50 hover:text-destructive"
-                                aria-label="Remove"
+                                aria-label={t('Remove')}
                                 disabled={disabled}
                             >
                                 <XIcon className="size-4" />
@@ -125,7 +124,7 @@ export function RestartScheduleBox({ restartTimes, setRestartTimes, disabled }: 
                         variant="secondary"
                         size={'xs'}
                         className="w-10 hover:bg-primary hover:text-primary-foreground"
-                        aria-label="Add"
+                        aria-label={t('Add')}
                         disabled={disabled}
                     >
                         <PlusIcon className="h-4" />
@@ -135,7 +134,7 @@ export function RestartScheduleBox({ restartTimes, setRestartTimes, disabled }: 
                         variant="muted"
                         size={'xs'}
                         className="w-10 hover:bg-destructive hover:text-destructive-foreground"
-                        aria-label="Clear"
+                        aria-label={t('Clear')}
                         disabled={disabled || !restartTimes || restartTimes.length === 0}
                     >
                         <TrashIcon className="h-3.5" />
@@ -143,7 +142,7 @@ export function RestartScheduleBox({ restartTimes, setRestartTimes, disabled }: 
                 </div>
             </div>
             <TimeInputDialog
-                title="Add Restart Time"
+                title={t('Add Restart Time')}
                 isOpen={isTimeInputOpen}
                 onClose={() => setIsTimeInputOpen(false)}
                 onSubmit={addTime}
@@ -171,7 +170,10 @@ export function TimeZoneWarning() {
         if (window.txConsts.serverTimezone !== browserTimezone) {
             return (
                 <SettingItemDesc className="text-destructive-inline">
-                    <strong>Warning:</strong> Your server timezone is set to <InlineCode>{window.txConsts.serverTimezone}</InlineCode>, but your browser timezone is <InlineCode>{browserTimezone}</InlineCode>. Make sure to configure the time according to the server timezone.
+                    <TransText
+                        k="**Warning:** Your server timezone is set to `{serverTimezone}`, but your browser timezone is `{browserTimezone}`. Make sure to configure the time according to the server timezone."
+                        values={{ serverTimezone: window.txConsts.serverTimezone, browserTimezone }}
+                    />
                 </SettingItemDesc>
             );
         }
@@ -308,20 +310,20 @@ export default function ConfigCardFxserver({ cardCtx, pageCtx }: SettingsCardPro
     });
     const handleResetServerData = () => {
         openConfirmDialog({
-            title: 'Reset Server Data Path',
+            title: t('Reset Server Data Path'),
             message: (<>
-                Are you sure you want to reset the server data path? <br />
+                {t('Are you sure you want to reset the server data path?')} <br />
                 <br />
-                <strong>This will not delete any resource files or database</strong>, but just reset the cAdminPanel configuration, allowing you to go back to the Setup page. <br />
-                If you want, you can set the path back to the current value later. <br />
+                <TransText k="**This will not delete any resource files or database**, but just reset the cAdminPanel configuration, allowing you to go back to the Setup page." /> <br />
+                {t('If you want, you can set the path back to the current value later.')} <br />
                 <br />
-                <strong className="text-warning-inline">Warning:</strong> take note of the current path before proceeding, so you can set it back later if you need to. Current path:
+                <strong className="text-warning-inline">{t('Warning:')}</strong> {t('take note of the current path before proceeding, so you can set it back later if you need to. Current path:')}
                 <Input value={cfg.dataPath.initialValue} className="mt-2" readOnly />
             </>),
             onConfirm: () => {
                 setIsResettingServerData(true);
                 resetServerDataApi({
-                    toastLoadingMessage: 'Resetting server data path...',
+                    toastLoadingMessage: t('Resetting server data path...'),
                     success: (data, toastId) => {
                         if (data.type === 'success') {
                             setLocation('/server/setup');
@@ -346,7 +348,7 @@ export default function ConfigCardFxserver({ cardCtx, pageCtx }: SettingsCardPro
             advancedVisible={showAdvanced}
             advancedSetter={setShowAdvanced}
         >
-            <SettingItem label="Server Data Folder" htmlFor={cfg.dataPath.eid} required>
+            <SettingItem label={t('Server Data Folder')} htmlFor={cfg.dataPath.eid} required>
                 <div className="flex gap-2">
                     <Input
                         id={cfg.dataPath.eid}
@@ -363,42 +365,45 @@ export default function ConfigCardFxserver({ cardCtx, pageCtx }: SettingsCardPro
                         disabled={pageCtx.isReadOnly || !hasPerm('all_permissions') || isResettingServerData}
                         onClick={handleResetServerData}
                     >
-                        <Undo2Icon className="mr-2 h-4 w-4" /> Reset
+                        <Undo2Icon className="mr-2 h-4 w-4" /> {t('Reset')}
                     </Button>
                 </div>
                 <SettingItemDesc>
-                    The full path of the folder that <strong>contains</strong> the <InlineCode>resources</InlineCode> folder, usually it's the same place that contains your <InlineCode>server.cfg</InlineCode>. <br />
-                    Resetting this value will allow you to go back to the Setup page, without deleting any files.
+                    <TransText k="The full path of the folder that **contains** the `resources` folder, usually it's the same place that contains your `server.cfg`." /> <br />
+                    {t('Resetting this value will allow you to go back to the Setup page, without deleting any files.')}
                     {pageCtx.apiData?.dataPath && pageCtx.apiData?.hasCustomDataPath && (<>
                         <br />
                         <span className="text-warning-inline">
-                            {window.txConsts.hostConfigSource}: This path should start with <InlineCode>{pageCtx.apiData.dataPath}</InlineCode> .
+                            <TransText
+                                k="{source}: This path should start with `{path}`."
+                                values={{ source: window.txConsts.hostConfigSource, path: pageCtx.apiData.dataPath }}
+                            />
                         </span>
                     </>)}
                 </SettingItemDesc>
             </SettingItem>
-            <SettingItem label="Quiet Mode">
+            <SettingItem label={t('Quiet Mode')}>
                 <SwitchText
                     id={cfg.quietMode.eid}
-                    checkedLabel="Enabled"
-                    uncheckedLabel="Disabled"
+                    checkedLabel={t('Enabled')}
+                    uncheckedLabel={t('Disabled')}
                     checked={forceQuietMode || states.quietMode}
                     onCheckedChange={cfg.quietMode.state.set}
                     disabled={pageCtx.isReadOnly || forceQuietMode}
                 />
                 <SettingItemDesc>
-                    Do not print FXServer's output to the terminal. <br />
-                    You will still be able to use the Live Console.
+                    {t("Do not print FXServer's output to the terminal.")} <br />
+                    {t('You will still be able to use the Live Console.')}
                     {forceQuietMode && (<>
                         <br />
-                        <span className="text-warning-inline">{window.txConsts.hostConfigSource}: This setting is locked and cannot be changed.</span>
+                        <span className="text-warning-inline">{t('{source}: This setting is locked and cannot be changed.', { source: window.txConsts.hostConfigSource })}</span>
                     </>)}
                 </SettingItemDesc>
             </SettingItem>
 
             {showAdvanced && <AdvancedDivider />}
 
-            <SettingItem label="CFG File Path" htmlFor={cfg.cfgPath.eid} showIf={showAdvanced} required>
+            <SettingItem label={t('CFG File Path')} htmlFor={cfg.cfgPath.eid} showIf={showAdvanced} required>
                 <Input
                     id={cfg.cfgPath.eid}
                     ref={cfgPathRef}
@@ -409,11 +414,11 @@ export default function ConfigCardFxserver({ cardCtx, pageCtx }: SettingsCardPro
                     required
                 />
                 <SettingItemDesc>
-                    The path to your server config file, probably named <InlineCode>server.cfg</InlineCode>. <br />
-                    This can either be absolute, or relative to the Server Data folder.
+                    <TransText k="The path to your server config file, probably named `server.cfg`." /> <br />
+                    {t('This can either be absolute, or relative to the Server Data folder.')}
                 </SettingItemDesc>
             </SettingItem>
-            <SettingItem label="Startup Arguments" htmlFor={cfg.startupArgs.eid} showIf={showAdvanced}>
+            <SettingItem label={t('Startup Arguments')} htmlFor={cfg.startupArgs.eid} showIf={showAdvanced}>
                 <Input
                     id={cfg.startupArgs.eid}
                     ref={startupArgsRef}
@@ -423,8 +428,8 @@ export default function ConfigCardFxserver({ cardCtx, pageCtx }: SettingsCardPro
                     disabled={pageCtx.isReadOnly}
                 />
                 <SettingItemDesc>
-                    Additional command-line arguments to pass to the FXServer instance such as NodeJS CLI flags. <br />
-                    <strong>Warning:</strong> You almost certainly should not use this option, commands and convars should be placed in your <InlineCode>server.cfg</InlineCode> instead.
+                    {t('Additional command-line arguments to pass to the FXServer instance such as NodeJS CLI flags.')} <br />
+                    <TransText k="**Warning:** You almost certainly should not use this option, commands and convars should be placed in your `server.cfg` instead." />
                 </SettingItemDesc>
             </SettingItem>
             <SettingItem label="OneSync" htmlFor={cfg.onesync.eid} showIf={showAdvanced}>
@@ -434,52 +439,52 @@ export default function ConfigCardFxserver({ cardCtx, pageCtx }: SettingsCardPro
                     disabled={pageCtx.isReadOnly}
                 >
                     <SelectTrigger id={cfg.onesync.eid}>
-                        <SelectValue placeholder="Select OneSync option" />
+                        <SelectValue placeholder={t('Select OneSync option')} />
                     </SelectTrigger>
                     <SelectContent>
-                        <SelectItem value="on">On (recommended)</SelectItem>
-                        <SelectItem value="legacy">Legacy</SelectItem>
-                        <SelectItem value="off">Off</SelectItem>
+                        <SelectItem value="on">{t('On (recommended)')}</SelectItem>
+                        <SelectItem value="legacy">{t('Legacy')}</SelectItem>
+                        <SelectItem value="off">{t('Off')}</SelectItem>
                     </SelectContent>
                 </Select>
                 <SettingItemDesc>
-                    Most servers should be using <strong>OneSync On</strong>. <br />
-                    The other options are considered deprecated and should not be used unless you know what you're doing.
-                    For more information, please read the <TxAnchor href="https://docs.fivem.net/docs/scripting-reference/onesync/" >documentation</TxAnchor>.
+                    <TransText k="Most servers should be using **OneSync On**." /> <br />
+                    <TransText k="The other options are considered deprecated and should not be used unless you know what you're doing. RedM servers only support **On**." /> <br />
+                    <TransText k="For more information, please read the [documentation](https://docs.fivem.net/docs/scripting-reference/onesync/)." />
                 </SettingItemDesc>
             </SettingItem>
-            <SettingItem label="Autostart" showIf={showAdvanced}>
+            <SettingItem label={t('Autostart')} showIf={showAdvanced}>
                 <SwitchText
                     id={cfg.autoStart.eid}
-                    checkedLabel="Enabled"
-                    uncheckedLabel="Disabled"
+                    checkedLabel={t('Enabled')}
+                    uncheckedLabel={t('Disabled')}
                     checked={states.autoStart}
                     onCheckedChange={cfg.autoStart.state.set}
                     disabled={pageCtx.isReadOnly}
                 />
                 <SettingItemDesc>
-                    Start the server automatically after <strong>cAdminPanel</strong> starts.
+                    <TransText k="Start the server automatically after **cAdminPanel** starts." />
                 </SettingItemDesc>
             </SettingItem>
-            <SettingItem label="Resource Starting Tolerance" htmlFor={cfg.resourceTolerance.eid} showIf={showAdvanced}>
+            <SettingItem label={t('Resource Starting Tolerance')} htmlFor={cfg.resourceTolerance.eid} showIf={showAdvanced}>
                 <Select
                     value={selectNumberUtil.toUi(states.resourceTolerance)}
                     onValueChange={(val) => cfg.resourceTolerance.state.set(selectNumberUtil.toCfg(val))}
                     disabled={pageCtx.isReadOnly}
                 >
                     <SelectTrigger id={cfg.resourceTolerance.eid}>
-                        <SelectValue placeholder="Select..." />
+                        <SelectValue placeholder={t('Select...')} />
                     </SelectTrigger>
                     <SelectContent>
-                        <SelectItem value="90">1.5 minutes (default)</SelectItem>
-                        <SelectItem value="180">3 minutes</SelectItem>
-                        <SelectItem value="300">5 minutes</SelectItem>
-                        <SelectItem value="600">10 minutes</SelectItem>
+                        <SelectItem value="90">{t('1.5 minutes (default)')}</SelectItem>
+                        <SelectItem value="180">{t('3 minutes')}</SelectItem>
+                        <SelectItem value="300">{t('5 minutes')}</SelectItem>
+                        <SelectItem value="600">{t('10 minutes')}</SelectItem>
                     </SelectContent>
                 </Select>
                 <SettingItemDesc>
-                    At server boot, how much time to wait for any single resource to start before restarting the server. <br />
-                    <strong>Note:</strong> If you are getting <InlineCode>failed to start in time</InlineCode> errors, increase this value.
+                    {t('At server boot, how much time to wait for any single resource to start before restarting the server.')} <br />
+                    <TransText k="**Note:** If you are getting `failed to start in time` errors, increase this value." />
                 </SettingItemDesc>
             </SettingItem>
         </SettingsCardShell>

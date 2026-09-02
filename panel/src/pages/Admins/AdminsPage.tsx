@@ -12,13 +12,6 @@ import { Label } from '@/components/ui/label';
 import { PageHeader } from '@/components/page-header';
 import { cn } from '@/lib/utils';
 import { useOpenConfirmDialog } from '@/hooks/dialogs';
-import {
-    cadminApiPath,
-    cadminData,
-    toCadminLicenseIdentifier,
-    type CadminPlayer,
-    type CadminResponse,
-} from '@/pages/CAdmin/api';
 import { t } from '@/lib/i18n';
 
 type StaffMember = {
@@ -27,7 +20,6 @@ type StaffMember = {
     isSelf: boolean;
     disableEdit: boolean;
     disableDelete: boolean;
-    email: string;
     citizenfxId: string;
     citizenfxIdentifier: string;
     discordId: string;
@@ -46,13 +38,12 @@ type StaffDataResponse = { success: true; data: StaffData } | { success: false; 
 type ActionResponse = { type: 'success' | 'danger'; message?: string; refresh?: boolean; temporaryPassword?: string };
 type StaffDraft = {
     name: string;
-    email: string;
     citizenfxID: string;
     discordID: string;
     permissions: string[];
 };
 
-const emptyDraft: StaffDraft = { name: '', email: '', citizenfxID: '', discordID: '', permissions: [] };
+const emptyDraft: StaffDraft = { name: '', citizenfxID: '', discordID: '', permissions: [] };
 const sectionOrder: Permission['section'][] = ['Panel & Server', 'Character Management', 'In-game Menu'];
 
 const permissionSummary = (member: StaffMember) => {
@@ -79,6 +70,10 @@ export default function AdminsPage() {
         permissions: (swr.data?.permissions ?? []).filter(permission => permission.section === section),
     })), [swr.data?.permissions]);
 
+    //An account with neither identifier is reachable only through the panel: the
+    //in-game menu authenticates on the identifiers the game reports and nothing else.
+    const hasGameIdentity = draft.citizenfxID.trim().length > 0 || draft.discordID.trim().length > 0;
+
     const openNew = (prefill: Partial<StaffDraft> = {}) => {
         setDraft({ ...emptyDraft, ...prefill });
         setEditing('new');
@@ -97,32 +92,15 @@ export default function AdminsPage() {
         const prefill: StaffDraft = {
             ...emptyDraft,
             name: safeName,
-            email: params.get('email') || '',
             citizenfxID: params.get('citizenfx') || '',
             discordID: discord.includes(':') ? discord.split(':').pop() || '' : discord,
         };
         openNew(prefill);
-        const license = params.get('license');
         window.history.replaceState({}, '', window.location.pathname);
-
-        if (!prefill.email && license && window.txConsts.cadminEnabled) {
-            const cadminIdentifier = toCadminLicenseIdentifier(license);
-            if (!cadminIdentifier) return;
-            const url = `${cadminApiPath(`player/${encodeURIComponent(cadminIdentifier)}`)}?scope=player`;
-            void fetcher<CadminResponse<CadminPlayer[]>>(url)
-                .then(cadminData)
-                .then(players => {
-                    const email = players.find(player => player.account?.email)?.account?.email;
-                    if (!email) return;
-                    setDraft(current => current.name === prefill.name ? { ...current, email } : current);
-                })
-                .catch(() => undefined);
-        }
     }, []);
     const openEdit = (member: StaffMember) => {
         setDraft({
             name: member.name,
-            email: member.email,
             citizenfxID: member.citizenfxId,
             discordID: member.discordId,
             permissions: member.permissions,
@@ -144,9 +122,8 @@ export default function AdminsPage() {
                 method: 'POST',
                 body: {
                     name: draft.name.trim(),
-                    chyaroEmail: draft.email.trim(),
                     citizenfxID: draft.citizenfxID.trim(),
-                    discordID: draft.email.trim() ? '' : draft.discordID.trim(),
+                    discordID: draft.discordID.trim(),
                     permissions: draft.permissions,
                 },
             });
@@ -171,7 +148,7 @@ export default function AdminsPage() {
     };
     const remove = (member: StaffMember) => openConfirmDialog({
         title: t('Remove {name}?', { name: member.name }),
-        message: t('This removes their local txAdmin access. Their chyarologin account is not deleted.'),
+        message: t('This removes their local panel access. Their game identifiers are left untouched.'),
         actionLabel: t('Remove access'),
         onConfirm: () => { void performRemove(member); },
     });
@@ -180,7 +157,7 @@ export default function AdminsPage() {
         <PageHeader title={t('Staff & Permissions')} icon={<ShieldCheck className="size-6" />} />
         <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
             <div>
-                <p className="max-w-3xl text-sm text-zinc-400">{t("Access is stored locally in txAdmin's admins.json. Staff can sign in with a local username/password, an optional chyarologin account, or use linked game identifiers in-menu.")}</p>
+                <p className="max-w-3xl text-sm text-zinc-400">{t("Access is stored locally in the panel's admins.json. Staff sign in with a local username and password, or use linked game identifiers in-menu.")}</p>
                 {swr.data && <p className="mt-1 text-xs text-zinc-600">{t(swr.data.admins.length === 1 ? '{count} local staff account' : '{count} local staff accounts', { count: swr.data.admins.length })}</p>}
             </div>
             <Button onClick={() => openNew()}><Plus className="mr-2 size-4" />{t('Add staff member')}</Button>
@@ -192,12 +169,14 @@ export default function AdminsPage() {
                 <div className="overflow-x-auto">
                     <table className="w-full text-sm">
                         <thead className="border-b border-dashed border-white/5 text-xs uppercase tracking-widest text-zinc-500">
-                            <tr><th className="px-6 py-3 text-left font-medium">{t('Staff member')}</th><th className="px-6 py-3 text-left font-medium">{t('Login identity')}</th><th className="px-6 py-3 text-left font-medium">{t('Local access')}</th><th className="px-6 py-3" /></tr>
+                            <tr><th className="px-6 py-3 text-left font-medium">{t('Staff member')}</th><th className="px-6 py-3 text-left font-medium">{t('Game identifier')}</th><th className="px-6 py-3 text-left font-medium">{t('Local access')}</th><th className="px-6 py-3" /></tr>
                         </thead>
                         <tbody className="divide-y divide-dashed divide-white/5">
                             {swr.data?.admins.map(member => <tr key={member.name} className="transition hover:bg-white/[0.03]">
                                 <td className="px-6 py-4"><div className="flex items-center gap-3"><span className="grid size-9 place-items-center rounded-xl bg-brand-500/10 text-brand-400"><UserRound className="size-4" /></span><div><p className="font-medium text-white">{member.name}{member.isSelf && <span className="ml-2 text-xs text-brand-400">{t('you')}</span>}</p><p className="text-xs text-zinc-600">{member.master ? t('Owner') : t('Staff')}</p></div></div></td>
-                                <td className="px-6 py-4"><p className="text-zinc-300">{member.email || t('Local username')}</p><p className="mt-0.5 font-mono text-xs text-zinc-600">{member.citizenfxIdentifier || (member.discordId ? `discord:${member.discordId}` : t('No game identifier'))}</p></td>
+                                <td className="px-6 py-4">{member.citizenfxIdentifier || member.discordId
+                                    ? <p className="font-mono text-xs text-zinc-400">{member.citizenfxIdentifier || `discord:${member.discordId}`}</p>
+                                    : <span className="rounded-md bg-amber-500/10 px-2 py-1 text-xs text-amber-300">{t('No game identifier')}</span>}</td>
                                 <td className="px-6 py-4"><span className={cn('rounded-md px-2 py-1 text-xs', member.master || member.permissions.includes('all_permissions') ? 'bg-amber-500/10 text-amber-300' : 'bg-white/5 text-zinc-400')}>{permissionSummary(member)}</span></td>
                                 <td className="px-6 py-4"><div className="flex justify-end gap-2">{!member.isSelf && <Button size="sm" variant="outline" disabled={member.disableEdit} onClick={() => openEdit(member)}><Pencil className="mr-1 size-3.5" />{t('Edit')}</Button>}<Button size="sm" variant="destructive" disabled={member.disableDelete} onClick={() => remove(member)}><Trash2 className="size-3.5" /></Button></div></td>
                             </tr>)}
@@ -214,20 +193,18 @@ export default function AdminsPage() {
                 <div className="grid gap-6 py-2">
                     <section className="rounded-2xl border border-white/5 bg-white/[0.025] p-5">
                         <h3 className="mb-4 flex items-center text-sm font-semibold text-white"><UserRound className="mr-2 size-4 text-brand-400" />{t('Identity')}</h3>
-                        {editing === 'new' && <p className="mb-4 rounded-xl border border-brand-500/20 bg-brand-500/5 p-3 text-xs text-zinc-300">{draft.email.trim()
-                            ? t('The email must belong to a registered chyarologin account. No local password will be created.')
-                            : t('A temporary local password will be generated and shown once after saving. The staff member must change it on first login.')}</p>}
+                        {editing === 'new' && <p className="mb-4 rounded-xl border border-brand-500/20 bg-brand-500/5 p-3 text-xs text-zinc-300">{t('A temporary local password will be generated and shown once after saving. The staff member must change it on first login.')}</p>}
+                        {!hasGameIdentity && <p className="mb-4 rounded-xl border border-amber-500/20 bg-amber-500/5 p-3 text-xs text-amber-200">{t('Fill in at least one identifier below, or this account can only sign in to the panel. The in-game menu recognises staff by identifier alone, so it never opens for an account without one.')}</p>}
                         <div className="grid gap-4 md:grid-cols-2">
                             <div className="space-y-2"><Label htmlFor="staff-name">{t('Username')}</Label><Input id="staff-name" value={draft.name} readOnly={editing !== 'new'} onChange={event => setDraft({ ...draft, name: event.target.value })} placeholder={t('panel username')} /></div>
-                            <div className="space-y-2"><Label htmlFor="staff-email">{t('chyarologin email (optional)')}</Label><Input id="staff-email" type="email" value={draft.email} onChange={event => setDraft({ ...draft, email: event.target.value })} placeholder="verified@example.com" /><p className="text-xs text-zinc-600">{t('Used only to match an optional verified login to this local account.')}</p></div>
-                            <div className="space-y-2"><Label htmlFor="staff-fivem">{t('Cfx.re username or fivem ID')}</Label><Input id="staff-fivem" value={draft.citizenfxID} onChange={event => setDraft({ ...draft, citizenfxID: event.target.value })} placeholder={t('optional')} /></div>
-                            <div className="space-y-2"><Label htmlFor="staff-discord">{t('Discord user ID')}</Label><Input id="staff-discord" value={draft.discordID} disabled={!!draft.email.trim()} onChange={event => setDraft({ ...draft, discordID: event.target.value })} placeholder={t('optional')} /><p className="text-xs text-zinc-600">{draft.email.trim() ? t('Discord must be connected through chyarologin for this account.') : t('Used for in-game administrator matching.')}</p></div>
+                            <div className="space-y-2"><Label htmlFor="staff-fivem">{t('Cfx.re username or fivem ID')}</Label><Input id="staff-fivem" value={draft.citizenfxID} onChange={event => setDraft({ ...draft, citizenfxID: event.target.value })} placeholder={t('optional')} /><p className="text-xs text-zinc-600">{t('The identifier the game reports, so this is what matches staff in game.')}</p></div>
+                            <div className="space-y-2"><Label htmlFor="staff-discord">{t('Discord user ID')}</Label><Input id="staff-discord" value={draft.discordID} onChange={event => setDraft({ ...draft, discordID: event.target.value })} placeholder={t('optional')} /><p className="text-xs text-zinc-600">{t('Also matches in game, and links the account to the Discord bot.')}</p></div>
                         </div>
                     </section>
                     <section className="rounded-2xl border border-white/5 bg-white/[0.025] p-5">
-                        <h3 className="mb-1 flex items-center text-sm font-semibold text-white"><KeyRound className="mr-2 size-4 text-brand-400" />{t('Local txAdmin permissions')}</h3>
+                        <h3 className="mb-1 flex items-center text-sm font-semibold text-white"><KeyRound className="mr-2 size-4 text-brand-400" />{t('Local panel permissions')}</h3>
                         <p className="mb-5 text-xs text-zinc-600">{t('Dangerous permissions are highlighted. Staff cannot grant permissions they do not already have.')}</p>
-                        <p className="mb-5 -mt-3 text-xs text-zinc-500">{t('All Permissions grants every listed permission. Linked Accounts and CFG Editor are master-only and are not permissions.')}</p>
+                        <p className="mb-5 -mt-3 text-xs text-zinc-500">{t('All Permissions grants every listed permission. The CFG Editor is master-only and is not a permission.')}</p>
                         <div className="grid gap-6 lg:grid-cols-3">{groupedPermissions.map(group => <div key={group.section}><h4 className="mb-3 text-xs font-semibold uppercase tracking-widest text-zinc-500">{t(group.section)}</h4><div className="space-y-2.5">{group.permissions.map(permission => <label key={permission.id} className="flex cursor-pointer items-start gap-3 rounded-lg p-2 transition hover:bg-white/5"><Checkbox checked={draft.permissions.includes(permission.id)} onCheckedChange={value => togglePermission(permission.id, value === true)} /><span><span className={cn('block text-sm', permission.dangerous ? 'text-red-300' : 'text-zinc-300')}>{t(permission.label)}</span><span className="font-mono text-[10px] text-zinc-600">{permission.id}</span></span></label>)}</div></div>)}</div>
                     </section>
                 </div>

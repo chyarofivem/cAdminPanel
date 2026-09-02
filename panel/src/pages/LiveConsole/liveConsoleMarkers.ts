@@ -60,7 +60,7 @@ const parseCommandArg = (arg: string) => {
  */
 export const getTermLineEventData = (line: string): TerminalMarkerGetterResult => {
     const clean = sanitizeTermLine(line);
-    const regex = /^(?<bar>.)\s+TXADMIN\1 txaEvent "(?<arg0>\w+)" "(?<arg1>.*)"$/;
+    const regex = /^(?<bar>.)\s+PANEL\1 txaEvent "(?<arg0>\w+)" "(?<arg1>.*)"$/;
     const match = clean.match(regex);
     if (!match || !match.groups) return;
     const { arg0, arg1 } = match.groups;
@@ -92,10 +92,9 @@ export const getTermLineEventData = (line: string): TerminalMarkerGetterResult =
  */
 export const getTermLineInitialData = (line: string): TerminalMarkerGetterResult => {
     const clean = sanitizeTermLine(line);
-    const regex = /^(?<bar>.)\s+TXADMIN\1 txaInitialData "(?<arg0>.*)"$/;
+    const regex = /^(?<bar>.)\s+PANEL\1 txaInitialData "(?<arg0>.*)"$/;
     const match = clean.match(regex);
     if (!match || !match.groups) return;
-    console.log('getTermLineInitialData', match.groups);
     const { arg0 } = match.groups;
 
     const data = parseCommandArg(arg0);

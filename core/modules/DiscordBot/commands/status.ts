@@ -56,12 +56,17 @@ export const generateStatusMessage = (
     //NOTE: serverCfxId can be undefined, breaking the URLs, but there is no easy clean way to deal with this issue
     const serverCfxId = txCore.cacheStore.get('fxsRuntime:cfxId');
     const fxMonitorStatus = txCore.fxMonitor.status;
+    //RedM servers are not listed on servers.fivem.net, so the embed title would link
+    //to a page that cannot find them.
+    const serverBrowserHost = txCore.cacheStore.get('fxsRuntime:gameName') === 'redm'
+        ? 'servers.redm.net'
+        : 'servers.fivem.net';
     const placeholders = {
         serverName: txConfig.general.serverName,
         statusString: 'Unknown',
         statusColor: '#4C3539',
         serverCfxId,
-        serverBrowserUrl: `https://servers.fivem.net/servers/detail/${serverCfxId}`,
+        serverBrowserUrl: `https://${serverBrowserHost}/servers/detail/${serverCfxId}`,
         serverJoinUrl: `https://cfx.re/join/${serverCfxId}`,
         serverMaxClients: txCore.cacheStore.get('fxsRuntime:maxClients') ?? 'unknown',
         serverClients: txCore.fxPlayerlist.onlineCount,

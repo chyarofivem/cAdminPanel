@@ -42,6 +42,14 @@ RegisterNetEvent('txcl:showAnnouncement', function(message, author)
         }
     )
 end)
+RegisterNetEvent('txcl:showScheduledRestart', function(message)
+    sendMenuMessage(
+        'addScheduledRestart',
+        {
+            message = message
+        }
+    )
+end)
 RegisterNetEvent('txcl:showDirectMessage', function(message, author)
     sendMenuMessage(
         'addDirectMessage',
@@ -136,13 +144,14 @@ end)
 --  Other stuff
 -- =============================================
 -- Removing unwanted chat suggestions
--- We only want suggestion for: /tx, /txAdmin-reauth
+-- We only want suggestion for: /tx, /cadmin-reauth
 -- The suggestion is added after 500ms, so we need to wait more
 CreateThread(function()
     Wait(1000)
     local suggestionsToRemove = {
         --Commands
         '/txadmin',
+        '/txAdmin-reauth',
         '/txaPing',
         '/txaEvent',
         '/txaReportResources',
@@ -223,7 +232,7 @@ function IsNuiRequestOriginValid(headers)
 
     -- warn admin of possible csrf attempt
     if menuIsAccessible and sendPersistentAlert then
-        local msg = ('ATTENTION! txAdmin received a NUI message from the origin "%s" which is not approved. This likely means that that resource is vulnerable to XSS which has been exploited to inject txAdmin commands. It is recommended that you fix the vulnerability or remove that resource completely.'):format(headers['Origin'])
+        local msg = ('ATTENTION! The admin menu received a NUI message from the origin "%s" which is not approved. This likely means that that resource is vulnerable to XSS which has been exploited to inject admin menu commands. It is recommended that you fix the vulnerability or remove that resource completely.'):format(headers['Origin'])
         sendPersistentAlert('csrfWarning', 'error', msg, false)
     end
 

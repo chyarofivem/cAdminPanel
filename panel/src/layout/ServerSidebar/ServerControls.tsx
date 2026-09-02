@@ -15,7 +15,11 @@ import { restartSchedulePromptProps } from './restartScheduleUtils';
 import { validateRestartSchedule } from './restartScheduleValidation';
 
 
-const controlButtonClass = 'h-9 w-full gap-2 px-2 text-xs shadow-none';
+//NOTE: the sidebar grid cell is ~100px wide, and the button base class is `whitespace-nowrap`.
+//Longer translations (eg. 'Restart' -> 'Ponovno pokreni') painted outside the rounded background,
+//so the label wraps onto a second line and the button grows instead of overflowing.
+const controlButtonClass = 'h-auto min-h-9 w-full min-w-0 gap-2 px-2 py-1.5 text-xs shadow-none';
+const controlLabelClass = 'min-w-0 whitespace-normal break-words text-center leading-tight';
 
 export default function ServerControls() {
     const txConfigState = useAtomValue(txConfigStateAtom);
@@ -168,10 +172,11 @@ export default function ServerControls() {
                             <Button
                                 onClick={handleStartStop}
                                 variant="success"
-                                className={cn(controlButtonClass, 'relative')}
+                                className={cn(controlButtonClass, 'relative h-full')}
                                 disabled={!hasControlPerms}
                             >
-                                <PowerIcon className='size-4' /> {t('Start')}
+                                <PowerIcon className='size-4 shrink-0' />
+                                <span className={controlLabelClass}>{t('Start')}</span>
                             </Button>
                         </div>
                     ) : (
@@ -181,7 +186,8 @@ export default function ServerControls() {
                             className={controlButtonClass}
                             disabled={!hasControlPerms}
                         >
-                            <PowerOffIcon className='size-4' /> {t('Stop')}
+                            <PowerOffIcon className='size-4 shrink-0' />
+                            <span className={controlLabelClass}>{t('Stop')}</span>
                         </Button>
                     )}
                 </TooltipTrigger>
@@ -201,7 +207,8 @@ export default function ServerControls() {
                         className={controlButtonClass}
                         disabled={!hasControlPerms || !fxRunnerState.isChildAlive}
                     >
-                        <RotateCcwIcon className='size-4' /> {t('Restart')}
+                        <RotateCcwIcon className='size-4 shrink-0' />
+                        <span className={controlLabelClass}>{t('Restart')}</span>
                     </Button>
                 </TooltipTrigger>
                 <TooltipContent className={cn(!hasControlPerms && 'text-destructive-inline text-center')}>
@@ -221,15 +228,15 @@ export default function ServerControls() {
                         disabled={!hasControlPerms}
                     >
                         {scheduledRestartIsSkipped
-                            ? <PlayCircleIcon className='size-4' />
+                            ? <PlayCircleIcon className='size-4 shrink-0' />
                             : hasScheduledRestart
-                                ? <XCircleIcon className='size-4' />
-                                : <Clock3Icon className='size-4' />}
-                        {scheduledRestartIsSkipped
+                                ? <XCircleIcon className='size-4 shrink-0' />
+                                : <Clock3Icon className='size-4 shrink-0' />}
+                        <span className={controlLabelClass}>{scheduledRestartIsSkipped
                             ? t('Enable')
                             : hasScheduledRestart
                                 ? t('Cancel')
-                                : t('Schedule')}
+                                : t('Schedule')}</span>
                     </Button>
                 </TooltipTrigger>
                 <TooltipContent className={cn(!hasControlPerms && 'text-destructive-inline text-center')}>
@@ -252,7 +259,8 @@ export default function ServerControls() {
                         className={controlButtonClass}
                         disabled={!hasAnnouncementPerm || !fxRunnerState.isChildAlive}
                     >
-                        <MegaphoneIcon className='size-4' /> {t('Announce')}
+                        <MegaphoneIcon className='size-4 shrink-0' />
+                        <span className={controlLabelClass}>{t('Announce')}</span>
                     </Button>
                 </TooltipTrigger>
                 <TooltipContent className={cn(!hasAnnouncementPerm && 'text-destructive-inline text-center')}>

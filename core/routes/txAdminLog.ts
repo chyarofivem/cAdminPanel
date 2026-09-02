@@ -14,15 +14,15 @@ const querySchema = z.object({
 
 export default async function TxAdminLog(ctx: AuthedCtx) {
     const sendTypedResp = (data: TxAdminLogApiResponse | GenericApiErrorResp) => ctx.send(data);
-    if (!ctx.admin.testPermission('txadmin.log.combined', modulename)) {
+    if (!ctx.admin.testPermission('panel.log.view', modulename)) {
         ctx.status = 403;
-        return sendTypedResp({ error: 'You do not have permission to view the txAdmin log.' });
+        return sendTypedResp({ error: 'You do not have permission to view the panel log.' });
     }
 
     const parsed = querySchema.safeParse(ctx.query);
     if (!parsed.success) {
         ctx.status = 400;
-        return sendTypedResp({ error: 'Invalid txAdmin log query.' });
+        return sendTypedResp({ error: 'Invalid panel log query.' });
     }
     return sendTypedResp(txCore.logger.txadmin.query(parsed.data));
 }

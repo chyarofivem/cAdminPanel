@@ -34,12 +34,19 @@ CAdminConfig.rateLimit = {
 -- one of your own garages. ESX ignores this: it looks at `stored` instead.
 CAdminConfig.defaultGarage = GetConvar('cadmin_default_garage', 'pillboxgarage')
 
--- Chat command players run to bind their character to a chyarologin account.
-CAdminConfig.linkCommand = GetConvar('cadmin_link_command', 'link')
-
--- Where the panel lives, used only by /link. The resource talks to the panel,
--- never to chyarologin — that is what keeps the master key off the game server.
+-- Where the panel lives, filled from the panel's "Public panel URL" setting.
+-- Nothing in this resource calls out to it; it is exposed here so server
+-- scripts can point players or staff at the panel. http or https both work.
 CAdminConfig.panelUrl = GetConvar('cadmin_panel_url', '')
+
+-- The name shown to players in chat messages sent by this resource. By default
+-- it follows the server name the panel replicates, so players see "<server> Panel"
+-- instead of a product name they have no reason to recognise. The innermost
+-- fallback stays game-neutral so a RedM server is never branded for FiveM.
+CAdminConfig.displayName = GetConvar(
+    'cadmin_display_name',
+    GetConvar('txAdmin-serverName', 'Server') .. ' Panel'
+)
 
 -- Table names, in case your framework install renamed them.
 CAdminConfig.tables = {

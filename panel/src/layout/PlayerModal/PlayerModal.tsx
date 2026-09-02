@@ -15,6 +15,7 @@ import PlayerModalFooter from "./PlayerModalFooter";
 import { ModalContent, ModalTabMessage, ModalTabsList, ModalTabWrapper, type ModalTabInfo } from "@/components/modal-tabs";
 import { useAdminPerms } from "@/hooks/auth";
 import PlayerCharacterTab from "./PlayerCharacterTab";
+import { isCadminAvailable } from "@/pages/CAdmin/api";
 import { t } from '@/lib/i18n';
 
 
@@ -41,7 +42,7 @@ const baseModalTabs: ModalTabInfo[] = [
 
 export default function PlayerModal() {
     const { hasPerm } = useAdminPerms();
-    const canViewCharacter = window.txConsts.cadminEnabled && hasPerm('cadmin.players.view');
+    const canViewCharacter = isCadminAvailable() && hasPerm('cadmin.players.view');
     const modalTabs = useMemo<ModalTabInfo[]>(() => {
         if (!canViewCharacter) return baseModalTabs;
         return [

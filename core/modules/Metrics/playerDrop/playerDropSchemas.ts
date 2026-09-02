@@ -7,7 +7,7 @@ import { DeepReadonly } from 'utility-types';
 //Generic schemas
 const zIntNonNegative = z.number().int().nonnegative();
 
-//handleServerBootData that comes from txAdmin.loggers.server when the server boots
+//handleServerBootData that comes from the server logger when the server boots
 export const PDLServerBootDataSchema = z.object({
     gameName: z.string().min(1).default('unknown'),
     gameBuild: z.string().min(1).default('unknown'),
@@ -78,37 +78,3 @@ export type PDLHourlyType = {
     dropTypes: MultipleCounter;
     resKicks: MultipleCounter;
 };
-
-
-/**
- * Migration schemas from v1 to v2 with changes:
- * - added "oldVersion" to the fxsChanged and gameChanged events
- * - removed the "Game crashed: " prefix from crash reasons
- */
-export const PDLFxsChangedEventSchema_v1 = PDLFxsChangedEventSchema.omit({
-    oldVersion: true,
-});
-export const PDLGameChangedEventSchema_v1 = PDLGameChangedEventSchema.omit({
-    oldVersion: true,
-});
-export const PDLHourlyRawSchema_v1 = PDLHourlyRawSchema.extend({
-    changes: z.array(z.union([
-        PDLFxsChangedEventSchema_v1,
-        PDLGameChangedEventSchema_v1,
-        PDLResourcesChangedEventSchema,
-    ])),
-}).omit({
-    resKicks: true,
-});
-export const PDLFileSchema_v1 = PDLFileSchema.extend({
-    version: z.literal(1),
-    log: z.array(PDLHourlyRawSchema_v1),
-});
-export type PDLFileType_v1 = z.infer<typeof PDLFileSchema_v1>;
-
-//Used only in scripts/dev/makeOldStatsFile.ts
-export type PDLChangeEventType_V1 = (
-    z.infer<typeof PDLFxsChangedEventSchema_v1>
-    | z.infer<typeof PDLGameChangedEventSchema_v1>
-    | PDLResourcesChangedEventType
-);

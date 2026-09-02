@@ -1,29 +1,33 @@
 # In-Game Menu
 
-txAdmin v4.0.0 introduced an in-game menu equipped with common admin functionality, 
+cAdminPanel ships with an in-game menu equipped with common admin functionality,
 an online player browser, and a slightly trimmed down version of the web panel.
-
-You can find a short preview video [here](https://www.youtube.com/watch?v=jWKg0VQK0sc)
 
 ## Accessing the Menu
 
 You can access the menu in-game by using the command `/tx` or `/txadmin`, alternatively
-you can also use a keybind by going to `Game Settings > Key Bindings > FiveM` and 
-setting the `(txAdmin) Menu: Open Main Page` option.
+you can also use a keybind by going to `Game Settings > Key Bindings > FiveM` and
+setting the `Open Main Page` option.
+
+> RedM does not support key mappings, so no keybinds are registered there and the
+> commands are the only way to open the menu on a RedM server.
+
+> The `/tx` and `/txadmin` commands, as well as the `txAdmin-*` convars and
+> `txAdmin:*` command/event names below, are kept as-is for compatibility with the
+> wide range of existing FiveM/RedM resources, guides and server configs that rely
+> on them. They are stable contracts and will not be renamed.
 
 ### Permissions
-Anybody who you would like to give permissions to open the menu in-game, must have a txAdmin
+Anybody who you would like to give permissions to open the menu in-game, must have a panel
 account with either their Discord or Cfx.re identifiers tied to it.
 
 ***If you do not have any of these identifiers attached, you will not be able to access the menu***
 
 You can further control the menu options accessible to admins by changing their permissions
-in the admin manager as shown below.
-
-![img](https://i.imgur.com/LP7Ij8M.png)
+in the admin manager.
 
 ## Convars
-The txAdmin menu has a variety convars that can alter the default behavior of the menu.  
+The in-game menu has a variety convars that can alter the default behavior of the menu.  
 Convars configured in the settings page should not be set manually.
 
 ### Settings page only
@@ -40,7 +44,7 @@ Convars configured in the settings page should not be set manually.
 - Default: `Tab`
 
 **txAdmin-playerModePtfx**
-- Description: Determine whether to play particles effects and sound whenever an admin's player mode is changed, such as when enabling god mode or noclip.
+- Description: Determine whether to play particles effects and sound whenever an admin's player mode is changed, such as when enabling god mode or noclip. On RedM only the particles play.
 - Default: `true`
 
 **txAdmin-hideAdminInPunishments**
@@ -79,7 +83,7 @@ Convars configured in the settings page should not be set manually.
 - Usage: `setr txAdmin-menuPlayerIdDistance 100`
 
 **txAdmin-menuAnnounceNotiPos**
-- Description: Determines the location of the txAdmin announcement notification. This **must** use one of the following valid 
+- Description: Determines the location of the announcement notification. This **must** use one of the following valid
 positions, `top-center`, `top-left`, `top-right`, `bottom-center`, `bottom-left`, `bottom-right`.
 - Default: `top-center`
 - Usage: `set txAdmin-menuAnnounceNotiPos top-right`
@@ -91,22 +95,22 @@ positions, `top-center`, `top-left`, `top-right`, `bottom-center`, `bottom-left`
 - Usage: `/tx (playerID)`, `/txadmin (playerID)`
 - Required Perm: `Must be an admin registered in the Admin Manager`
 
-**txAdmin-reauth**
+**cadmin-reauth**
 - Description: Will retrigger the reauthentication process.
-- Usage: `/txAdmin-reauth`
+- Usage: `/cadmin-reauth` (the old `/txAdmin-reauth` name still works)
 - Required Perm: `none`
 
 ## Troubleshooting menu access
 - If you type `/tx` and nothing happens, your menu is probably disabled.  
-- If you see a red message like [this](https://i.imgur.com/G83uTNC.png) and you are registered on txAdmin, you can type `/txAdmin-reauth` in the chat to retry the authentication.  
-- If you can't authenticate and the reason id `Invalid Request: source`, this means the source IP of the HTTP request being made by fxserver to txAdmin is not a "localhost" one, which might occur if your host has multiple IPs. To disable this protection, edit your `config.json` file and add `webServer.disableNuiSourceCheck` with value `true` then restart txAdmin.
+- If you see a red authentication error in the chat and you are registered in the panel, you can type `/cadmin-reauth` in the chat to retry the authentication.  
+- If you can't authenticate and the reason id `Invalid Request: source`, this means the source IP of the HTTP request being made by fxserver to the panel is not a "localhost" one, which might occur if your host has multiple IPs. To disable this protection, edit your `config.json` file and add `webServer.disableNuiSourceCheck` with value `true` then restart the server.
 
 ## Development
-You can find development instructions regarding the menu [here.](https://github.com/tabarra/txAdmin/blob/master/docs/development.md#menu-development)
+You can find development instructions regarding the menu [here.](https://github.com/chyarofivem/cAdminPanel/blob/master/docs/development.md#menu-development)
 
 ## FAQ
 - **Q**: Why don't the 'Heal' options revive a player when using ESX/QBCore/etc?
 - **A**: Many frameworks independently handle a "dead" state for a player, meaning
   the menu is unable to reset this state in an resource agnostic form directly. To establish compatibility 
-  with any framework, txAdmin will emit an [txAdmin:events:playerHealed](https://github.com/tabarra/txAdmin/blob/master/docs/events.md#txadmineventsplayerhealed) 
+  with any framework, the panel will emit an [txAdmin:events:playerHealed](https://github.com/chyarofivem/cAdminPanel/blob/master/docs/events.md#txadmineventsplayerhealed)
   for developers to handle.

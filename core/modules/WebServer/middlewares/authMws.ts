@@ -10,7 +10,7 @@ const console = consoleFactory(modulename);
  * For the hosting provider routes
  */
 export const hostAuthMw = async (ctx: InitializedCtx, next: Function) => {
-    const docs = 'https://aka.cfx.re/txadmin-env-config';
+    const docs = 'https://github.com/chyarofivem/cAdminPanel/blob/master/docs/env-config.md';
 
     //Token disabled
     if (txHostConfig.hostApiToken === 'disabled') {

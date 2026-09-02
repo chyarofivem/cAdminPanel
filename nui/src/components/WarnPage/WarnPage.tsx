@@ -5,6 +5,7 @@ import { useNuiEvent } from "../../hooks/useNuiEvent";
 import { useTranslate } from "react-polyglot";
 import { debugData } from "../../utils/debugData";
 import { ReportProblemOutlined } from "@mui/icons-material";
+import { fontMono } from "../../styles/nuiTokens";
 
 
 /**
@@ -91,7 +92,7 @@ const WarnInnerComp: React.FC<WarnInnerComp> = ({
     padding: "0.15rem 0.35rem",
     backgroundColor: "rgba(255, 255, 255, 0.15)",
     border: "1px solid rgba(255, 255, 255, 0.25)",
-    fontFamily: "monospace",
+    fontFamily: fontMono,
     fontSize: "1.25em",
     letterSpacing: 1,
     borderRadius: 4,

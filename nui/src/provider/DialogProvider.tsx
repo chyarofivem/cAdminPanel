@@ -9,6 +9,7 @@ import React, {
 } from "react";
 
 import {
+  alpha,
   Button,
   Dialog,
   DialogActions,
@@ -138,7 +139,9 @@ export const DialogProvider: React.FC<DialogProviderProps> = ({ children }) => {
             borderRadius: 3,
             border: "1px solid",
             borderColor: "rgba(255,255,255,0.12)",
-            backgroundColor: "rgba(16, 21, 26, 0.98)",
+            //Reads the live theme: the literal FiveM wash painted RedM dialogs in the
+            //wrong palette, since the menu swaps the whole theme per game.
+            backgroundColor: (theme) => alpha(theme.palette.background.default, 0.98),
             backgroundImage: "none",
             boxShadow: "0 28px 80px rgba(0,0,0,0.55)",
           },
@@ -176,7 +179,7 @@ export const DialogProvider: React.FC<DialogProviderProps> = ({ children }) => {
                     : "primary.main",
                   bgcolor: dialogProps.composerTone === "announcement"
                     ? "rgba(251,191,36,0.12)"
-                    : "rgba(0,197,140,0.12)",
+                    : (theme) => alpha(theme.palette.primary.main, 0.12),
                   border: "1px solid currentColor",
                 }}
               >

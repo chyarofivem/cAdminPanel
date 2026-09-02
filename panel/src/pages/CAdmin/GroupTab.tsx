@@ -27,12 +27,22 @@ export default function GroupTab({ player, refresh }: { player: CadminPlayer; re
         if (!isValid || !canEdit || saving) return;
         setSaving(true);
         try {
-            cadminData(await fetcher<CadminResponse>(cadminApiPath('group'), {
+            const result = cadminData(await fetcher<CadminResponse<{ effective?: string }>>(cadminApiPath('group'), {
                 method: 'POST',
                 body: { identifier: cadminCharacterIdentifier(player), group: normalizedGroup },
             }));
             setGroup(normalizedGroup);
-            txToast.success(t('Group updated and saved.'));
+            //Qbox groups are ACE principals, and one granted in server.cfg is not
+            //the panel's to revoke. Saying so beats a success toast next to a
+            //group badge that still shows the old value.
+            if (result?.effective && result.effective !== normalizedGroup) {
+                txToast.warning(t('Saved as {group}, but the server still reports {effective} because another ACE principal (server.cfg) grants it.', {
+                    group: normalizedGroup,
+                    effective: result.effective,
+                }));
+            } else {
+                txToast.success(t('Group updated and saved.'));
+            }
             refresh();
         } catch (error) {
             txToast.error(t((error as Error).message));

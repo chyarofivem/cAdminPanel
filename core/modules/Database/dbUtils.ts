@@ -13,7 +13,7 @@ const console = consoleFactory(modulename);
 //Consts
 type IdStorageTypes = DatabaseObjectType | Set<string>;
 const maxAttempts = 10;
-const noIdErrorMessage = 'Unnable to generate new Random ID possibly due to the decreased available entropy. Please send a screenshot of the detailed information in the terminal for the txAdmin devs.';
+const noIdErrorMessage = 'Unnable to generate new Random ID possibly due to the decreased available entropy. Please open an issue with a screenshot of the detailed information in the terminal.';
 
 
 /**
@@ -46,7 +46,7 @@ const printDiagnostics = async () => {
     console.error(`Uptime: ${uptime}`);
     console.error(`Entropy: ${entropy}`);
     console.error(`Distro: ${osDistro}`);
-    console.error(`txAdmin: ${txEnv.txaVersion}`);
+    console.error(`Panel: ${txEnv.txaVersion}`);
     console.error(`FXServer: ${txEnv.fxsVersionTag}`);
     console.error(`Provider: ${txHostConfig.providerName ?? 'none'}`);
     console.error(`Unique Test: secure ${secureStorage.size}/100, non-secure ${nonsecureStorage.size}/100`);

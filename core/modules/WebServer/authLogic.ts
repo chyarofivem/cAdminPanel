@@ -6,7 +6,6 @@ import type { SessToolsType } from "./middlewares/sessionMws";
 import { ReactAuthDataType } from "@shared/authApiTypes";
 import localeMap from '@shared/localeMap';
 import { ACCENTS, type AccentId } from '@lib/theme';
-import { isUpdateSetupPending } from '@lib/updateSetup';
 const console = consoleFactory(modulename);
 
 
@@ -19,9 +18,6 @@ export class AuthedAdmin {
     public readonly permissions: string[];
     public readonly isTempPassword: boolean;
     public readonly profilePicture: string | undefined;
-    public readonly email: string | undefined;
-    public readonly chyaroLinked: boolean;
-    public readonly discordAvatar: string | undefined;
     public readonly discordIdentifier: string | undefined;
     public readonly cfxIdentifier: string | undefined;
     public readonly locale: string | undefined;
@@ -38,19 +34,9 @@ export class AuthedAdmin {
 
         const cachedPfp = txCore.cacheStore.get(`admin:picture:${vaultAdmin.name}`);
         this.profilePicture = typeof cachedPfp === 'string' ? cachedPfp : undefined;
-        this.chyaroLinked = !!vaultAdmin.providers?.chyarologin;
-        const chyaroData = vaultAdmin.providers?.chyarologin?.data || {};
-        this.email = chyaroData.email || vaultAdmin.providers?.chyarologin?.identifier;
-        //Once chyarologin is linked it is the authority for Discord identity. In
-        //particular, do not surface a stale/manual provider when the verified
-        //chyarologin profile has no Discord account attached.
-        const discordId = this.chyaroLinked
-            ? chyaroData.discordId
-            : vaultAdmin.providers?.discord?.id;
+        const discordId = vaultAdmin.providers?.discord?.id;
         this.discordIdentifier = discordId ? `discord:${discordId}` : undefined;
-        //The explicitly linked identifier wins: it is set by the admin themselves
-        //in the user settings page, while fivemLicense comes from chyarologin.
-        this.cfxIdentifier = vaultAdmin.providers?.citizenfx?.identifier || chyaroData.fivemLicense;
+        this.cfxIdentifier = vaultAdmin.providers?.citizenfx?.identifier;
         const storedLocale = vaultAdmin.preferences?.locale;
         this.locale = typeof storedLocale === 'string'
             && Object.prototype.hasOwnProperty.call(localeMap, storedLocale)
@@ -62,9 +48,6 @@ export class AuthedAdmin {
             ? storedAccent as AccentId
             : undefined;
         this.accentColor = this.accent ? ACCENTS[this.accent].hex : undefined;
-        this.discordAvatar = chyaroData.discordId && chyaroData.discordAvatar
-            ? `https://cdn.discordapp.com/avatars/${chyaroData.discordId}/${chyaroData.discordAvatar}.jpg?size=128`
-            : undefined;
     }
 
     /**
@@ -117,20 +100,16 @@ export class AuthedAdmin {
     getAuthData(): ReactAuthDataType {
         return {
             name: this.name,
-            email: this.email,
-            chyaroLinked: this.chyaroLinked,
             permissions: this.isMaster ? ['all_permissions'] : this.permissions,
             isMaster: this.isMaster,
             isTempPassword: this.isTempPassword,
             profilePicture: this.profilePicture,
-            discordAvatar: this.discordAvatar,
             discordIdentifier: this.discordIdentifier,
             cfxIdentifier: this.cfxIdentifier,
             locale: this.locale,
             accent: this.accent,
             accentColor: this.accentColor,
             csrfToken: this.csrfToken ?? 'not_set',
-            pendingUpdate: isUpdateSetupPending(this.isMaster),
         }
     }
 }
@@ -161,15 +140,6 @@ const failResp = (reason?: string) => ({
 /**
  * ZOD schemas for session auth
  */
-const validChyaroSessAuthSchema = z.object({
-    type: z.literal('chyarologin'),
-    username: z.string(),
-    csrfToken: z.string(),
-    expiresAt: z.number(),
-    identifier: z.string(),
-});
-export type ChyaroSessAuthType = z.infer<typeof validChyaroSessAuthSchema>;
-
 const validPassSessAuthSchema = z.object({
     type: z.literal('password'),
     username: z.string(),
@@ -179,10 +149,7 @@ const validPassSessAuthSchema = z.object({
 });
 export type PassSessAuthType = z.infer<typeof validPassSessAuthSchema>;
 
-const validSessAuthSchema = z.discriminatedUnion('type', [
-    validChyaroSessAuthSchema,
-    validPassSessAuthSchema,
-]);
+const validSessAuthSchema = validPassSessAuthSchema;
 
 
 /**
@@ -231,15 +198,8 @@ export const normalAuthLogic = (
             return failResp(`Admin '${sessAuth.username}' not found.`);
         }
 
-        if (sessAuth.type === 'password') {
-            if (vaultAdmin.password_hash !== sessAuth.password_hash) {
-                return failResp(`Password hash doesn't match for '${sessAuth.username}'.`);
-            }
-        } else {
-            const configuredEmail = vaultAdmin.providers.chyarologin?.identifier;
-            if (configuredEmail?.toLowerCase() !== sessAuth.identifier.toLowerCase()) {
-                return failResp(`chyarologin identity doesn't match for '${sessAuth.username}'.`);
-            }
+        if (vaultAdmin.password_hash !== sessAuth.password_hash) {
+            return failResp(`Password hash doesn't match for '${sessAuth.username}'.`);
         }
         return successResp(vaultAdmin, sessAuth.csrfToken);
     } catch (error) {

@@ -1,5 +1,5 @@
-# txAdmin Development
-If you are interested in development of txAdmin, this short guide will help setup your environment. 
+# cAdminPanel Development
+If you are interested in development of cAdminPanel, this short guide will help setup your environment.
 Before starting, please make sure you are familiar with the basics of NodeJS & ecosystem.
 > **Note:** This guide does not cover translations, [which are very easy to do!](./translation.md)  
 
@@ -15,7 +15,7 @@ Before starting, please make sure you are familiar with the basics of NodeJS & e
     - `boot`: Code used/triggered during the boot process.
     - `deployer`: Responsible for deploying new servers.
     - `lib`: Collection of stateles utils, helpers and business logic.
-    - `modules`: The classes that compose the txAdmin instance, they are stateful, provide specific functionalities and are interconnected with each other.
+    - `modules`: The classes that compose the panel instance, they are stateful, provide specific functionalities and are interconnected with each other.
     - `routes`: All the web routes, contain all the logic referenced in the HTTP router.
     - `testing`: Contains top-level testing utilities.
 - `resource`: The in-game resource that runs under the `monitor` name. These files will be synchronized with the deploy path when running the `dev:main` npm script;
@@ -26,9 +26,9 @@ Before starting, please make sure you are familiar with the basics of NodeJS & e
 
 
 ## Preparing the environment
-1. First, clone the txAdmin repository into a folder outside the fxserver directory;
+1. First, clone the cAdminPanel repository into a folder outside the fxserver directory;
 ```sh
-git clone https://github.com/tabarra/txAdmin
+git clone https://github.com/chyarofivem/cAdminPanel
 ```
 2. Install dependencies & prepare commit hook;
 ```sh
@@ -71,7 +71,7 @@ npm run dev
 #To run Vite on browser dev mode:
 npm run browser
 ```
-Keep in mind that for every change you will need to restart the `monitor` resource, and unless you started the server with `+setr txAdmin-debugMode true` txAdmin will detect that as a crash and restart your server.  
+Keep in mind that for every change you will need to restart the `monitor` resource, and unless you started the server with `+setr txAdmin-debugMode true` the panel will detect that as a crash and restart your server.  
 Also, when running in game mode, it takes between 10 and 30 seconds for the vite builder to finish for you to be able to restart the `monitor` resource ingame.
 
 ### Resource event naming rules:
@@ -103,7 +103,7 @@ replaces `monitor.zip` with the build stored under a single top-level `monitor/`
 - All schemas must have a default, even if `null`.
 - The objective of the `schema.fixer` is to fix invalid values, not apply defaults for missing values.
 - The `schema.fixer` is only used during boot, not during any saves.
-- Only use `SYM_FIXER_FATAL` for settings that are very important, so txAdmin rather not boot than to boot with an unexpected config.
+- Only use `SYM_FIXER_FATAL` for settings that are very important, so the panel rather not boot than to boot with an unexpected config.
 - The objective of the schema is to guarantee that the values are of the correct type (shouldn't cause TypeErrors), but does not check anything dynamic like existence of files, or anything that goes beyond one schema (eg. if bot enabled, token is required).
 - Validator transformers are only to "polish" the value, like removing duplicates and sorting values, not to fix invalid values.
 

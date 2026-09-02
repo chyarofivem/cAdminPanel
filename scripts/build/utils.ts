@@ -5,37 +5,19 @@ import config from './config';
 
 
 /**
- * txAdmin in ASCII
- */
-export const txAdminASCII = () => {
-    //NOTE: precalculating the ascii art for efficiency
-    // const figlet = require('figlet');
-    // let ascii = figlet.textSync('txAdmin');
-    // let b64 = Buffer.from(ascii).toString('base64');
-    // console.log(b64);
-    const preCalculated = `ICBfICAgICAgICAgICAgXyAgICAgICBfICAgICAgICAgICBfICAgICAgIAogfCB8X19fICBfX
- yAgIC8gXCAgIF9ffCB8XyBfXyBfX18gKF8pXyBfXyAgCiB8IF9fXCBcLyAvICAvIF8gXCAvIF9gIHwgJ18gYCBfIFx8IHwg
- J18gXCAKIHwgfF8gPiAgPCAgLyBfX18gXCAoX3wgfCB8IHwgfCB8IHwgfCB8IHwgfAogIFxfXy9fL1xfXC9fLyAgIFxfXF9
- fLF98X3wgfF98IHxffF98X3wgfF98CiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICA=`;
-    return Buffer.from(preCalculated, 'base64').toString('ascii');
-};
-
-
-/**
- * txAdmin + license banner for bundled files
+ * cAdminPanel + license banner for bundled files
  */
 export const licenseBanner = (baseDir = '.', isBundledFile = false) => {
     const licensePath = path.join(baseDir, 'LICENSE');
     const rootPrefix = isBundledFile ? '../' : '';
     const lineSep = '%'.repeat(80);
-    const logoPad = ' '.repeat(18);
+    const titlePad = ' '.repeat(18);
     const contentLines = [
         lineSep,
-        ...txAdminASCII().split('\n').map((x) => logoPad + x),
+        titlePad + 'cAdminPanel - FiveM/RedM server management',
+        titlePad + 'https://github.com/chyarofivem/cAdminPanel',
         lineSep,
-        'Author: André Tabarra (https://github.com/tabarra)',
-        'Repository: https://github.com/tabarra/txAdmin',
-        'txAdmin is a free open source software provided under the license below.',
+        'cAdminPanel is free open source software provided under the license below.',
         lineSep,
         ...fs.readFileSync(licensePath, 'utf8').trim().split('\n'),
         lineSep,
@@ -101,7 +83,7 @@ export const getPublishVersion = (isOptional: boolean) => {
         const parsedVersion = new SemVer(refRemoved);
         const isPreRelease = parsedVersion.prerelease.length > 0;
         const potentialExpiration = new Date().setUTCHours(24 * config.preReleaseExpirationDays, 0, 0, 0);
-        console.log(`txAdmin version ${parsedVersion.version}.`);
+        console.log(`cAdminPanel version ${parsedVersion.version}.`);
         return {
             txVersion: parsedVersion.version,
             isPreRelease,
@@ -115,7 +97,7 @@ export const getPublishVersion = (isOptional: boolean) => {
 
 
 /**
- * Edits the ./dist/fxmanifest.lua to include the txAdmin version.
+ * Edits the ./dist/fxmanifest.lua to include the panel version.
  * TODO: set up *_scripts automagically
  */
 const setupDistFxmanifest = (targetPath: string, txVersion: string) => {

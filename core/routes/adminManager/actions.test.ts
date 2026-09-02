@@ -6,7 +6,6 @@ const makeCtx = (password = '') => ({
     request: {
         body: {
             name: 'target',
-            chyaroEmail: '',
             password,
             citizenfxID: '',
             discordID: '',
@@ -58,7 +57,7 @@ describe('administrator management password boundaries', () => {
 
         await AdminManagerActions(ctx);
 
-        expect(editAdmin).toHaveBeenCalledWith('target', false, false, '', []);
+        expect(editAdmin).toHaveBeenCalledWith('target', false, false, []);
         expect(ctx.send).toHaveBeenCalledWith({ type: 'success', refresh: true });
     });
 });

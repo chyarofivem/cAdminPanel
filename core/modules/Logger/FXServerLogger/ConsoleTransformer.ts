@@ -91,7 +91,7 @@ export default class ConsoleTransformer {
     private lastSrc = '0:undefined';
     private lastMarkerTs = 0; //in seconds
     private STYLES = STYLES;
-    private PREFIX_SYSTEM = getConsoleLinePrefix('TXADMIN');
+    private PREFIX_SYSTEM = getConsoleLinePrefix('PANEL');
     private PREFIX_STDERR = getConsoleLinePrefix('STDERR');
 
     public process(type: ConsoleLineEnum, data: string, context?: string): MultiBuffer {

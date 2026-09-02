@@ -30,7 +30,7 @@ import { t } from "@/lib/i18n";
 
 //Tab configuration
 const settingsTabsBase = [
-    { id: 'general', name: t('General'), Component: ConfigCardGeneral }, //TODO: cards [Server Listing, txAdmin]
+    { id: 'general', name: t('General'), Component: ConfigCardGeneral }, //TODO: cards [Server Listing]
     { id: 'appearance', name: t('Appearance'), Component: AppearanceCard },
     { id: 'cadmin', name: t('Character Management'), Component: CadminCard },
     { id: 'fxserver', name: t('FXServer'), Component: ConfigCardFxserver },

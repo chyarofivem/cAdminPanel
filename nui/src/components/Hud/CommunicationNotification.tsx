@@ -2,8 +2,9 @@ import React from "react";
 import { Box, Typography } from "@mui/material";
 import CampaignRoundedIcon from "@mui/icons-material/CampaignRounded";
 import MarkChatUnreadRoundedIcon from "@mui/icons-material/MarkChatUnreadRounded";
+import RestartAltRoundedIcon from "@mui/icons-material/RestartAltRounded";
 
-type CommunicationKind = "announcement" | "direct-message";
+type CommunicationKind = "announcement" | "direct-message" | "restart";
 
 interface CommunicationNotificationProps {
   kind: CommunicationKind;
@@ -17,6 +18,9 @@ const notificationCopy = {
   },
   "direct-message": {
     Icon: MarkChatUnreadRoundedIcon,
+  },
+  restart: {
+    Icon: RestartAltRoundedIcon,
   },
 } as const;
 

@@ -128,10 +128,10 @@ export default class ServerLogger {
                 this.recentBuffer.push(eventObject);
                 if (this.recentBuffer.length > this.recentBufferMaxSize) this.recentBuffer.shift();
 
-                //Persist and publish through the combined txAdmin log.
+                //Persist and publish through the combined panel log.
                 this.combinedLogger.writeServer(eventObject);
             } catch (error) {
-                console.verbose.error('Error processing FD3 txAdminLogData:');
+                console.verbose.error('Error processing FD3 log data:');
                 console.verbose.dir(error);
             }
         }
@@ -148,8 +148,8 @@ export default class ServerLogger {
         let srcObject; //to be sent to the UI
         let srcString; //to ve saved to the log file
         if (eventData.src === 'tx') {
-            srcObject = { id: false, name: 'txAdmin' };
-            srcString = 'txAdmin';
+            srcObject = { id: false, name: 'Panel' };
+            srcString = 'Panel';
 
         } else if (typeof eventData.src === 'number' && eventData.src > 0) {
             const player = txCore.fxPlayerlist.getPlayerById(eventData.src);

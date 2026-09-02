@@ -12,6 +12,7 @@ import { RestartScheduleBox, TimeZoneWarning } from './fxserver'
 export const pageConfigs = {
     serverName: getPageConfig('general', 'serverName'),
     language: getPageConfig('general', 'language'),
+    publicPanelUrl: getPageConfig('general', 'publicPanelUrl'),
     restarterSchedule: getPageConfig('restarter', 'schedule'),
 } as const;
 
@@ -32,11 +33,13 @@ export default function ConfigCardGeneral({ cardCtx, pageCtx }: SettingsCardProp
 
     //Refs for configs that don't use state
     const serverNameRef = useRef<HTMLInputElement | null>(null);
+    const publicPanelUrlRef = useRef<HTMLInputElement | null>(null);
 
     //Processes the state of the page and sets the card as pending save if needed
     const updatePageState = () => {
         const overwrites = {
             serverName: serverNameRef.current?.value,
+            publicPanelUrl: publicPanelUrlRef.current?.value,
         };
 
         const res = getConfigDiff(cfg, states, overwrites, false);
@@ -54,6 +57,10 @@ export default function ConfigCardGeneral({ cardCtx, pageCtx }: SettingsCardProp
         }
         if (localConfigs.general?.serverName?.length > 18) {
             return txToast.error(t('The Server Name is too big.'));
+        }
+        const panelUrl = localConfigs.general?.publicPanelUrl?.trim();
+        if (panelUrl && !/^https?:\/\/\S+$/i.test(panelUrl)) {
+            return txToast.error(t('Enter a full URL starting with http:// or https://.'));
         }
         pageCtx.saveChanges(cardCtx, localConfigs);
     }
@@ -100,6 +107,19 @@ export default function ConfigCardGeneral({ cardCtx, pageCtx }: SettingsCardProp
                 </Select>
                 <SettingItemDesc>
                     {t('The language used by the panel, in-game menu, chat, and Discord messages.')}
+                </SettingItemDesc>
+            </SettingItem>
+            <SettingItem label={t('Public panel URL')} htmlFor={cfg.publicPanelUrl.eid} showOptional>
+                <Input
+                    id={cfg.publicPanelUrl.eid}
+                    ref={publicPanelUrlRef}
+                    defaultValue={cfg.publicPanelUrl.initialValue}
+                    placeholder={'http://127.0.0.1:40120'}
+                    onInput={updatePageState}
+                    disabled={pageCtx.isReadOnly}
+                />
+                <SettingItemDesc>
+                    {t('The address staff use to open this panel. It fills the cadmin_panel_url convar for the game resource and accepts http or https.')}
                 </SettingItemDesc>
             </SettingItem>
             <SettingItem label={t('Restart Schedule')} showOptional>

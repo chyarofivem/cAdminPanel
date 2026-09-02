@@ -10,9 +10,10 @@
 --     item, so `dirty` reads and writes go through the inventory instead —
 --     the item name is CAdminConfig.dirtyMoneyItem.
 --
--- qbx_core's permission and money exports have changed shape between releases.
--- The calls here target current qbx_core; each one that is version-sensitive is
--- marked, and offline groups fall back to CAdminConfig.tables.qbGroups.
+-- qbx_core's money and job exports have changed shape between releases. The
+-- calls here target current qbx_core and each version-sensitive one is marked.
+-- Groups are the exception: they are written as ACE principals directly, for the
+-- reason documented above mutateAce, and persisted in CAdminConfig.tables.qbGroups.
 
 local util = CAdmin.util
 local T = CAdminConfig.tables
@@ -34,40 +35,109 @@ local function errorText(value, fallback)
     return fallback
 end
 
-local function hasAceGroup(source, group)
-    if not source or not group or group == '' or group == 'user' then return false end
-    -- qbx_core's deprecated permission helpers historically checked `admin`,
-    -- while ox_lib command restrictions use `group.admin`. Supporting both is
-    -- necessary across Qbox releases and custom ACE layouts.
-    return IsPlayerAceAllowed(source, group)
-        or IsPlayerAceAllowed(source, 'group.' .. group)
+-- FXServer only runs a console command from a resource when the ACL permits that
+-- resource, so the ACE writes below are refused with "Access denied for command
+-- add_principal" until server.cfg grants them. The installer writes those grants,
+-- but a copy installed by hand, or a cfg the admin later trimmed, will not have
+-- them. Checking first turns a silent no-op into one specific instruction.
+local ACL_COMMANDS = { 'add_principal', 'add_ace', 'remove_principal', 'remove_ace' }
+
+local function missingAclCommands()
+    local principal = 'resource.' .. GetCurrentResourceName()
+    -- Fail open if the runtime does not expose the check: reporting a problem we
+    -- cannot actually confirm would block group changes on a server that works.
+    -- An ACE object is hierarchical, so a blanket `command` grant answers true
+    -- here for each of these without being listed individually.
+    if not IsPrincipalAceAllowed then return {}, principal end
+
+    local missing = {}
+    for _, command in ipairs(ACL_COMMANDS) do
+        if not IsPrincipalAceAllowed(principal, 'command.' .. command) then
+            missing[#missing + 1] = command
+        end
+    end
+    return missing, principal
 end
 
-local function mutateAceGroup(source, action, group)
-    if not group or group == '' or group == 'user' then return true end
+--- nil when the ACL is in order, otherwise the message shown in the panel.
+local function aclError()
+    local missing, principal = missingAclCommands()
+    if #missing == 0 then return nil end
 
-    local called, result = pcall(function()
-        if action == 'add' then return core:AddPermission(source, group) end
-        return core:RemovePermission(source, group)
-    end)
-    if not called then
-        return false, ('qbx_core could not %s permission "%s": %s')
-            :format(action, group, errorText(result, 'unknown export error'))
+    local lines = {}
+    for _, command in ipairs(missing) do
+        lines[#lines + 1] = ('add_ace %s command.%s allow'):format(principal, command)
     end
-    if result == false then
-        return false, ('qbx_core refused to %s permission "%s".'):format(action, group)
-    end
+    return ('This server has not allowed %s to change ACE permissions, so groups cannot be set. Add to server.cfg and restart:\n%s')
+        :format(principal, table.concat(lines, '\n'))
+end
 
-    local present = hasAceGroup(source, group)
-    if action == 'add' and not present then
-        return false, ('qbx_core did not apply permission "%s". Check the server ACE configuration.')
-            :format(group)
+-- The principal and ACE object qbx_core itself writes for a permission, so a
+-- group granted from the panel is exactly what a `group.admin` check anywhere
+-- else on the server already looks for.
+local function principalFor(source) return 'player.' .. source end
+local function aceFor(group) return 'group.' .. group end
+
+-- Group names reach a console command, so anything that is not a plain
+-- identifier is refused here as well as in handlers.lua: a name with a space in
+-- it would turn one command into another.
+local function isGroupName(group)
+    return type(group) == 'string' and string.match(group, '^[%w_%-]+$') ~= nil
+end
+
+--- The grant this resource writes, and only that one.
+local function hasGroupAce(source, group)
+    if not source or not isGroupName(group) or group == 'user' then return false end
+    return IsPlayerAceAllowed(source, aceFor(group))
+end
+
+--- Whether the player holds the group at all, however it was granted. Older qb
+--- configurations allow the bare `admin` object where ox_lib and qbx_core use
+--- `group.admin`, and a server.cfg principal counts for as much as ours.
+local function hasAceGroup(source, group)
+    if not source or not isGroupName(group) or group == 'user' then return false end
+    return IsPlayerAceAllowed(source, group) or IsPlayerAceAllowed(source, aceFor(group))
+end
+
+--- Writes the principal directly instead of calling qbx_core's AddPermission /
+--- RemovePermission. Those are deprecated wrappers whose guards disagree with
+--- what they do: both test the bare `admin` ACE while the grant they write is
+--- `group.admin`, so RemovePermission returns having touched nothing for the
+--- very grant AddPermission made. Demoting an online player through them left
+--- the old group live until that player reconnected. The strings below are the
+--- ones qbx_core uses, so nothing else on the server can tell the difference.
+local function mutateAce(source, group, grant)
+    local principal, ace = principalFor(source), aceFor(group)
+    if grant then
+        ExecuteCommand(('add_principal %s %s'):format(principal, ace))
+        ExecuteCommand(('add_ace %s %s allow'):format(principal, ace))
+    else
+        ExecuteCommand(('remove_ace %s %s allow'):format(principal, ace))
+        ExecuteCommand(('remove_principal %s %s'):format(principal, ace))
     end
-    if action == 'remove' and present then
-        return false, ('Permission "%s" is still inherited from server.cfg or another ACE principal.')
-            :format(group)
+    -- What qbx_core emits after a permission change of its own. Qbox resources
+    -- refresh their cached permissions from these, so a group set in the panel
+    -- reaches the game without a relog.
+    TriggerClientEvent('QBCore:Client:OnPermissionUpdate', source)
+    TriggerEvent('QBCore:Server:OnPermissionUpdate', source)
+end
+
+--- Reads the result back rather than trusting the write. The ACL can refuse an
+--- ACE command outright, in which case nothing lands and the admin has to be told
+--- why. Only the add path waits, because it is the one reported to the admin and
+--- both callers run on a thread; a few ticks is a frame or two of slack rather
+--- than a timeout.
+local function grantAce(source, group)
+    mutateAce(source, group, true)
+
+    for _ = 1, 6 do
+        if hasGroupAce(source, group) then return true end
+        Wait(0)
     end
-    return true
+    -- A refused command is the common cause, so name it rather than sending the
+    -- admin to a console they may not be able to read.
+    return false, aclError()
+        or ('The server did not apply the "%s" ACE. Check the server console.'):format(group)
 end
 
 local function sourceNumber(source)
@@ -106,52 +176,46 @@ local function invalidateReapply(source)
 end
 
 -- Remove only the direct player principal cAdmin previously established. The
--- effective ACE may remain true through server.cfg (or another principal),
--- which is expected and must not be treated as permission we own.
+-- effective ACE may remain true through server.cfg (or another principal), which
+-- is expected and must not be treated as permission we own. Nothing here can
+-- fail: the console takes the command either way, and an ACE that survives it
+-- belongs to someone else.
 local function releaseManagedGroup(source)
     source = sourceNumber(source)
     local managed = source and managedGroupBySource[source] or nil
-    if not managed then return true end
-
-    local called, result = pcall(function()
-        return core:RemovePermission(source, managed.group)
-    end)
-    if not called then
-        return false, ('qbx_core could not release cAdmin permission "%s": %s')
-            :format(managed.group, errorText(result, 'unknown export error'))
-    end
-    if result == false then
-        return false, ('qbx_core refused to release cAdmin permission "%s".'):format(managed.group)
-    end
+    if not managed then return end
 
     managedGroupBySource[source] = nil
+    if not isGroupName(managed.group) then return end
+
+    mutateAce(source, managed.group, false)
     if hasAceGroup(source, managed.group) then
         util.log('Released cAdmin group "%s" from source %s; an unrelated ACE still grants it.',
             managed.group, source)
     end
-    return true
 end
 
--- Always call AddPermission before recording ownership, even if the source is
--- already allowed through server.cfg. This creates an idempotent direct
--- player.* principal that cAdmin can later remove without touching inherited
--- principals.
+-- Establishes the direct player.* principal cAdmin owns, replacing whatever it
+-- owned for this source before. An already-granted group is left alone rather
+-- than removed and re-added, which would blink the permission off for anything
+-- watching, and the principal is ours to remove later without touching the
+-- inherited ones.
 local function applyManagedGroup(source, citizenid, group)
     source = sourceNumber(source)
-    if not source or not citizenid or not group or group == '' or group == 'user' then
-        return true
+    if not source or not citizenid or not group or group == 'user' then return true end
+    if not isGroupName(group) then
+        return false, ('"%s" is not a group name this server can use.'):format(tostring(group))
     end
 
     local managed = managedGroupBySource[source]
     if managed and (managed.citizenid ~= citizenid or managed.group ~= group) then
-        local released, releaseError = releaseManagedGroup(source)
-        if not released then return false, releaseError end
+        releaseManagedGroup(source)
         managed = nil
     end
-    if managed and hasAceGroup(source, group) then return true end
+    if managed and hasGroupAce(source, group) then return true end
 
-    local added, addError = mutateAceGroup(source, 'add', group)
-    if not added then return false, addError end
+    local granted, grantError = grantAce(source, group)
+    if not granted then return false, grantError end
     managedGroupBySource[source] = { citizenid = citizenid, group = group }
     return true
 end
@@ -175,6 +239,10 @@ end
 
 function adapter.init()
     core = exports.qbx_core
+    -- Surfaced once at load so the problem is visible before an admin tries a
+    -- group change and gets an error they have to go looking for.
+    local aclProblem = aclError()
+    if aclProblem then util.log('%s', aclProblem) end
     return core ~= nil
 end
 
@@ -530,12 +598,13 @@ function adapter.setJob(identifier, jobName, grade)
     return true
 end
 
---- Groups are ACE principals in Qbox, not a column. Online changes go through
---- qbx_core so the principal is live; the row is written either way so the
---- group survives a relog.
+--- Groups are ACE principals in Qbox, not a column. The live principal is
+--- rewritten for an online player, and the row is written either way so the
+--- group survives a relog, a server restart, or a cadminpanel restart.
 function adapter.setGroup(identifier, group)
     local citizenid = identifier
 
+    if not isGroupName(group) then return false, 'That is not a group name this server can use.' end
     if not CAdmin.schema.ready then
         return false, ('The `%s` table is missing and could not be created. Import sql/cadminpanel.sql.')
             :format(T.qbGroups)
@@ -549,39 +618,40 @@ function adapter.setGroup(identifier, group)
 
     local player = adapter.getOnlineByIdentifier(identifier)
     local source = player and sourceNumber(player.PlayerData.source) or nil
+    -- Neither branch below writes an ACE for an offline player, and `user` is the
+    -- absence of a group rather than one to grant, so a broken ACL would be stored
+    -- as a completed promotion and only surface later, out of sight. Where an ACE
+    -- write is attempted, grantAce reports the refusal itself and this predicts
+    -- nothing.
+    if not source or group == 'user' then
+        local aclProblem = aclError()
+        if aclProblem then return false, aclProblem end
+    end
     if source then
         -- A pending load reconciliation must not overwrite this explicit edit.
         invalidateReapply(source)
 
+        -- Claim the durable previous value before dropping it. The principal is
+        -- the same string an earlier run of this resource would have written, so
+        -- claiming it is what lets a group granted before a cadminpanel restart
+        -- be taken back instead of staying live alongside the new one.
+        if isGroupName(previous) and previous ~= group then
+            local claimed, claimError = applyManagedGroup(source, citizenid, previous)
+            if not claimed then return false, claimError end
+        end
+
+        -- Only ever our own player.* grant: an inherited server.cfg principal is
+        -- not permission this panel handed out, so it is not ours to revoke.
         local managed = managedGroupBySource[source]
-        if managed and managed.citizenid ~= citizenid then
-            local released, releaseError = releaseManagedGroup(source)
-            if not released then return false, releaseError end
-            managed = nil
+        if managed and (managed.citizenid ~= citizenid or managed.group ~= group) then
+            releaseManagedGroup(source)
         end
 
-        -- Seed ownership for the durable previous value. AddPermission is
-        -- idempotent, and claiming our own direct principal before removing it
-        -- means an inherited server.cfg principal is never mistaken for ours.
-        if previous and previous ~= 'user' then
-            local applied, applyError = applyManagedGroup(source, citizenid, previous)
-            if not applied then return false, applyError end
-        elseif managed and managed.citizenid == citizenid then
-            local released, releaseError = releaseManagedGroup(source)
-            if not released then return false, releaseError end
-        end
-
-        managed = managedGroupBySource[source]
-        if managed and managed.group ~= group then
-            local released, releaseError = releaseManagedGroup(source)
-            if not released then return false, releaseError end
-        end
         if group ~= 'user' then
             local applied, applyError = applyManagedGroup(source, citizenid, group)
             if not applied then
-                if previous and previous ~= 'user' then
-                    applyManagedGroup(source, citizenid, previous)
-                end
+                -- A refused change must not read as a demotion.
+                if isGroupName(previous) then applyManagedGroup(source, citizenid, previous) end
                 return false, applyError
             end
         end
@@ -595,17 +665,11 @@ function adapter.setGroup(identifier, group)
         )
     end)
     if not saved or saveResult == nil then
-        -- Keep live and durable state aligned if the database write fails.
+        -- Keep live and durable state aligned if the database write fails: drop
+        -- what was just granted and put back what the table still says.
         if source and group ~= previous then
-            local managed = managedGroupBySource[source]
-            if managed and managed.citizenid == citizenid then
-                local released, releaseError = releaseManagedGroup(source)
-                if not released then
-                    util.log('Could not roll back group "%s" for character %s: %s',
-                        managed.group, citizenid, releaseError)
-                end
-            end
-            if previous and previous ~= 'user' then
+            releaseManagedGroup(source)
+            if isGroupName(previous) then
                 local restored, restoreError = applyManagedGroup(source, citizenid, previous)
                 if not restored then
                     util.log('Could not restore group "%s" for character %s: %s',
@@ -888,12 +952,7 @@ local function reapplyGroup(src)
         -- ACE here, so server.cfg groups remain untouched.
         local managed = managedGroupBySource[src]
         if managed and (managed.citizenid ~= citizenid or managed.group ~= stored) then
-            local released, releaseError = releaseManagedGroup(src)
-            if not released then
-                util.log('Could not release cAdmin group "%s" from source %s: %s',
-                    managed.group, src, releaseError)
-                return
-            end
+            releaseManagedGroup(src)
         end
 
         -- No row is deliberately different from an explicit `user` row only
@@ -917,17 +976,11 @@ local function lifecycleSource(value)
     return sourceNumber(value) or sourceNumber(source)
 end
 
-local function cleanupSourceGroup(value, reason)
+local function cleanupSourceGroup(value)
     local src = lifecycleSource(value)
     if not src then return end
     invalidateReapply(src)
-
-    local managed = managedGroupBySource[src]
-    local released, releaseError = releaseManagedGroup(src)
-    if not released then
-        util.log('Could not release cAdmin group "%s" from source %s on %s: %s',
-            managed and managed.group or 'unknown', src, reason, releaseError)
-    end
+    releaseManagedGroup(src)
 end
 
 -- Emitted by qbx_core when it creates the server-side player object. Keep this
@@ -955,14 +1008,14 @@ end)
 -- not remove source ACE principals itself. Releasing our tracked principal here
 -- prevents it leaking to the next character selected on the same source.
 AddEventHandler('QBCore:Server:OnPlayerUnload', function(playerSource)
-    cleanupSourceGroup(playerSource, 'character unload')
+    cleanupSourceGroup(playerSource)
 end)
 
 -- Keep the source table clean if a client disconnects without a normal Qbox
 -- logout. The direct principal is released while the source still identifies
 -- the disconnecting player.
 AddEventHandler('playerDropped', function()
-    cleanupSourceGroup(source, 'player drop')
+    cleanupSourceGroup(source)
 end)
 
 -- bridge.lua invokes this after framework and schema initialization. It covers
@@ -983,14 +1036,7 @@ AddEventHandler('onResourceStop', function(resourceName)
 
     local sources = {}
     for src in pairs(managedGroupBySource) do sources[#sources + 1] = src end
-    for _, src in ipairs(sources) do
-        local managed = managedGroupBySource[src]
-        local released, releaseError = releaseManagedGroup(src)
-        if not released then
-            util.log('Could not release cAdmin group "%s" from source %s on resource stop: %s',
-                managed and managed.group or 'unknown', src, releaseError)
-        end
-    end
+    for _, src in ipairs(sources) do releaseManagedGroup(src) end
 end)
 
 CAdmin.frameworks.qbox = adapter

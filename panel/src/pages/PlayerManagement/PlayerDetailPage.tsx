@@ -36,6 +36,7 @@ import {
     cadminApiPath,
     cadminCharacterIdentifier,
     cadminData,
+    isCadminAvailable,
     toTxAdminLicense,
     type CadminPlayer,
     type CadminResponse,
@@ -69,8 +70,10 @@ export default function PlayerDetailPage() {
         if ('error' in response) throw new Error(response.error);
         return response;
     });
-    const cadminEnabled = window.txConsts.cadminEnabled;
+    const cadminEnabled = isCadminAvailable();
     const canViewCharacter = hasPerm('cadmin.players.view');
+    //Character management is entirely opt-in: when it is off (or the admin can't use it)
+    //the page must not show character metrics, tabs or notices at all.
     const canQueryCharacter = cadminEnabled && canViewCharacter;
     const characterListUrl = canQueryCharacter && license
         ? `${cadminApiPath(`player/${encodeURIComponent(license)}`)}?scope=player`
@@ -173,18 +176,20 @@ export default function PlayerDetailPage() {
                 <div className="flex flex-wrap items-center gap-2">
                     <span className={cn('rounded-md px-2 py-1 text-xs', isOnline ? 'bg-emerald-500/10 text-emerald-300' : 'bg-white/5 text-zinc-500')}>{isOnline ? t('Online') : t('Offline')}</span>
                     {character && <span className="rounded-md bg-brand-500/10 px-2 py-1 text-xs text-brand-300">{character.group || 'user'}</span>}
-                    {txPlayer?.isRegistered && <span className="rounded-md bg-blue-500/10 px-2 py-1 text-xs text-blue-300">{t('txAdmin record')}</span>}
+                    {txPlayer?.isRegistered && <span className="rounded-md bg-blue-500/10 px-2 py-1 text-xs text-blue-300">{t('Panel record')}</span>}
                 </div>
-                <p className="mt-2 break-all font-mono text-xs text-zinc-600">{selectedCharacterId || `license:${license}`}</p>
+                <p className="mt-2 break-all font-mono text-xs text-zinc-600">{
+                    canQueryCharacter && selectedCharacterId ? selectedCharacterId : `license:${license}`
+                }</p>
             </div>
             <PlayerActions target={target} extended onChanged={refresh} className="flex flex-wrap gap-2" />
         </div>
 
         {txDetails.error && <div className="mb-4 rounded-2xl border border-yellow-500/20 bg-yellow-500/10 p-4 text-sm text-yellow-200">
-            {t('txAdmin record unavailable: {error}', { error: txDetails.error.message })}
+            {t('Panel record unavailable: {error}', { error: txDetails.error.message })}
         </div>}
 
-        {characterLookupState.kind !== 'ready' && !initialPlayerLoading && <CharacterManagementState
+        {canQueryCharacter && characterLookupState.kind !== 'ready' && !initialPlayerLoading && <CharacterManagementState
             state={characterLookupState}
             license={license}
             onRetry={() => void retryCharacter()}
@@ -208,45 +213,45 @@ export default function PlayerDetailPage() {
         {initialPlayerLoading
             ? <div className="rounded-2xl bg-white/[0.035] p-12 text-center text-sm text-zinc-500">{t('Loading player management...')}</div>
             : <>
-                <div className="mb-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
+                <div className={cn('mb-4 grid grid-cols-2 gap-3', canQueryCharacter ? 'lg:grid-cols-4' : 'lg:grid-cols-2')}>
                     <Metric icon={<Clock3 />} label={t('Play time')} value={txPlayer?.playTime ? msToDuration(txPlayer.playTime * 60_000, { units: ['d', 'h', 'm'] }) : '—'} />
-                    <Metric icon={<BadgeDollarSign />} label={t('Cash')} value={character ? Number(character.money?.cash || 0).toLocaleString() : '—'} />
-                    <Metric icon={<Car />} label={t('Vehicles')} value={character ? String(character.vehicles?.length ?? 0) : '—'} />
+                    {canQueryCharacter && <Metric icon={<BadgeDollarSign />} label={t('Cash')} value={character ? Number(character.money?.cash || 0).toLocaleString() : '—'} />}
+                    {canQueryCharacter && <Metric icon={<Car />} label={t('Vehicles')} value={character ? String(character.vehicles?.length ?? 0) : '—'} />}
                     <Metric icon={<History />} label={t('Sanctions')} value={String(txPlayer?.actionHistory.filter(action => !action.revokedAt).length ?? 0)} />
                 </div>
 
-                <Tabs key={`${cadminEnabled}:${canViewCharacter}`} defaultValue="overview" className="rounded-2xl border border-white/5 bg-white/[0.025] p-4 md:p-6">
+                <Tabs key={`${canQueryCharacter}`} defaultValue="overview" className="rounded-2xl border border-white/5 bg-white/[0.025] p-4 md:p-6">
                     <TabsList className="h-auto w-full flex-wrap justify-start bg-white/5">
                         <TabsTrigger value="overview">{t('Overview')}</TabsTrigger>
-                        {cadminEnabled && <TabsTrigger value="money">{t('Money')}</TabsTrigger>}
-                        {cadminEnabled && <TabsTrigger value="job">{t('Job')}</TabsTrigger>}
-                        {cadminEnabled && <TabsTrigger value="group">{t('Group')}</TabsTrigger>}
-                        {cadminEnabled && <TabsTrigger value="inventory">{t('Inventory')}</TabsTrigger>}
-                        {cadminEnabled && <TabsTrigger value="garage">{t('Garage')}</TabsTrigger>}
+                        {canQueryCharacter && <TabsTrigger value="money">{t('Money')}</TabsTrigger>}
+                        {canQueryCharacter && <TabsTrigger value="job">{t('Job')}</TabsTrigger>}
+                        {canQueryCharacter && <TabsTrigger value="group">{t('Group')}</TabsTrigger>}
+                        {canQueryCharacter && <TabsTrigger value="inventory">{t('Inventory')}</TabsTrigger>}
+                        {canQueryCharacter && <TabsTrigger value="garage">{t('Garage')}</TabsTrigger>}
                         {txPlayer && <TabsTrigger value="history">{t('History')}</TabsTrigger>}
                         {txPlayer && <TabsTrigger value="identifiers">{t('Identifiers')}</TabsTrigger>}
                     </TabsList>
 
                     <TabsContent value="overview" className="mt-6">
-                        <OverviewTab player={txDetails.data} character={character} license={license} refresh={refresh} />
+                        <OverviewTab player={txDetails.data} character={character} license={license} refresh={refresh} showCharacter={canQueryCharacter} />
                     </TabsContent>
-                    {cadminEnabled && <TabsContent value="money" className="mt-6">{character
+                    {canQueryCharacter && <TabsContent value="money" className="mt-6">{character
                         ? <MoneyTab player={character} refresh={refresh} />
                         : <CharacterManagementState state={characterLookupState} license={license} onRetry={() => void retryCharacter()} />}
                     </TabsContent>}
-                    {cadminEnabled && <TabsContent value="job" className="mt-6">{character
+                    {canQueryCharacter && <TabsContent value="job" className="mt-6">{character
                         ? <JobTab player={character} refresh={refresh} />
                         : <CharacterManagementState state={characterLookupState} license={license} onRetry={() => void retryCharacter()} />}
                     </TabsContent>}
-                    {cadminEnabled && <TabsContent value="group" className="mt-6">{character
+                    {canQueryCharacter && <TabsContent value="group" className="mt-6">{character
                         ? <GroupTab player={character} refresh={refresh} />
                         : <CharacterManagementState state={characterLookupState} license={license} onRetry={() => void retryCharacter()} />}
                     </TabsContent>}
-                    {cadminEnabled && <TabsContent value="inventory" className="mt-6">{character
+                    {canQueryCharacter && <TabsContent value="inventory" className="mt-6">{character
                         ? <InventoryTab player={character} refresh={refresh} />
                         : <CharacterManagementState state={characterLookupState} license={license} onRetry={() => void retryCharacter()} />}
                     </TabsContent>}
-                    {cadminEnabled && <TabsContent value="garage" className="mt-6">{character
+                    {canQueryCharacter && <TabsContent value="garage" className="mt-6">{character
                         ? <GarageTab player={character} refresh={refresh} />
                         : <CharacterManagementState state={characterLookupState} license={license} onRetry={() => void retryCharacter()} />}
                     </TabsContent>}
@@ -310,11 +315,13 @@ function OverviewTab({
     character,
     license,
     refresh,
+    showCharacter,
 }: {
     player?: PlayerModalSuccess;
     character?: CadminPlayer;
     license: string;
     refresh: () => void;
+    showCharacter: boolean;
 }) {
     const { hasPerm } = useAdminPerms();
     const txPlayer = player?.player;
@@ -379,15 +386,15 @@ function OverviewTab({
                     </Button>
                 </CardContent>
             </Card>
-            <Card className="border-white/5 bg-white/[0.03] shadow-none">
+            {showCharacter && <Card className="border-white/5 bg-white/[0.03] shadow-none">
                 <CardContent className="p-5">
-                    <h3 className="flex items-center font-medium text-white"><Database className="mr-2 size-4 text-brand-400" />{t('chyarologin identity')}</h3>
-                    {character?.account ? <>
-                        <p className="mt-3 break-all text-sm text-zinc-200">{character.account.email}</p>
-                        <p className="mt-1 text-xs text-zinc-500">{character.account.discordUsername || character.account.discordId || t('Discord not linked')}</p>
-                    </> : <p className="mt-3 text-sm text-zinc-500">{t('No linked chyarologin identity.')}</p>}
+                    <h3 className="flex items-center font-medium text-white"><Database className="mr-2 size-4 text-brand-400" />{t('Character record')}</h3>
+                    {character ? <>
+                        <p className="mt-3 break-all font-mono text-xs text-zinc-200">{cadminCharacterIdentifier(character)}</p>
+                        <p className="mt-1 text-xs text-zinc-500">{character.playerLicense || t('No account identifier reported.')}</p>
+                    </> : <p className="mt-3 text-sm text-zinc-500">{t('No framework character selected.')}</p>}
                 </CardContent>
-            </Card>
+            </Card>}
         </div>
     </div>;
 }

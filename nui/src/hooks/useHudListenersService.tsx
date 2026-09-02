@@ -12,8 +12,9 @@ import {
 } from "../state/players.state";
 import { useSetAssociatedPlayer } from "../state/playerDetails.state";
 import { txAdminMenuPage, useSetPage } from "../state/page.state";
-import { useAnnounceNotiPosValue } from "../state/server.state";
+import { useAnnounceNotiPosValue, useServerCtxValue } from "../state/server.state";
 import { useSetPlayerModalVisibility } from "@nui/src/state/playerModal.state";
+import { useIsRedmValue } from "@nui/src/state/isRedm.state";
 import cleanPlayerName from "@shared/cleanPlayerName";
 import { usePlayerModalContext } from "../provider/PlayerModalProvider";
 import { fetchNui } from "../utils/fetchNui";
@@ -36,6 +37,10 @@ export interface AddAnnounceData {
   message: string;
   author: string;
   isDirectMessage: boolean;
+}
+
+export interface AddScheduledRestartData {
+  message: string;
 }
 
 const alertMap = new Map<string, SnackbarKey>();
@@ -63,7 +68,16 @@ export const useHudListenersService = () => {
   const setPlayersFilterIsTemp = useSetPlayersFilterIsTemp();
   const setPage = useSetPage();
   const notiPos = useAnnounceNotiPosValue();
+  const serverCtx = useServerCtxValue();
+  const isRedm = useIsRedmValue();
   const { closeMenu } = usePlayerModalContext();
+
+  //Every phrase can use %{panelName} without the caller having to pass it,
+  //so no in-game copy has to hardcode the panel branding.
+  const tBranded = (key: string, options: object = {}) => t(key, {
+    panelName: serverCtx.panelName,
+    ...options,
+  });
 
   const snackFormat = (m: string) => (
     <span style={{ whiteSpace: "pre-wrap" }}>{m}</span>
@@ -73,7 +87,7 @@ export const useHudListenersService = () => {
     "setSnackbarAlert",
     ({ level, message, isTranslationKey, tOptions }) => {
       if (isTranslationKey) {
-        message = t(message, tOptions);
+        message = tBranded(message, tOptions);
       }
       enqueueSnackbar(
         snackFormat(message),
@@ -85,7 +99,12 @@ export const useHudListenersService = () => {
   useNuiEvent("showMenuHelpInfo", () => {
     const showAlert = shouldHelpAlertShow();
     if (showAlert) {
-      enqueueSnackbar(snackFormat(t("nui_menu.misc.help_message")), {
+      //RedM registers no keymappings (cl_base.lua gates them on IS_FIVEM), so the
+      //variant that points at the FiveM key bindings screen is FiveM-only copy.
+      const helpKey = isRedm
+        ? "nui_menu.misc.help_message_no_keybind"
+        : "nui_menu.misc.help_message";
+      enqueueSnackbar(snackFormat(tBranded(helpKey)), {
         variant: "info",
         anchorOrigin: {
           horizontal: "center",
@@ -101,7 +120,7 @@ export const useHudListenersService = () => {
     ({ level, message, key, isTranslationKey }) => {
       if (alertMap.has(key)) return;
       const snackbarItem = enqueueSnackbar(
-        isTranslationKey ? t(message) : message,
+        isTranslationKey ? tBranded(message) : message,
         {
           variant: level,
           persist: true,
@@ -178,6 +197,27 @@ export const useHudListenersService = () => {
           className: "tx-communication-notification tx-communication-notification--announcement",
           hideIconVariant: true,
           autoHideDuration: getNotiDuration(message) * 1000,
+        anchorOrigin: {
+          horizontal: notiPos.horizontal,
+          vertical: notiPos.vertical,
+        },
+      }
+    );
+  });
+
+  useNuiEvent<AddScheduledRestartData>("addScheduledRestart", ({ message }) => {
+    announcementSound.play();
+    enqueueSnackbar(
+      <CommunicationNotification
+        kind="restart"
+        message={message}
+        title={t("nui_menu.misc.restart_title")}
+      />,
+      {
+        variant: "warning",
+        className: "tx-communication-notification tx-communication-notification--restart",
+        hideIconVariant: true,
+        autoHideDuration: getNotiDuration(message) * 1000,
         anchorOrigin: {
           horizontal: notiPos.horizontal,
           vertical: notiPos.vertical,

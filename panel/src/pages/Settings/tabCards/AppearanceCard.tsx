@@ -18,7 +18,7 @@ import { cn } from '@/lib/utils';
 import { t } from '@/lib/i18n';
 import { useAuth } from '@/hooks/auth';
 import { Textarea } from '@/components/ui/textarea';
-import InlineCode from '@/components/InlineCode';
+import TransText from '@/components/TransText';
 
 const MAX_UPLOAD_BYTES = 128 * 1024;
 
@@ -237,7 +237,7 @@ function EmbedJsonSetting({ label, id, value, disabled, onChange, onDiscard, onD
             </Button>
         </div>
         <SettingItemDesc>
-            {t('Use')} <InlineCode>/status add</InlineCode> {t('in Discord to create or refresh the status embed.')}
+            <TransText k="Use `/status add` in Discord to create or refresh the status embed." />
         </SettingItemDesc>
     </SettingItem>;
 }

@@ -65,7 +65,7 @@ export default class TxManager {
         //Updates the terminal title every 15 seconds
         if(txEnv.setConsoleTitle){
             setInterval(() => {
-                setTTYTitle(`(${txCore.fxPlayerlist.onlineCount}) ${txConfig.general.serverName} - txAdmin`);
+                setTTYTitle(`(${txCore.fxPlayerlist.onlineCount}) ${txConfig.general.serverName}`);
             }, 15000);
         }
 
@@ -166,6 +166,7 @@ export default class TxManager {
         const serverPaths = txCore.fxRunner.serverPaths;
         const cfxId = txCore.cacheStore.getTyped('fxsRuntime:cfxId', isString) ?? null;
         const isGameName = (val: any): val is gameNames => val === 'fivem' || val === 'redm';
+        const gameName = txCore.cacheStore.getTyped('fxsRuntime:gameName', isGameName) ?? null;
         return {
             //txAdmin state
             isConfigured: this.configState === TxConfigState.Ready,
@@ -176,8 +177,10 @@ export default class TxManager {
 
             //Detected at runtime
             cfxId,
-            gameName: txCore.cacheStore.getTyped('fxsRuntime:gameName', isGameName) ?? null,
-            joinDeepLink: cfxId ? `fivem://connect/cfx.re/join/${cfxId}` : null,
+            gameName,
+            //There is no `redm://` protocol handler, so a deep link on a RedM server
+            //would open the wrong client, or none at all. `joinLink` still works.
+            joinDeepLink: cfxId && gameName !== 'redm' ? `fivem://connect/cfx.re/join/${cfxId}` : null,
             joinLink: cfxId ? `https://cfx.re/join/${cfxId}` : null,
             playerSlots: txCore.cacheStore.getTyped('fxsRuntime:maxClients', isNumber) ?? null,
             projectName: txCore.cacheStore.getTyped('fxsRuntime:projectName', isString) ?? null,

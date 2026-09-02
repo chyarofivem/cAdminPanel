@@ -85,6 +85,14 @@ const MenuObject = {
       },
     ]);
   },
+  scheduledRestartMsg: (message: string) => {
+    debugData([
+      {
+        action: "addScheduledRestart",
+        data: { message },
+      },
+    ]);
+  },
   setCustomLocale: (localeObj: LocaleType) => {
     debugData<ServerCtx>([
       {
@@ -137,7 +145,7 @@ export const registerDebugFunctions = () => {
     (window as any).menuDebug = MenuObject;
 
     console.log(
-      "%ctxAdmin Menu Development",
+      "%ccAdminPanel Menu Development",
       "font-weight: bold; font-size: 25px; color: red;"
     );
     console.log(

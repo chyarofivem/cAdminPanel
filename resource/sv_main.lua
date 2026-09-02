@@ -32,7 +32,7 @@ TX_IS_SERVER_SHUTTING_DOWN = false
 
 -- Checking convars
 if TX_LUACOMHOST == "invalid" or TX_LUACOMTOKEN == "invalid" then
-    txPrint('^1API Host or Pipe Token ConVars not found. Do not start this resource if not using txAdmin.')
+    txPrint('^1API Host or Pipe Token ConVars not found. Do not start this resource manually - it is managed by the panel.')
     return
 end
 if TX_LUACOMTOKEN == "removed" then
@@ -95,12 +95,12 @@ end
 --- Simple stdout reply just to make sure the resource is alive
 --- this is only used in debug
 local function txaPing(source, args)
-    txPrint("Pong! (txAdmin resource is running)")
+    txPrint("Pong! (monitor resource is running)")
     CancelEvent()
 end
 
 
---- Get all resources/statuses and report back to txAdmin
+--- Get all resources/statuses and report back to the panel
 local function txaReportResources(source, args)
     --Prepare resources list
     local resources = {}
@@ -118,13 +118,13 @@ local function txaReportResources(source, args)
         resources[#resources+1] = currentRes
     end
 
-    --Send to txAdmin
+    --Send to the panel
     local url = "http://"..TX_LUACOMHOST.."/intercom/resources"
     local exData = {
         txAdminToken = TX_LUACOMTOKEN,
         resources = resources
     }
-    txPrint('Sending resources list to txAdmin.')
+    txPrint('Sending resources list to the panel.')
     PrintStructuredTrace(json.encode({
         type = 'txAdminResourceReport',
         resources = resources,
@@ -163,7 +163,10 @@ end
 -- =============================================
 -- MARK: Events handling
 -- =============================================
-local txServerName = GetConvar("txAdmin-serverName", "cAdminPanel")
+--- The panel always sets this convar on the command line, so the fallback only
+--- matters if the resource is loaded some other way. It still reaches player-facing
+--- announcements, DMs and punishment cards, so it has to stay game-neutral.
+local txServerName = GetConvar("txAdmin-serverName", "Server")
 local cvHideAdminInPunishments = GetConvarBool('txAdmin-hideAdminInPunishments')
 local cvHideAdminInMessages = GetConvarBool('txAdmin-hideAdminInMessages')
 local cvHideAnnouncement = GetConvarBool('txAdmin-hideDefaultAnnouncement')
@@ -203,10 +206,10 @@ end
 
 
 --- Handler for scheduled restarts event
---- Broadcast through an announcement that the server will restart in XX minutes
+--- Broadcast through a dedicated notification that the server will restart in XX minutes
 TX_EVENT_HANDLERS.scheduledRestart = function(eventData)
     if not cvHideScheduledRestartWarning then
-        TriggerClientEvent('txcl:showAnnouncement', -1, eventData.translatedMessage, txServerName)
+        TriggerClientEvent('txcl:showScheduledRestart', -1, eventData.translatedMessage)
     end
     TriggerEvent('txsv:logger:addChatMessage', 'tx', '(Broadcast) '..txServerName, eventData.translatedMessage)
 end
@@ -442,11 +445,62 @@ end
 -- =============================================
 -- MARK: Player connecting handler
 -- =============================================
+
+--- Escapes the characters that could break out of a html text node
+local function escapeHtml(str)
+    local escaped = tostring(str):gsub('&', '&amp;'):gsub('<', '&lt;'):gsub('>', '&gt;')
+    return escaped
+end
+
+--- Converts a '#rrggbb' string into the comma-separated components of rgb()/rgba()
+local function hexToRgbParts(hex)
+    local r, g, b = tostring(hex):match('^#?(%x%x)(%x%x)(%x%x)$')
+    if not r then return '37, 99, 235' end
+    return string.format('%d, %d, %d', tonumber(r, 16), tonumber(g, 16), tonumber(b, 16))
+end
+
+--- Wraps a string in the same inline-styled <code> tag used by the panel
+local function htmlCode(str)
+    return '<code style="background-color: rgba(148, 163, 184, 0.22); padding: 2px 5px; border-radius: 5px;">'
+        .. escapeHtml(str) .. '</code>'
+end
+
+--- Builds the on-brand card shown in the game's connection screen.
+--- Mirrors rejectMessageTemplate() in core/routes/player/checkJoin.ts, so the messages
+--- coming from this resource look the same as the ones coming from the panel.
+--- NOTE: the title is escaped, but the content is not - it is trusted html built here.
+local function buildConnectionCard(title, content)
+    local ctx = GlobalState.txAdminServerCtx
+    local panelName = txServerName .. ' Panel'
+    local accent = '37, 99, 235'
+    if type(ctx) == 'table' then
+        if type(ctx.panelName) == 'string' and ctx.panelName ~= '' then
+            panelName = ctx.panelName
+        end
+        if type(ctx.accentColor) == 'string' then
+            accent = hexToRgbParts(ctx.accentColor)
+        end
+    end
+
+    local cardStyle = ('margin-top: 25px; overflow: hidden; border: solid 1px rgba(%s, 0.35); border-radius: 12px; background-color: rgba(17, 20, 26, 0.72); box-shadow: 0 18px 42px rgba(0, 0, 0, 0.35);'):format(accent)
+    local headerStyle = ('padding: 9px 22px; border-bottom: solid 1px rgba(%s, 0.28); background-color: rgba(%s, 0.16); color: rgb(%s); font-size: 0.85rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase;'):format(accent, accent, accent)
+    return ('<div style="%s"><div style="%s">%s</div><div style="padding: 18px 22px 22px;"><h2 style="margin: 0px; padding: 0px; font-size: 1.45rem; line-height: 1.3;">%s</h2><p style="margin: 12px 0px 0px; padding: 0px; font-size: 1.15rem; line-height: 1.55; opacity: 0.92;">%s</p></div></div>'):format(
+        cardStyle,
+        headerStyle,
+        escapeHtml(panelName),
+        escapeHtml(title),
+        content
+    )
+end
+
 local function handleConnections(name, setKickReason, d)
     -- if server is shutting down
     if TX_IS_SERVER_SHUTTING_DOWN then
         CancelEvent()
-        setKickReason("Server is shutting down, try again in a few seconds.")
+        setKickReason(buildConnectionCard(
+            'Server is shutting down',
+            'The server is currently shutting down. Please try connecting again in a few seconds.'
+        ))
         return
     end
 
@@ -464,37 +518,47 @@ local function handleConnections(name, setKickReason, d)
             playerName = name
         }
         if #exData.playerIds <= 1 then
-            d.done("\nThis server has bans or whitelisting enabled, which requires every player to have at least one identifier, but you have none.\nIf you own this server, make sure sv_lan is disabled in your server.cfg.")
+            d.done(buildConnectionCard(
+                'Missing player identifiers',
+                'This server has bans or allowlisting enabled, which requires every player to have at least one identifier, but none were found on your account.<br>'
+                    .. 'If you own this server, make sure ' .. htmlCode('sv_lan') .. ' is disabled in your server.cfg.'
+            ))
             return
         end
 
         --Attempt to validate the user
-        d.update("\nChecking banlist/whitelist... (0/5)")
+        d.update("\nChecking banlist/allowlist... (0/5)")
         CreateThread(function()
             local attempts = 0
             local isDone = false;
             --Do 5 attempts (2.5 mins)
             while isDone == false and attempts < 5 do
                 attempts = attempts + 1
-                d.update("\nChecking banlist/whitelist... ("..attempts.."/5)")
+                d.update("\nChecking banlist/allowlist... ("..attempts.."/5)")
                 PerformHttpRequest(url, function(httpCode, rawData, resultHeaders)
                     if isDone then return end
                     -- rawData = nil
                     -- httpCode = 408
 
                     if not rawData or httpCode ~= 200 then
-                        logError("Checking banlist/whitelist failed with code "..httpCode.." and message: "..tostring(rawData))
+                        logError("Checking banlist/allowlist failed with code "..httpCode.." and message: "..tostring(rawData))
                     else
                         local respStr = tostring(rawData)
                         local respObj = json.decode(respStr)
                         if not respObj or type(respObj.allow) ~= "boolean" then
-                            logError("Checking banlist/whitelist failed with invalid response: "..respStr)
+                            logError("Checking banlist/allowlist failed with invalid response: "..respStr)
                         else
                             if respObj.allow == true then
                                 d.done()
                                 isDone = true
                             else
-                                local reason = respObj.reason or "\nNo reason provided."
+                                local reason = respObj.reason
+                                if type(reason) ~= 'string' or reason == '' then
+                                    reason = buildConnectionCard(
+                                        'Connection refused',
+                                        'This server refused your connection, but no reason was provided.'
+                                    )
+                                end
                                 d.done("\n"..reason)
                                 isDone = true
                             end
@@ -506,7 +570,10 @@ local function handleConnections(name, setKickReason, d)
 
             --Block client if failed
             if not isDone then
-                d.done("\nFailed to validate your banlist/whitelist status. Try again in a few minutes.")
+                d.done(buildConnectionCard(
+                    'Could not verify your access',
+                    'The server could not confirm your ban/allowlist status in time. Please try again in a few minutes.'
+                ))
                 isDone = true
             end
         end)

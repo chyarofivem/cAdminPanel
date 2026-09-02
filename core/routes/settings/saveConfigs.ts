@@ -473,7 +473,7 @@ export const handleDiscordCard: CardHandler = async (
             - Navigate to \`Bot > Privileged Gateway Intents\`.
             - Enable the \`GUILD_MEMBERS\` intent.
             - Press save on the developer portal.
-            - Go to the \`txAdmin > Settings > Discord Bot\` and press save.`;
+            - Go to the \`Settings > Discord Bot\` page and press save.`;
         } else if (errorCode === 'CustomNoGuild') {
             const inviteUrl = ('clientId' in (error as any))
                 ? `https://discord.com/oauth2/authorize?client_id=${(error as any).clientId}&scope=bot&permissions=0`
@@ -502,7 +502,7 @@ export const handleDiscordCard: CardHandler = async (
             type: 'success',
             md: true,
             title: 'Discord Bot Settings Saved!',
-            msg: `${successMsg}\nIf _(and only if)_ the status embed is not being updated, check the [System > txAdmin Log](/system/txadmin-log) page to look for embed errors.`,
+            msg: `${successMsg}\nIf _(and only if)_ the status embed is not being updated, check the [System > Panel Log](/system/panel-log) page to look for embed errors.`,
         }
     };
 }

@@ -6,6 +6,8 @@ import { anyUndefined, now } from '@lib/misc';
 import { filterPlayerHwids, parsePlayerIds, summarizeIdsArray } from '@lib/player/idUtils';
 import type { PlayerIdsObjectType } from "@shared/otherTypes";
 import { escapeHtmlContent, sanitizeSimpleHtml } from '@lib/htmlRenderSafety';
+import { panelDisplayName } from '@lib/branding';
+import { ACCENTS, resolveAccent } from '@lib/theme';
 import playerResolver from '@lib/player/playerResolver';
 import { Unit } from 'humanize-duration';
 import consoleFactory from '@lib/console';
@@ -14,27 +16,49 @@ import { InitializedCtx } from '@modules/WebServer/ctxTypes';
 const console = consoleFactory(modulename);
 
 //Helper
-const htmlCodeTag = '<code style="background-color: hsl(202deg 40% 66% / 35%); padding: 2px 2px; border-radius: 4px;">';
-const htmlCodeIdTag = '<code style="letter-spacing: 2px; background-color: #ff7f5059; padding: 2px 4px; border-radius: 6px;">';
+const htmlCodeTag = '<code style="background-color: rgba(148, 163, 184, 0.22); padding: 2px 5px; border-radius: 5px;">';
+const htmlCodeIdTag = '<code style="letter-spacing: 2px; background-color: rgba(148, 163, 184, 0.22); border: solid 1px rgba(148, 163, 184, 0.28); padding: 2px 6px; border-radius: 6px;">';
 const htmlGuildNameTag = '<strong style="color: cornflowerblue">';
+
+/**
+ * Renders the card shown in the game's connection screen when a join is denied.
+ * The header carries the server's own panel name and accent color, so the box
+ * follows the server branding instead of hardcoding ours.
+ * NOTE: only inline styles and legacy comma-separated rgb() are used for
+ * maximum compatibility with the game's html renderer.
+ * NOTE: kept visually in sync with buildConnectionCard() in resource/sv_main.lua.
+ */
 const rejectMessageTemplate = (title: string, content: string) => {
     content = content.replaceAll('<code>', htmlCodeTag);
     content = content.replaceAll('<codeid>', htmlCodeIdTag).replaceAll('</codeid>', '</code>');
     content = content.replaceAll('<guildname>', htmlGuildNameTag).replaceAll('</guildname>', '</strong>');
+    const accent = ACCENTS[resolveAccent(txConfig.general.accent)][500].trim().split(/\s+/).join(', ');
+    const brandLabel = escapeHtmlContent(panelDisplayName());
     return `
     <div style="
-        background-color: rgba(30, 30, 30, 0.5);
-        padding: 20px;
-        border: solid 1.5px #80282B;
-        border-radius: 8px;
         margin-top: 25px;
-        position: relative;
+        overflow: hidden;
+        border: solid 1px rgba(${accent}, 0.35);
+        border-radius: 12px;
+        background-color: rgba(17, 20, 26, 0.72);
+        box-shadow: 0 18px 42px rgba(0, 0, 0, 0.35);
     ">
-        <h2>${title}</h2>
-        <br>
-        <p style="font-size: 1.25rem; padding: 0px">
-            ${content}
-        </p>
+        <div style="
+            padding: 9px 22px;
+            border-bottom: solid 1px rgba(${accent}, 0.28);
+            background-color: rgba(${accent}, 0.16);
+            color: rgb(${accent});
+            font-size: 0.85rem;
+            font-weight: 700;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+        ">${brandLabel}</div>
+        <div style="padding: 18px 22px 22px;">
+            <h2 style="margin: 0px; padding: 0px; font-size: 1.45rem; line-height: 1.3;">${title}</h2>
+            <p style="margin: 12px 0px 0px; padding: 0px; font-size: 1.15rem; line-height: 1.55; opacity: 0.92;">
+                ${content}
+            </p>
+        </div>
     </div>`.replaceAll(/[\r\n]/g, '');
 }
 

@@ -1,5 +1,5 @@
 //@ts-nocheck
-import { test, expect, suite, it, vitest, vi } from 'vitest';
+import { test, expect, suite, it, vitest, vi, beforeAll, afterAll } from 'vitest';
 import { prefixMultiline, splitFirstLine, stripLastEol } from './fxsLoggerUtils';
 import ConsoleTransformer, { FORCED_EOL } from './ConsoleTransformer';
 import ConsoleLineEnum from './ConsoleLineEnum';
@@ -139,6 +139,21 @@ suite('transformer: marker', () => {
 
 //MARK: Transformer ingest
 const jp = (arr: string[]) => arr.join('');
+
+//The transformer only emits a time marker when the wall-clock second changes, so the
+//expectation has to be pinned to the same instant the transformer sees. Deriving it
+//from the live clock made these suites fail whenever a second boundary fell between
+//suite collection and test execution.
+const FIXED_NOW_MS = 1735689600000; //2025-01-01T00:00:00Z
+const FIXED_TIME_MARKER = `{§${Math.floor(FIXED_NOW_MS / 1000).toString(16)}}`;
+const useFixedClock = () => {
+    beforeAll(() => {
+        vi.spyOn(Date, 'now').mockReturnValue(FIXED_NOW_MS);
+    });
+    afterAll(() => {
+        vi.restoreAllMocks();
+    });
+};
 const getPatchedTransformer = () => {
     const t = new ConsoleTransformer();
     t.STYLES = {
@@ -211,7 +226,8 @@ suite('transformer: shortcuts', () => {
 });
 
 suite('transformer: new line', () => {
-    const expectedTimeMarker = `{§${Math.floor(Date.now() / 1000).toString(16)}}`;
+    useFixedClock();
+    const expectedTimeMarker = FIXED_TIME_MARKER;
 
     test('single line same src', () => {
         const transformer = getPatchedTransformer();
@@ -241,7 +257,8 @@ suite('transformer: new line', () => {
 
 
 suite('transformer: postfix', () => {
-    const expectedTimeMarker = `{§${Math.floor(Date.now() / 1000).toString(16)}}`;
+    useFixedClock();
+    const expectedTimeMarker = FIXED_TIME_MARKER;
 
     test('same source incomplete line', () => {
         const transformer = getPatchedTransformer();

@@ -7,6 +7,7 @@ import { PlayerDropsLoadingSpinner } from "./PlayerDropsGenericSubcards";
 import TimelineDropsChart, { TimelineDropsChartData } from "./TimelineDropsChart";
 import { processDropsSummary } from "./chartingUtils";
 import { DisplayLodType, DrilldownRangeSelectionType } from "./PlayerDropsPage";
+import { t } from "@/lib/i18n";
 
 
 type PlayerDropsTimelineChartsProps = {
@@ -72,20 +73,20 @@ const TimelineCard = memo(({
             <div className="flex flex-row items-center justify-between border-b border-dashed border-white/[0.07] px-4 sm:px-5">
                 <div className="flex items-center py-3 space-x-2">
                     <div className='hidden xs:block'><DoorOpenIcon className="size-4" /></div>
-                    <h2 className="text-sm font-medium">Expected disconnects</h2>
+                    <h2 className="text-sm font-medium">{t('Expected disconnects')}</h2>
                 </div>
                 <Select defaultValue={displayLod} onValueChange={setDisplayLod}>
                     <SelectTrigger
                         className="w-32 h-6 px-3 py-1 text-sm"
                     >
-                        <SelectValue placeholder="Filter by admin" />
+                        <SelectValue />
                     </SelectTrigger>
                     <SelectContent className="px-0">
                         <SelectItem value={'day'} className="cursor-pointer">
-                            Days
+                            {t('Days')}
                         </SelectItem>
                         <SelectItem value={'hour'} className="cursor-pointer">
-                            Hours
+                            {t('Hours')}
                         </SelectItem>
                     </SelectContent>
                 </Select>
@@ -110,7 +111,7 @@ const TimelineCard = memo(({
             <div className="flex flex-row items-center justify-between border-b border-t border-dashed border-white/[0.07] px-4 sm:px-5">
                 <div className="flex items-center py-3 gap-2">
                     <div className='hidden xs:block'><DoorOpenIcon className="size-4" /></div>
-                    <h2 className="text-sm font-medium">Unexpected disconnects</h2>
+                    <h2 className="text-sm font-medium">{t('Unexpected disconnects')}</h2>
                 </div>
             </div>
             <div className="h-56 max-h-56 bg-black/[0.08]">

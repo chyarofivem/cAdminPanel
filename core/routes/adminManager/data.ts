@@ -21,7 +21,6 @@ export default async function AdminManagerData(ctx: AuthedCtx) {
             isSelf,
             disableEdit: !ctx.admin.isMaster && admin.master,
             disableDelete: admin.master || isSelf,
-            email: admin.providers.chyarologin?.identifier ?? '',
             citizenfxId: admin.providers.citizenfx?.id ?? '',
             citizenfxIdentifier: admin.providers.citizenfx?.identifier ?? '',
             discordId: admin.providers.discord?.id ?? '',

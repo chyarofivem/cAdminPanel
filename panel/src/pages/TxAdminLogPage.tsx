@@ -23,7 +23,7 @@ import type {
     TxAdminLogEntry,
 } from '@shared/txAdminLogTypes';
 
-const FIRST_PAGE_PATH = '/api/logs/txadmin?limit=250';
+const FIRST_PAGE_PATH = '/api/logs/panel?limit=250';
 
 const mergeEntries = (current: TxAdminLogEntry[], incoming: TxAdminLogEntry[]) => {
     const unique = new Map<string, TxAdminLogEntry>();
@@ -127,7 +127,7 @@ export default function TxAdminLogPage() {
         setIsLoadingMore(true);
         try {
             const response = await requestPage(
-                `/api/logs/txadmin?limit=250&before=${encodeURIComponent(nextCursor)}`,
+                `/api/logs/panel?limit=250&before=${encodeURIComponent(nextCursor)}`,
             );
             setEntries(current => mergeEntries(current, response.entries));
             setNextCursor(response.nextCursor);
@@ -152,7 +152,7 @@ export default function TxAdminLogPage() {
                         </span>
                         <div className="min-w-0">
                             <div className="flex flex-wrap items-center gap-2">
-                                <h1 className="text-lg font-semibold text-white">{t('txAdmin Log')}</h1>
+                                <h1 className="text-lg font-semibold text-white">{t('Panel Log')}</h1>
                                 <span className="rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-[10px] uppercase tracking-[0.16em] text-zinc-400">
                                     {t('24-hour rotation')}
                                 </span>
@@ -222,15 +222,15 @@ export default function TxAdminLogPage() {
             <div className="min-h-0 flex-1 overflow-auto">
                 {swr.isLoading && entries.length === 0 ? (
                     <div className="grid h-full place-items-center text-zinc-500">
-                        <span className="flex items-center gap-3"><Loader2Icon className="size-5 animate-spin" />{t('Loading txAdmin log...')}</span>
+                        <span className="flex items-center gap-3"><Loader2Icon className="size-5 animate-spin" />{t('Loading panel log...')}</span>
                     </div>
                 ) : swr.error && entries.length === 0 ? (
                     <div className="grid h-full place-items-center px-6 text-center text-sm text-red-300">
-                        {swr.error.message || t('The txAdmin log could not be loaded.')}
+                        {swr.error.message || t('The panel log could not be loaded.')}
                     </div>
                 ) : visibleEntries.length === 0 ? (
                     <div className="grid h-full place-items-center px-6 text-center text-sm text-zinc-500">
-                        {query || channel !== 'all' ? t('No log entries match these filters.') : t('No txAdmin log entries yet.')}
+                        {query || channel !== 'all' ? t('No log entries match these filters.') : t('No panel log entries yet.')}
                     </div>
                 ) : (
                     <ol className="divide-y divide-white/[0.06]">

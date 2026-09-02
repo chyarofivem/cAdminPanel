@@ -1,6 +1,10 @@
+import { fontSans } from './nuiTokens';
+
 export default {
   name: 'fivem',
-  logo: 'images/txadmin.png',
+  typography: {
+    fontFamily: fontSans,
+  },
   palette: {
     mode: "dark",
     primary: {

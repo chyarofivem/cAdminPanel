@@ -56,15 +56,15 @@ suite('classifyDrop legacy mode', () => {
     it('should handle invalid reasons', () => {
         expect(fnc(undefined as any)).toEqual({
             category: 'unknown',
-            cleanReason: '[tx:invalid-reason]',
+            cleanReason: '[panel:invalid-reason]',
         });
         expect(fnc('')).toEqual({
             category: 'unknown',
-            cleanReason: '[tx:empty-reason]',
+            cleanReason: '[panel:empty-reason]',
         });
         expect(fnc('   ')).toEqual({
             category: 'unknown',
-            cleanReason: '[tx:empty-reason]',
+            cleanReason: '[panel:empty-reason]',
         });
     });
     it('should classify player-initiated reasons', () => {
@@ -127,15 +127,15 @@ suite('classifyDrop new mode', () => {
     it('should handle invalid categories', () => {
         expect(fnc('rsn', 'res', null)).toEqual({
             category: 'unknown',
-            cleanReason: '[tx:invalid-category] rsn',
+            cleanReason: '[panel:invalid-category] rsn',
         });
         expect(fnc('rsn', 'res', -1)).toEqual({
             category: 'unknown',
-            cleanReason: '[tx:invalid-category] rsn',
+            cleanReason: '[panel:invalid-category] rsn',
         });
         expect(fnc('rsn', 'res', 999)).toEqual({
             category: 'unknown',
-            cleanReason: '[tx:unknown-category] rsn',
+            cleanReason: '[panel:unknown-category] rsn',
         });
     });
 
@@ -150,7 +150,7 @@ suite('classifyDrop new mode', () => {
         });
         expect(fnc('rsn', 'monitor', 1)).toEqual({
             category: 'resource',
-            resource: 'txAdmin',
+            resource: 'cAdminPanel',
         });
         expect(fnc('server_shutting_down', 'monitor', 1)).toEqual({
             category: false,

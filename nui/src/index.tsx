@@ -20,13 +20,11 @@ registerDebugFunctions();
 declare module '@mui/material/styles' {
   interface Theme {
       name: string;
-      logo: string;
   }
 
   // allow configuration using `createTheme`
   interface ThemeOptions {
       name?: string;
-      logo?: string;
   }
 }
 const menuRedmTheme = createTheme(rawMenuRedmTheme);
@@ -44,6 +42,10 @@ const StyledMaterialDesignContent = styled(MaterialDesignContent)(({ theme }) =>
   '&.tx-communication-notification--direct-message': {
     '--tx-comms-accent': muiTheme.palette.primary.main,
     '--tx-comms-accent-soft': alpha(muiTheme.palette.primary.main, 0.14),
+  },
+  '&.tx-communication-notification--restart': {
+    '--tx-comms-accent': '#f87171',
+    '--tx-comms-accent-soft': 'rgba(248, 113, 113, 0.14)',
   },
   '& .tx-communication-card': {
     position: 'relative',
@@ -201,7 +203,7 @@ const App = () => {
 
 const rootContainer = document.getElementById("root");
 if (!rootContainer) {
-  throw new Error("Unable to mount txAdmin NUI: #root was not found");
+  throw new Error("Unable to mount the in-game menu: #root was not found");
 }
 const root = createRoot(rootContainer);
 root.render(

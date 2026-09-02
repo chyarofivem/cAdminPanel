@@ -16,6 +16,7 @@ import {
     cadminApiPath,
     cadminCharacterIdentifier,
     cadminData,
+    isCadminAvailable,
     type CadminPlayer,
     type CadminResponse,
 } from '@/pages/CAdmin/api';
@@ -97,7 +98,7 @@ export default function PlayerManagementPage() {
         { refreshInterval: 10_000, revalidateFirstPage: true },
     );
 
-    const canViewCharacters = window.txConsts.cadminEnabled && hasPerm('cadmin.players.view');
+    const canViewCharacters = isCadminAvailable() && hasPerm('cadmin.players.view');
     const canSearchCharacters = hasPerm('cadmin.players.search_offline');
     const shouldMergeCharacters = canViewCharacters && (!submitted || mode !== 'playerNotes');
     const characterUrl = shouldMergeCharacters
@@ -202,10 +203,10 @@ export default function PlayerManagementPage() {
 
     return <div className="flex w-full min-w-0 flex-col pb-10">
         <PageHeader title={t('Player Management')} icon={<UserRoundCog className="size-6" />} />
-        <div className="mb-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <div className={cn('mb-5 grid grid-cols-2 gap-3', canViewCharacters ? 'lg:grid-cols-4' : 'lg:grid-cols-2')}>
             <Metric icon={<UsersRound />} label={t('Players shown')} value={managedPlayers.length} />
-            <Metric icon={<Database />} label={t('Framework characters')} value={frameworkCharacters} />
-            <Metric icon={<Car />} label={t('Vehicles shown')} value={managedPlayers.reduce((total, player) => total + player.characters.reduce((count, character) => count + (character.vehicles?.length ?? 0), 0), 0)} />
+            {canViewCharacters && <Metric icon={<Database />} label={t('Framework characters')} value={frameworkCharacters} />}
+            {canViewCharacters && <Metric icon={<Car />} label={t('Vehicles shown')} value={managedPlayers.reduce((total, player) => total + player.characters.reduce((count, character) => count + (character.vehicles?.length ?? 0), 0), 0)} />}
             <Metric icon={<ShieldCheck />} label={t('Staff shown')} value={managedPlayers.filter(player => player.isAdmin).length} />
         </div>
 
@@ -235,24 +236,24 @@ export default function PlayerManagementPage() {
                 <div className="mt-3 flex flex-wrap gap-2">
                     <Button size="sm" variant={onlineOnly ? 'secondary' : 'ghost'} onClick={() => setOnlineOnly(value => !value)}>{t('Online only')}</Button>
                     <Button size="sm" variant={staffOnly ? 'secondary' : 'ghost'} onClick={() => setStaffOnly(value => !value)}>{t('Staff only')}</Button>
-                    <span className="self-center text-xs text-zinc-500">{t('txAdmin records and framework characters are matched by FiveM license.')}</span>
+                    {canViewCharacters && <span className="self-center text-xs text-zinc-500">{t('Panel records and framework characters are matched by FiveM license.')}</span>}
                 </div>
             </CardContent>
         </Card>
 
         {(txSearch.error || characterSearch.error) && <div className="mb-4 rounded-2xl border border-red-500/20 bg-red-500/10 p-4 text-sm text-red-300">
-            {txSearch.error ? t('txAdmin player search failed: {error}', { error: txSearch.error.message }) : null}
+            {txSearch.error ? t('Panel player search failed: {error}', { error: txSearch.error.message }) : null}
             {txSearch.error && characterSearch.error ? <br /> : null}
             {characterSearch.error ? t('Character search failed: {error}', { error: characterSearch.error.message }) : null}
         </div>}
 
         <div className="overflow-hidden rounded-2xl border border-white/5 bg-white/[0.025]">
             <div className="overflow-x-auto">
-                <table className="w-full min-w-[940px] text-sm">
+                <table className={cn('w-full text-sm', canViewCharacters ? 'min-w-[940px]' : 'min-w-[760px]')}>
                     <thead className="border-b border-dashed border-white/5 text-xs uppercase tracking-widest text-zinc-500">
                         <tr>
                             <th className="px-5 py-3 text-left font-medium">{t('Player')}</th>
-                            <th className="px-5 py-3 text-left font-medium">{t('Character')}</th>
+                            {canViewCharacters && <th className="px-5 py-3 text-left font-medium">{t('Character')}</th>}
                             <th className="px-5 py-3 text-left font-medium">{t('Status')}</th>
                             <th className="px-5 py-3 text-left font-medium">{t('Activity')}</th>
                             <th className="px-5 py-3 text-right font-medium">{t('Quick actions')}</th>
@@ -291,17 +292,17 @@ export default function PlayerManagementPage() {
                                         </div>
                                     </div>
                                 </td>
-                                <td className="px-5 py-4">
+                                {canViewCharacters && <td className="px-5 py-4">
                                     {character ? <>
                                         <p className="font-medium text-zinc-200">{character.name || t('Unnamed character')}</p>
                                         <p className="mt-0.5 text-xs text-zinc-500">
                                             {character.job?.label || character.job?.name || t('No job')}
                                             {player.characters.length > 1 ? ` · ${t('{count} characters', { count: player.characters.length })}` : ''}
                                         </p>
-                                    </> : <span className="text-zinc-600">{canViewCharacters && characterSearch.isLoading
+                                    </> : <span className="text-zinc-600">{characterSearch.isLoading
                                         ? t('Loading character...')
                                         : t('No framework character')}</span>}
-                                </td>
+                                </td>}
                                 <td className="px-5 py-4">
                                     <div className="flex flex-wrap gap-1.5">
                                         <span className={cn('rounded-md px-2 py-1 text-xs', player.isOnline ? 'bg-emerald-500/10 text-emerald-300' : 'bg-white/5 text-zinc-500')}>{player.isOnline ? t('Online') : t('Offline')}</span>

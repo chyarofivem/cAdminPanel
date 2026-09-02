@@ -38,7 +38,6 @@ describe('settings config access', () => {
             server: { dataPath: 'C:/private/server', startupArgs: ['+set', 'token', 'secret'] },
             restarter: { schedule: ['06:00'], resourceStartingTolerance: 120, bootGracePeriod: 60 },
             cadmin: { apiSecret: 'cadmin-secret' },
-            chyaro: { apiKey: 'chyaro-secret' },
         };
 
         const visible = getVisibleSettingsConfig(input, { isMaster: false, canWrite: true });
@@ -46,7 +45,6 @@ describe('settings config access', () => {
         expect(visible.server).toBeUndefined();
         expect(visible.restarter).toEqual({ schedule: ['06:00'] });
         expect(visible.cadmin?.apiSecret).toBe('[redacted]');
-        expect(visible.chyaro?.apiKey).toBe('[redacted]');
         expect(input.server?.dataPath).toBe('C:/private/server');
     });
 
@@ -63,7 +61,7 @@ describe('settings config access', () => {
 
         expect(visible.discordBot).toEqual({
             enabled: true,
-            token: '[redacted by txAdmin]',
+            token: '[redacted]',
             guild: '123456789012345678',
         });
         expect(input.discordBot?.token).toBe('discord-secret');

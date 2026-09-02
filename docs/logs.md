@@ -1,33 +1,32 @@
 # Logging
-In version v4.6.0, **txAdmin** added support for persistent logging with file rotate, meaning you will have an organized folder (`txData/<profile>/logs/`) containing your log files up to a maximum size and number of days.
+The panel writes persistent log files with rotation into `txData/<profile>/logs/`, keeping them up to a maximum size and number of days.
 
-> Note: player warn/ban/whitelist actions are not just stored in the Admin Logs, but also on the players database.
+> Note: player warn/ban/allowlist actions are not just stored in the panel log, but also in the players database.
 
-## Admin Logs:
-Contains log of administrative actions as well as some automated ones like server restarts, bans, warns, settings change, live console input and so on. It does not log the user IP unless if from an authentication endpoint.
-- Recent Buffer: None. Methods will read the entire file.
-- Interval: 7d
-- maxFiles: false
-- maxSize: false
+There are two log files:
 
-## FXServer Console Log:
+## Panel Log (`panel.log`)
+The combined timeline shown on the *System > Panel Log* page. It holds two channels:
+- **Actions**: administrative actions and automated ones such as server restarts, bans, warns, settings changes and live console input. It does not log the user IP unless it comes from an authentication endpoint.
+- **Server events**: everything that happens inside the game server — player join/leave/die, chat messages, explosions, menu events, commands. Player sources are kept in the format `[mutex#id] name`, where the mutex identifies that server execution. If you search the file for a `[mutex#id]`, the first result will be the player join with all their identifiers available.
+
+The active file is newline-delimited JSON so the in-memory buffer can be restored after a panel restart.
+- Recent Buffer: 32k entries
+- Interval: 1d (fixed — the interval cannot be overridden)
+- maxFiles: 7
+- maxSize: 10G
+
+## FXServer Console Log (`fxserver.log`)
 Contains the log of everything that happens in the fxserver console (`stdin`, `stdout`, `stderr`). Any live console input is prefixed with `> `.
 - Recent Buffer: 64~128kb
 - Interval: 1d
 - maxFiles: 7
 - maxSize: 5G
 
-## Server Logs:
-Contains all actions that happen inside the server, for example player join/leave/die, chat messages, explosions, menu events, commands. Player sources are kept in the format `[mutex#id] name` where the mutex is an identifier of that server execution. If you search the file for a `[mutex#id]`, the first result will be the player join with all his identifiers available.
-- Recent Buffer: 32k events
-- Interval: 1d
-- maxFiles: 7
-- maxSize: 10G
-
 
 ## Configuring Log Rotate
 The log rotation can be configured, so you can choose to store more or less logs according to your needs.  
-To configure it, edit your `txData/<profile>/config.json` and add an object inside `logger` with the key being one of `[admin, fxserver, server]`. Then add option keys according with the library reference: https://github.com/iccicci/rotating-file-stream#options
+To configure it, edit your `txData/<profile>/config.json` and add an object inside `logger` with the key being one of `[fxserver, txadmin]` (`txadmin` is the storage key for the panel log). Then add option keys according with the library reference: https://github.com/iccicci/rotating-file-stream#options
 
 Example:
 ```jsonc
@@ -51,7 +50,7 @@ Example:
 {
   //...
   "logger": {
-    "server": false
+    "fxserver": false
   }
   //...
 }

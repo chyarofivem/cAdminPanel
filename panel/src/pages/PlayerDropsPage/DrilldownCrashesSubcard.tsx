@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { cn, numberToLocaleString } from "@/lib/utils";
 import { PlayerDropsMessage } from "./PlayerDropsGenericSubcards";
 import { compressMultipleCounter, splitPrefixedStrings } from "./utils";
+import { t } from "@/lib/i18n";
 
 
 type CrashDatumData = {
@@ -38,10 +39,10 @@ function CrashTypeRow({ datum, isLast, isOdd }: CrashTypeRowProps) {
                 'hover:bg-secondary/35'
             )}
         >
-            <td className="min-w-[4ch] px-2 py-1 border-r text-right" title="Percent of all crashes">
+            <td className="min-w-[4ch] px-2 py-1 border-r text-right" title={t('Percent of all crashes')}>
                 {datum.pctStr ?? '--'}
             </td>
-            <td className="min-w-[4ch] px-2 py-1 border-r text-right" title="Crash count">
+            <td className="min-w-[4ch] px-2 py-1 border-r text-right" title={t('Crash count')}>
                 {datum.cntStr ?? '--'}
             </td>
             <td className="px-2 py-1 attempt-word-wrap line-clamp-4">
@@ -65,10 +66,6 @@ export default function DrilldownCrashesSubcard({
     crashesTargetLimit,
     setCrashesTargetLimit
 }: DrilldownCrashesSubcardProps) {
-    if (!crashTypes.length) {
-        return <PlayerDropsMessage message="No player crashes within this time window." />;
-    }
-
     const crashesData = useMemo(() => {
         const sortedCrashTypes = [...crashTypes];
         // Sort a display copy so API state stays immutable.
@@ -110,14 +107,19 @@ export default function DrilldownCrashesSubcard({
 
     }, [crashTypes, crashesGroupReasons, crashesTargetLimit, setCrashesTargetLimit]);
 
+    //Kept after the memo so the hook order never changes between renders.
+    if (!crashTypes.length) {
+        return <PlayerDropsMessage message={t('No player crashes within this time window.')} />;
+    }
+
     return (
         <div className="overflow-x-auto p-4 pt-3">
         <table className="w-full overflow-hidden rounded-xl border border-white/[0.06]">
             <thead>
                 <tr className="border-b border-white/[0.06] bg-black/[0.12] text-xs uppercase tracking-wider text-muted-foreground/75">
                     <th className="min-w-[4ch] border-r border-white/[0.06] px-3 py-2 text-right">%</th>
-                    <th className="min-w-[4ch] border-r border-white/[0.06] px-3 py-2 text-right">Count</th>
-                    <th className="px-3 py-2 text-left">Crash Reason</th>
+                    <th className="min-w-[4ch] border-r border-white/[0.06] px-3 py-2 text-right">{t('Count')}</th>
+                    <th className="px-3 py-2 text-left">{t('Crash Reason')}</th>
                 </tr>
             </thead>
             <tbody>
@@ -139,13 +141,20 @@ export default function DrilldownCrashesSubcard({
                                 'hover:bg-secondary/35'
                             )}
                         >
-                            Showing the top {crashesData.display.length} out of {numberToLocaleString(crashTypes.length)} reasons which account for {crashesData.displayPct} of all crashes. <br />
-                            The remaining {numberToLocaleString(crashesData.filteredOut.types)} reasons account for {crashesData.filteredOut.countPct} of all crashes. {' '}
+                            {t('Showing the top {shown} out of {total} reasons which account for {percent} of all crashes.', {
+                                shown: crashesData.display.length,
+                                total: numberToLocaleString(crashTypes.length),
+                                percent: crashesData.displayPct,
+                            })} <br />
+                            {t('The remaining {count} reasons account for {percent} of all crashes.', {
+                                count: numberToLocaleString(crashesData.filteredOut.types),
+                                percent: crashesData.filteredOut.countPct,
+                            })} {' '}
                             <button
                                 className="text-accent hover:underline"
                                 onClick={() => setCrashesTargetLimit(0)}
                             >
-                                Show All!
+                                {t('Show All!')}
                             </button>
                         </td>
                     </tr>
