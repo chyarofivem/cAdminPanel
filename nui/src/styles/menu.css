@@ -8,8 +8,6 @@
  */
 
 :root {
-    color-scheme: dark;
-
     /* Accent: the one knob */
     --accent: #1d4ed8;
     --accent-hover: #1e40af;
@@ -82,6 +80,16 @@ html,
 body,
 #root {
     height: 100%;
+}
+
+/*
+ * Never on :root or html. The game embeds this page as an iframe, and Chrome paints an
+ * opaque Canvas colour (#121212 in dark) behind an iframe whose root colour scheme differs
+ * from its parent's, which covers the whole screen. The modal portals into body.
+ */
+#root,
+.modal-backdrop {
+    color-scheme: dark;
 }
 
 body {
