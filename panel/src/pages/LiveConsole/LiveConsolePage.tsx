@@ -9,7 +9,7 @@ import { useEventListener } from 'usehooks-ts';
 import { useContentRefresh } from "@/hooks/pages";
 import { debounce, throttle } from 'throttle-debounce';
 
-import { ChevronsDownIcon, Loader2Icon } from "lucide-react";
+import { ChevronsDownIcon } from "lucide-react";
 import LiveConsoleFooter from "./LiveConsoleFooter";
 import LiveConsoleHeader from "./LiveConsoleHeader";
 import LiveConsoleSearchBar from "./LiveConsoleSearchBar";
@@ -30,7 +30,7 @@ import { darkThemeColors, lightThemeColors, ANSI } from './liveConsoleColors';
 import { useTerminalOptions } from './liveConsoleHooks';
 import { DensityModes } from './xtermOptions';
 import { t } from '@/lib/i18n';
-import { Card } from '@/components/ui/card';
+import { IconButton } from '@/components/ui/icon-button';
 
 
 //Consts
@@ -63,7 +63,7 @@ export default function LiveConsolePage() {
     /**
      * xterm stuff
      */
-    const jumpBottomBtnRef = useRef<HTMLButtonElement>(null);
+    const jumpBottomBtnRef = useRef<HTMLDivElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
     const term = useMemo(() => new Terminal({
         ...xtermOptions,
@@ -391,15 +391,14 @@ export default function LiveConsolePage() {
                 isConnected={isConnected}
             />
 
-            <Card className="flex min-h-0 flex-1 flex-col overflow-hidden border-white/10 bg-[#0b0d11]">
-                <div className="relative min-h-0 flex-1 overflow-hidden bg-[#08090b]">
+            <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-lg bg-sunken font-mono">
+                <div className="relative min-h-0 flex-1 overflow-hidden">
                     {/* Connecting overlay */}
                     {!isConnected ? (
-                        <div className="absolute inset-0 z-20 grid place-items-center bg-black/65 backdrop-blur-[2px]">
-                            <div className="flex select-none items-center gap-3 rounded-xl border border-white/10 bg-zinc-950/90 px-5 py-3 text-sm text-zinc-400 shadow-xl">
-                                <Loader2Icon className="size-5 animate-spin text-brand-400" />
-                                <span>{t('Connecting to FXServer console...')}</span>
-                            </div>
+                        <div className="absolute inset-0 z-20 grid place-items-center bg-black/60 p-4" role="status">
+                            <p className="select-none text-center font-sans text-sm text-muted-foreground">
+                                {t('Connecting to FXServer console...')}
+                            </p>
                         </div>
                     ) : null}
 
@@ -419,15 +418,16 @@ export default function LiveConsolePage() {
                         searchAddon={searchAddon}
                     />
 
-                    {/* Scroll to bottom */}
-                    <button
-                        ref={jumpBottomBtnRef}
-                        className="absolute bottom-3 right-3 z-10 hidden rounded-full border border-white/10 bg-zinc-900/90 p-2 text-zinc-400 shadow-lg transition-colors hover:bg-zinc-800 hover:text-white"
-                        onClick={() => { term.scrollToBottom() }}
-                        aria-label={t('Jump to latest console output')}
-                    >
-                        <ChevronsDownIcon className="size-5" />
-                    </button>
+                    {/* Scroll to bottom: ScrollDownAddon toggles `hidden` on this wrapper */}
+                    <div ref={jumpBottomBtnRef} className="absolute bottom-3 right-5 z-10 hidden">
+                        <IconButton
+                            variant="secondary"
+                            label={t('Jump to latest console output')}
+                            icon={<ChevronsDownIcon />}
+                            tooltipSide="left"
+                            onClick={() => { term.scrollToBottom() }}
+                        />
+                    </div>
                 </div>
 
                 <LiveConsoleFooter
@@ -438,7 +438,7 @@ export default function LiveConsolePage() {
                     toggleSaveSheet={toggleSaveSheet}
                     toggleSearchBar={toggleSearchBar}
                 />
-            </Card>
+            </div>
         </section>
     )
 }

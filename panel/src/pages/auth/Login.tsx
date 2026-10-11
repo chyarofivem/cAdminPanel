@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
-import { AlertCircle, ArrowRight, CheckCircle2, Loader2, LogIn, ShieldCheck } from 'lucide-react';
 import PanelBrand from '@/components/PanelBrand';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Alert } from '@/components/ui/alert';
 import { fetchWithTimeout } from '@/hooks/fetch';
 import { t } from '@/lib/i18n';
 import { isValidRedirectPath, LogoutReasonHash, navigatePanel } from '@/lib/navigation';
@@ -25,11 +25,11 @@ type Feedback = {
     tone: 'info' | 'success' | 'error';
 };
 
-const feedbackStyles: Record<Feedback['tone'], string> = {
-    info: 'border-white/10 bg-white/[0.035] text-zinc-300',
-    success: 'border-emerald-500/20 bg-emerald-500/10 text-emerald-300',
-    error: 'border-red-500/20 bg-red-500/10 text-red-300',
-};
+const feedbackVariants = {
+    info: 'default',
+    success: 'success',
+    error: 'destructive',
+} as const;
 
 export default function Login() {
     const { setAuthData } = useAuth();
@@ -128,68 +128,67 @@ export default function Login() {
         }
     };
 
-    return <main className="p-6 sm:p-8">
-        <header className="flex items-center gap-4 border-b border-white/5 pb-5">
-            <div className="flex size-14 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-black/20 p-2">
-                <PanelBrand useLogo className="max-h-10 max-w-10" />
-            </div>
+    const field = 'flex flex-col gap-2';
+    const helper = 'text-dense text-muted-foreground';
+    return <main className="p-4 sm:p-6">
+        <header className="flex items-center gap-3">
+            <PanelBrand useLogo className="size-10 shrink-0" />
             <div className="min-w-0">
-                <p className="truncate text-lg font-semibold text-white">{window.txConsts.panelName}</p>
-                {serverName && serverName !== window.txConsts.panelName && <p className="mt-0.5 truncate text-xs text-zinc-500">{serverName}</p>}
+                <p className="truncate text-base font-semibold text-white">{window.txConsts.panelName}</p>
+                {serverName && serverName !== window.txConsts.panelName && <p className="truncate text-dense text-muted-foreground">{serverName}</p>}
             </div>
         </header>
 
-        <section className="pt-6">
-            <h1 className="text-2xl font-semibold tracking-tight text-white">{needsBootstrap ? t('Create the master account') : t('Sign in')}</h1>
-            <p className="mt-2 text-sm leading-6 text-zinc-400">{needsBootstrap
+        <section className="mt-6">
+            <h1 className="text-xl font-semibold text-white">{needsBootstrap ? t('Create the master account') : t('Sign in')}</h1>
+            <p className="mt-1 text-sm text-muted-foreground">{needsBootstrap
                 ? t('Enter the one-time PIN shown in the server console, then pick the username and password of the master account.')
                 : t('Sign in with your panel username and password.')}</p>
 
-            {feedback && <div aria-live="polite" className={`mt-5 flex items-start gap-3 rounded-xl border p-3 text-sm ${feedbackStyles[feedback.tone]}`}>
-                {feedback.tone === 'success'
-                    ? <CheckCircle2 className="mt-0.5 size-4 shrink-0" />
-                    : <AlertCircle className="mt-0.5 size-4 shrink-0" />}
-                <span className="whitespace-pre-wrap">{feedback.text}</span>
-            </div>}
+            {feedback && <Alert variant={feedbackVariants[feedback.tone]} aria-live="polite" className="mt-6 whitespace-pre-wrap">
+                {feedback.text}
+            </Alert>}
 
-            {needsBootstrap ? <form className="mt-6 space-y-4" onSubmit={(event) => { event.preventDefault(); void createMasterAccount(); }}>
-                <div className="space-y-2 text-left">
+            {needsBootstrap ? <form className="mt-6 flex flex-col gap-4" onSubmit={(event) => { event.preventDefault(); void createMasterAccount(); }}>
+                <div className={field}>
                     <Label htmlFor="bootstrap-pin">{t('One-time bootstrap PIN')}</Label>
-                    <Input id="bootstrap-pin" value={bootstrapPin} required autoComplete="one-time-code" disabled={isFetching} onChange={event => setBootstrapPin(event.target.value)} />
-                    <p className="text-xs text-zinc-500">{t('The PIN is printed in the server console and changes every time the panel restarts.')}</p>
+                    <Input id="bootstrap-pin" value={bootstrapPin} required autoComplete="one-time-code" className="font-mono" disabled={isFetching} onChange={event => setBootstrapPin(event.target.value)} />
+                    <p className={helper}>{t('The PIN is printed in the server console and changes every time the panel restarts.')}</p>
                 </div>
-                <div className="space-y-2 text-left">
+                <div className={field}>
                     <Label htmlFor="master-username">{t('Username')}</Label>
                     <Input id="master-username" value={username} required autoCapitalize="off" autoComplete="username" disabled={isFetching} onChange={event => setUsername(event.target.value)} />
                 </div>
-                <div className="space-y-2 text-left">
+                <div className={field}>
                     <Label htmlFor="master-password">{t('Password')}</Label>
                     <Input id="master-password" type="password" value={password} required autoComplete="new-password" disabled={isFetching} onChange={event => setPassword(event.target.value)} />
                 </div>
-                <div className="space-y-2 text-left">
+                <div className={field}>
                     <Label htmlFor="master-password-confirmation">{t('Repeat password')}</Label>
                     <Input id="master-password-confirmation" type="password" value={passwordConfirmation} required autoComplete="new-password" disabled={isFetching} onChange={event => setPasswordConfirmation(event.target.value)} />
                 </div>
-                <Button type="submit" className="h-11 w-full justify-between" disabled={isFetching}>
-                    <span className="flex items-center gap-2">{isFetching ? <Loader2 className="size-4 animate-spin" /> : <ShieldCheck className="size-4" />}{t('Create & Sign In')}</span>
-                    <ArrowRight className="size-4" />
-                </Button>
-            </form> : <form className="mt-6 space-y-4" onSubmit={(event) => { event.preventDefault(); void passwordLogin(); }}>
-                <div className="space-y-2 text-left">
+                <div className="pt-2">
+                    <Button type="submit" className="w-full sm:w-auto" disabled={isFetching}>
+                        {isFetching ? t('Creating…') : t('Create & Sign In')}
+                    </Button>
+                </div>
+            </form> : <form className="mt-6 flex flex-col gap-4" onSubmit={(event) => { event.preventDefault(); void passwordLogin(); }}>
+                <div className={field}>
                     <Label htmlFor="local-username">{t('Username')}</Label>
                     <Input id="local-username" value={username} required autoCapitalize="off" autoComplete="username" disabled={isFetching} onChange={event => setUsername(event.target.value)} />
                 </div>
-                <div className="space-y-2 text-left">
+                <div className={field}>
                     <Label htmlFor="local-password">{t('Password')}</Label>
                     <Input id="local-password" type="password" value={password} required autoComplete="current-password" disabled={isFetching} onChange={event => setPassword(event.target.value)} />
                 </div>
-                <Button type="submit" className="h-11 w-full justify-between" disabled={isFetching}>
-                    <span className="flex items-center gap-2">{isFetching ? <Loader2 className="size-4 animate-spin" /> : <LogIn className="size-4" />}{t('Sign in')}</span>
-                    <ArrowRight className="size-4" />
-                </Button>
+                <div className="pt-2">
+                    <Button type="submit" className="w-full sm:w-auto" disabled={isFetching}>
+                        {isFetching ? t('Signing in…') : t('Sign in')}
+                    </Button>
+                </div>
             </form>}
 
-            <p className="mt-6 border-t border-white/5 pt-4 text-xs leading-5 text-zinc-500">
+            <p className="mt-6 text-dense text-muted-foreground">
                 {t("This server's local administrator list controls who can sign in.")}
             </p>
         </section>

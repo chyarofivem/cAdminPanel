@@ -2,7 +2,7 @@ import * as d3 from 'd3';
 import { numberToLocaleString } from '@/lib/utils';
 import { msToShortDuration } from '@/lib/dateTime';
 import { playerDropCategories } from "@/lib/playerDropCategories";
-import { PlayerDropsCategoryCount } from './chartingUtils';
+import { PlayerDropsCategoryCount, getChartChromeColors, styleChartAxis } from './chartingUtils';
 import { TimelineDropsChartData } from './TimelineDropsChart';
 import { DrilldownRangeSelectionType } from './PlayerDropsPage';
 import { t } from '@/lib/i18n';
@@ -72,6 +72,9 @@ export default function drawDropsTimeline({
     console.log('Number of intervals:', data.log.length);
 
     //Setup
+    //NOTE: chart chrome (axes, gridlines, markers, cursor) uses the design tokens.
+    //Bar colours are the fixed player drop category palette.
+    const chromeColors = getChartChromeColors();
     const drawableAreaHeight = height - margins.top - margins.bottom;
     const drawableAreaWidth = width - margins.left - margins.right;
     console.log('Drawable area:', drawableAreaWidth, drawableAreaHeight);
@@ -105,6 +108,7 @@ export default function drawDropsTimeline({
         .attr('transform', translate(0, drawableAreaHeight))
         .attr('class', 'time-axis')
         .call(timeAxis);
+    styleChartAxis(timeAxisGroup, chromeColors);
 
     const countsAxisTickValues = (countsScaleMaxDomain <= 7) ? d3.range(countsScaleMaxDomain + 1) : null;
     const countsAxis = d3.axisLeft(countsScale)
@@ -114,7 +118,8 @@ export default function drawDropsTimeline({
     const countsAxisGroup = svg.append('g')
         .attr('class', 'counts-axis')
         .attr('transform', translate(margins.left - margins.axis, 0))
-        .call(countsAxis)
+        .call(countsAxis);
+    styleChartAxis(countsAxisGroup, chromeColors);
 
 
     /**
@@ -125,9 +130,8 @@ export default function drawDropsTimeline({
     const intervalWidth = timeScale(endOfFirstInterval) - timeScale(data.startDate);
     const barCenterOffset = Math.floor(intervalWidth / 2);
     const barPadding = data.displayLod === 'day' ? 12 : 0;
-    const canvasTicksStyle = isDarkMode ? `rgba(255, 255, 255, 0.15)` : `rgba(0, 0, 0, 0.35)`;
-    const canvasBackgroundStyle = isDarkMode ? '#00000035' : '#00000007';
-    const changeIndicatorStyle = isDarkMode ? '#FFFFFFE0' : '#000000D0';
+    const canvasTicksStyle = chromeColors.hairline;
+    const changeIndicatorStyle = chromeColors.text;
     const canvasCountScale = (value: number) => countsScale(value) - margins.top;
 
     const drawCanvasTimeline = () => {
@@ -141,12 +145,9 @@ export default function drawDropsTimeline({
         //Setup
         isFirstRender && console.time('drawing canvas timeline');
         ctx.clearRect(0, 0, drawableAreaWidth, drawableAreaHeight);
-        ctx.fillStyle = canvasBackgroundStyle;
-        ctx.fillRect(0, 0, drawableAreaWidth, drawableAreaHeight);
 
-        //Drawing horizontal ticks - trycatching because it's a bit fragile
+        //Drawing horizontal ticks (solid hairline gridlines) - trycatching because it's a bit fragile
         ctx.strokeStyle = canvasTicksStyle;
-        ctx.setLineDash([2, 2]);
         try {
             const tickLines = countsAxisGroup.selectAll("g.tick").nodes();
             for (const tickLine of tickLines) {
@@ -161,7 +162,6 @@ export default function drawDropsTimeline({
         } catch (error) {
             console.error('Error drawing horizontal ticks:', error);
         }
-        ctx.setLineDash([]);
 
         //Drawing the timeline
         let barsRendered = 0;
@@ -241,7 +241,7 @@ export default function drawDropsTimeline({
 
     //Cursor line
     const cursorLineVert = chartGroup.append('line')
-        .attr('stroke', isDarkMode ? 'rgba(216, 245, 19, 0.75)' : 'rgba(62, 70, 5, 0.75)')
+        .attr('stroke', chromeColors.body)
         .attr('stroke-width', 1)
         .attr('stroke-dasharray', '3,3');
 
@@ -391,8 +391,8 @@ export default function drawDropsTimeline({
             if (datum.changes) {
                 changeFlagEl.style.display = 'block';
                 changeFlagEl.textContent = datum.changes > 1
-                    ? t('{count} CHANGES', { count: datum.changes })
-                    : t('1 CHANGE');
+                    ? t('{count} changes', { count: datum.changes })
+                    : t('1 change');
             } else {
                 changeFlagEl.style.display = 'none';
                 changeFlagEl.textContent = '';
@@ -400,22 +400,13 @@ export default function drawDropsTimeline({
         }
 
         //Move legend - only when not holding click
-        let wasTransitionDisabled = false;
-        if (legendRef.style.opacity === '0') {
-            legendRef.style.transitionProperty = 'opacity';
-            wasTransitionDisabled = true;
-        }
+        //NOTE: only the opacity transitions; the legend jumps to its new position without sliding.
         const legendWidth = legendRef.clientWidth;
         const legendOffset = 36;
         let legendX = datumStartX - legendWidth - legendOffset + margins.left;
         if (legendX < margins.left) legendX = datumStartX + legendOffset + margins.left;
         legendRef.style.left = `${legendX}px`;
         legendRef.style.opacity = '1';
-        if (wasTransitionDisabled) {
-            setTimeout(() => {
-                legendRef.style.transitionProperty = 'all';
-            }, 0);
-        }
 
         // Draw cursor
         // const cursorX = Math.round(datumStartX + intervalWidth / 2) + 0.5 - barCenterOffset;

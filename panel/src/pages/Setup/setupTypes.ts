@@ -68,9 +68,3 @@ export const buildDeployName = (templateName: string, dataPath: string) => {
         path: `${dataPath}/${shortName}_${timestamp}.base`,
     };
 };
-
-export const tagColorClass = (tag: string) => {
-    if (tag === 'fivem') return 'text-[#FF8637] border-[#FF8637]/60 bg-[#FF8637]/10';
-    if (tag === 'redm') return 'text-[#FA0211] border-[#FA0211]/60 bg-[#FA0211]/10';
-    return 'text-neutral-300 border-white/20 bg-white/5';
-};

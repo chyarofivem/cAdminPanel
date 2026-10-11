@@ -1,5 +1,5 @@
 .interaction-highlight:not([data-mousedown="true"] *) {
-    fill: rgba(255, 255, 255, 0.1);
+    fill: var(--raise-2);
 }
 
 .interaction-chart[data-mousedown="true"] {

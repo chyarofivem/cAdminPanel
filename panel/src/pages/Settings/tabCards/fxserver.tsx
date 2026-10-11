@@ -4,10 +4,10 @@ import SwitchText from '@/components/SwitchText'
 import { AdvancedDivider, SettingItem, SettingItemDesc } from '../settingsItems'
 import { useState, useEffect, useRef, useMemo, useReducer } from "react"
 import { getConfigEmptyState, getConfigAccessors, SettingsCardProps, getPageConfig, configsReducer, getConfigDiff, type PageConfigReducerAction } from "../utils"
-import { PlusIcon, TrashIcon, Undo2Icon, XIcon } from "lucide-react"
+import { XIcon } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { IconButton } from "@/components/ui/icon-button"
 import { TimeInputDialog } from "@/components/TimeInputDialog"
-import { useAutoAnimate } from "@formkit/auto-animate/react"
 import SettingsCardShell from "../SettingsCardShell"
 import { cn } from "@/lib/utils"
 import { txToast } from "@/components/TxToaster"
@@ -37,9 +37,15 @@ type RestartScheduleBoxProps = {
     disabled?: boolean;
 };
 
+const restartPresets = [
+    { label: '1x', times: ['00:00'] },
+    { label: '2x', times: ['00:00', '12:00'] },
+    { label: '3x', times: ['00:00', '08:00', '16:00'] },
+    { label: '4x', times: ['00:00', '06:00', '12:00', '18:00'] },
+];
+
 export function RestartScheduleBox({ restartTimes, setRestartTimes, disabled }: RestartScheduleBoxProps) {
     const [isTimeInputOpen, setIsTimeInputOpen] = useState(false);
-    const [animationParent] = useAutoAnimate();
 
     const addTime = (time: string) => {
         if (!restartTimes || disabled) return;
@@ -58,88 +64,61 @@ export function RestartScheduleBox({ restartTimes, setRestartTimes, disabled }: 
         setRestartTimes([]);
     };
 
-    const presetSpanClasses = cn(
-        'text-muted-foreground',
-        disabled && 'opacity-50 cursor-not-allowed'
-    )
-
     return (
-        <div className="py-3 px-2 min-h-[4.5rem] flex items-center border rounded-lg">
-            <div className={cn("w-full flex items-center gap-2", disabled && 'cursor-not-allowed')}>
-                <div className="flex flex-wrap gap-2 grow" ref={animationParent} >
-                    {restartTimes && restartTimes.length === 0 && (
-                        <div className="text-sm text-muted-foreground">
-                            <span>
-                                <TransText k="No schedule set. Click on the **+** button to add a time." />
-                            </span>
-                            <p>
-                                {t('Presets')}{': '}
-                                <a
-                                    onClick={() => applyPreset(['00:00'])}
-                                    className="cursor-pointer text-sm text-primary hover:underline"
-                                >
-                                    1x<span className={presetSpanClasses}>{t('/day')}</span>
-                                </a>
-                                {', '}
-                                <a
-                                    onClick={() => applyPreset(['00:00', '12:00'])}
-                                    className="cursor-pointer text-sm text-primary hover:underline"
-                                >
-                                    2x<span className={presetSpanClasses}>{t('/day')}</span>
-                                </a>
-                                {', '}
-                                <a
-                                    onClick={() => applyPreset(['00:00', '08:00', '16:00'])}
-                                    className="cursor-pointer text-sm text-primary hover:underline"
-                                >
-                                    3x<span className={presetSpanClasses}>{t('/day')}</span>
-                                </a>
-                                {', '}
-                                <a
-                                    onClick={() => applyPreset(['00:00', '06:00', '12:00', '18:00'])}
-                                    className="cursor-pointer text-sm text-primary hover:underline"
-                                >
-                                    4x<span className={presetSpanClasses}>{t('/day')}</span>
-                                </a>
-                            </p>
-                        </div>
-                    )}
-                    {restartTimes && restartTimes.map((time, index) => (
-                        <div key={time} className="flex items-center space-x-1 bg-secondary text-secondary-foreground px-3 py-1 rounded-md select-none">
-                            <span className="font-mono">{time}</span>
-                            {!disabled && <button
-                                onClick={() => removeTime(index)}
-                                className="ml-2 text-secondary-foreground/50 hover:text-destructive"
-                                aria-label={t('Remove')}
+        <div className="flex flex-col gap-3">
+            {restartTimes && restartTimes.length === 0 && (
+                <div className="text-dense text-muted-foreground">
+                    <p>{t('No restarts scheduled.')}</p>
+                    <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1">
+                        <span>{t('Presets')}:</span>
+                        {restartPresets.map((preset) => (
+                            <Button
+                                key={preset.label}
+                                variant="link"
                                 disabled={disabled}
+                                onClick={() => applyPreset(preset.times)}
                             >
-                                <XIcon className="size-4" />
-                            </button>}
-                        </div>
+                                <span className="text-dense">{preset.label}{t('/day')}</span>
+                            </Button>
+                        ))}
+                    </div>
+                </div>
+            )}
+            {restartTimes && restartTimes.length > 0 && (
+                <ul className="flex flex-wrap gap-2" aria-label={t('Restart Schedule')}>
+                    {restartTimes.map((time, index) => (
+                        <li
+                            key={time}
+                            className={cn(
+                                'flex min-h-9 select-none items-center gap-1 rounded-sm bg-raise-2 text-sm',
+                                disabled ? 'px-3' : 'pl-3',
+                            )}
+                        >
+                            <span className="font-mono tabular-nums text-white">{time}</span>
+                            {!disabled && <IconButton
+                                label={t('Remove {time}', { time })}
+                                icon={<XIcon />}
+                                onClick={() => removeTime(index)}
+                            />}
+                        </li>
                     ))}
-                </div>
-                <div className="flex gap-2">
-                    <Button
-                        onClick={() => setIsTimeInputOpen(true)}
-                        variant="secondary"
-                        size={'xs'}
-                        className="w-10 hover:bg-primary hover:text-primary-foreground"
-                        aria-label={t('Add')}
-                        disabled={disabled}
-                    >
-                        <PlusIcon className="h-4" />
-                    </Button>
-                    <Button
-                        onClick={() => clearTimes()}
-                        variant="muted"
-                        size={'xs'}
-                        className="w-10 hover:bg-destructive hover:text-destructive-foreground"
-                        aria-label={t('Clear')}
-                        disabled={disabled || !restartTimes || restartTimes.length === 0}
-                    >
-                        <TrashIcon className="h-3.5" />
-                    </Button>
-                </div>
+                </ul>
+            )}
+            <div className="flex flex-wrap gap-2">
+                <Button
+                    variant="secondary"
+                    onClick={() => setIsTimeInputOpen(true)}
+                    disabled={disabled}
+                >
+                    {t('Add time')}
+                </Button>
+                <Button
+                    variant="outline-destructive"
+                    onClick={() => clearTimes()}
+                    disabled={disabled || !restartTimes || restartTimes.length === 0}
+                >
+                    {t('Clear')}
+                </Button>
             </div>
             <TimeInputDialog
                 title={t('Add Restart Time')}
@@ -169,7 +148,7 @@ export function TimeZoneWarning() {
         const browserTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
         if (window.txConsts.serverTimezone !== browserTimezone) {
             return (
-                <SettingItemDesc className="text-destructive-inline">
+                <SettingItemDesc className="text-warning-text">
                     <TransText
                         k="**Warning:** Your server timezone is set to `{serverTimezone}`, but your browser timezone is `{browserTimezone}`. Make sure to configure the time according to the server timezone."
                         values={{ serverTimezone: window.txConsts.serverTimezone, browserTimezone }}
@@ -317,7 +296,7 @@ export default function ConfigCardFxserver({ cardCtx, pageCtx }: SettingsCardPro
                 <TransText k="**This will not delete any resource files or database**, but just reset the cAdminPanel configuration, allowing you to go back to the Setup page." /> <br />
                 {t('If you want, you can set the path back to the current value later.')} <br />
                 <br />
-                <strong className="text-warning-inline">{t('Warning:')}</strong> {t('take note of the current path before proceeding, so you can set it back later if you need to. Current path:')}
+                <strong className="text-warning-text">{t('Warning:')}</strong> {t('take note of the current path before proceeding, so you can set it back later if you need to. Current path:')}
                 <Input value={cfg.dataPath.initialValue} className="mt-2" readOnly />
             </>),
             onConfirm: () => {
@@ -357,15 +336,16 @@ export default function ConfigCardFxserver({ cardCtx, pageCtx }: SettingsCardPro
                         placeholder={serverDataPlaceholder}
                         onInput={updatePageState}
                         disabled={pageCtx.isReadOnly}
+                        className="min-w-0 flex-1"
                         required
                     />
                     <Button
-                        className="grow border-destructive text-destructive hover:bg-destructive hover:text-destructive-foreground"
-                        variant="outline"
+                        className="shrink-0"
+                        variant="outline-destructive"
                         disabled={pageCtx.isReadOnly || !hasPerm('all_permissions') || isResettingServerData}
                         onClick={handleResetServerData}
                     >
-                        <Undo2Icon className="mr-2 h-4 w-4" /> {t('Reset')}
+                        {t('Reset')}
                     </Button>
                 </div>
                 <SettingItemDesc>
@@ -373,7 +353,7 @@ export default function ConfigCardFxserver({ cardCtx, pageCtx }: SettingsCardPro
                     {t('Resetting this value will allow you to go back to the Setup page, without deleting any files.')}
                     {pageCtx.apiData?.dataPath && pageCtx.apiData?.hasCustomDataPath && (<>
                         <br />
-                        <span className="text-warning-inline">
+                        <span className="text-warning-text">
                             <TransText
                                 k="{source}: This path should start with `{path}`."
                                 values={{ source: window.txConsts.hostConfigSource, path: pageCtx.apiData.dataPath }}
@@ -396,7 +376,7 @@ export default function ConfigCardFxserver({ cardCtx, pageCtx }: SettingsCardPro
                     {t('You will still be able to use the Live Console.')}
                     {forceQuietMode && (<>
                         <br />
-                        <span className="text-warning-inline">{t('{source}: This setting is locked and cannot be changed.', { source: window.txConsts.hostConfigSource })}</span>
+                        <span className="text-warning-text">{t('{source}: This setting is locked and cannot be changed.', { source: window.txConsts.hostConfigSource })}</span>
                     </>)}
                 </SettingItemDesc>
             </SettingItem>

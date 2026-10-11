@@ -1,200 +1,100 @@
 import { Button } from "@/components/ui/button";
-import { PersonStandingIcon } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import TmpHexHslConverter from "./TmpHexHslConverter";
 import TxAnchor from "@/components/TxAnchor";
+
+//Every swatch uses a design token from globals.css / tailwind.config.cjs.
+const accentSwatches = [
+    ['bg-accent', 'accent (fill)'],
+    ['bg-accent-hover', 'accent-hover'],
+    ['bg-accent-soft', 'accent-soft'],
+    ['bg-accent-tint', 'accent-tint'],
+    ['bg-accent-edge', 'accent-edge'],
+] as const;
+
+const surfaceSwatches = [
+    ['bg-sidebar', 'sidebar'],
+    ['bg-menu', 'menu'],
+    ['bg-modal', 'modal'],
+    ['bg-raise', 'raise'],
+    ['bg-raise-2', 'raise-2'],
+    ['bg-raise-3', 'raise-3'],
+    ['bg-sunken', 'sunken'],
+] as const;
+
+const textSwatches = [
+    ['text-white', 'text (headings, values)'],
+    ['text-body', 'text-body'],
+    ['text-muted-foreground', 'text-muted'],
+    ['text-faint', 'text-faint'],
+    ['text-accent-text', 'accent-text'],
+    ['text-accent-glow', 'accent-glow'],
+] as const;
+
+const statusSwatches = [
+    ['bg-success/15 text-success-text', 'success'],
+    ['bg-warning/15 text-warning-text', 'warning'],
+    ['bg-danger/15 text-danger-text', 'danger'],
+    ['bg-info/15 text-info-text', 'info'],
+] as const;
+
+function SwatchGroup({ title, children }: { title: string, children: React.ReactNode }) {
+    return <section className="flex w-56 flex-col gap-2">
+        <h3 className="text-sm font-medium text-white">{title}</h3>
+        {children}
+    </section>;
+}
 
 export default function TmpColors() {
     return <>
         <div className="mx-4 space-y-8">
-            {/* Header */}
-            <div className="text-center">
-                <h2 className="text-2xl font-bold mb-2">Color System Overview</h2>
-                <p className="text-muted-foreground text-sm">Semantic colors, hint backgrounds, and inline text variants</p>
+            <div className="space-y-1">
+                <h2 className="text-xl font-semibold text-white">Design tokens</h2>
+                <p className="text-sm text-muted-foreground">Accent, surfaces, text and status colours. See docs/design-system.md.</p>
             </div>
 
             <div className="flex flex-wrap gap-8">
-                {/* Base Semantic Colors */}
-                <div className="space-y-3">
-                    <h3 className="text-lg font-semibold mb-3">Base Colors</h3>
-                    <div className="space-y-2 w-56">
-                        <div className="w-full p-3 bg-primary text-primary-foreground rounded">primary</div>
-                        <div className="w-full p-3 bg-secondary text-secondary-foreground rounded">secondary</div>
-                        <div className="w-full p-3 bg-muted text-muted-foreground rounded">muted</div>
-                        <div className="w-full p-3 bg-info text-info-foreground rounded">info</div>
-                        <div className="w-full p-3 bg-success text-success-foreground rounded">success</div>
-                        <div className="w-full p-3 bg-warning text-warning-foreground rounded">warning</div>
-                        <div className="w-full p-3 bg-destructive text-destructive-foreground rounded">destructive</div>
-                        <div className="w-full p-3 bg-accent text-accent-foreground rounded">accent</div>
-                        <div className="w-full p-3 bg-card text-card-foreground border rounded">card + border</div>
+                <SwatchGroup title="Accent">
+                    {accentSwatches.map(([cls, label]) => <div key={cls} className={`rounded-sm p-3 text-sm text-white ${cls}`}>{label}</div>)}
+                </SwatchGroup>
+
+                <SwatchGroup title="Surfaces">
+                    {surfaceSwatches.map(([cls, label]) => <div key={cls} className={`rounded-sm p-3 text-sm text-white ${cls}`}>{label}</div>)}
+                </SwatchGroup>
+
+                <SwatchGroup title="Text">
+                    <div className="flex flex-col gap-2 rounded-lg bg-raise p-3">
+                        {textSwatches.map(([cls, label]) => <span key={cls} className={`text-sm ${cls}`}>{label}</span>)}
                     </div>
-                </div>
+                </SwatchGroup>
 
-                {/* Hint Colors - For Toast/Warning Backgrounds */}
-                <div className="space-y-3">
-                    <h3 className="text-lg font-semibold mb-3">Hint Colors</h3>
-                    <p className="text-sm text-muted-foreground mb-3">Used for toast/warning backgrounds</p>
-                    <div className="space-y-2 w-56">
-                        <div className="w-full p-3 bg-info-hint rounded border border-info/70">
-                            <span className="font-medium">info-hint</span>
-                            <br />
-                            <span className="text-sm opacity-75">Toast background</span>
-                        </div>
-                        <div className="w-full p-3 bg-success-hint text-foreground rounded border border-success/70">
-                            <span className="font-medium">success-hint</span>
-                            <br />
-                            <span className="text-sm opacity-75">Toast background</span>
-                        </div>
-                        <div className="w-full p-3 bg-warning-hint text-foreground rounded border border-warning/70">
-                            <span className="font-medium">warning-hint</span>
-                            <br />
-                            <span className="text-sm opacity-75">Toast background</span>
-                        </div>
-                        <div className="w-full p-3 bg-destructive-hint text-foreground rounded border border-destructive/70">
-                            <span className="font-medium">destructive-hint</span>
-                            <br />
-                            <span className="text-sm opacity-75">Toast background</span>
-                        </div>
+                <SwatchGroup title="Status">
+                    {statusSwatches.map(([cls, label]) => <div key={label} className={`rounded-sm p-3 text-sm ${cls}`}>{label}</div>)}
+                    <div className="flex flex-wrap gap-2 pt-1">
+                        <Badge variant="success">Online</Badge>
+                        <Badge variant="warning">Starting</Badge>
+                        <Badge variant="danger">Stopped</Badge>
+                        <Badge variant="info">Info</Badge>
                     </div>
-                </div>
+                </SwatchGroup>
 
-                {/* Inline Text Colors */}
-                <div className="space-y-3">
-                    <h3 className="text-lg font-semibold mb-3">Inline Text Colors</h3>
-                    <p className="text-sm text-muted-foreground mb-3">Better contrast for text on light mode</p>
-                    <div className="space-y-2 w-56">
-                        {/* On default background */}
-                        <div className="space-y-2 p-3 bg-background border rounded">
-                            <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">On Background</div>
-                            <div className="text-info-inline">info-inline text</div>
-                            <div className="text-success-inline">success-inline text</div>
-                            <div className="text-warning-inline">warning-inline text</div>
-                            <div className="text-destructive-inline">destructive-inline text</div>
-                        </div>
-
-                        {/* On card background */}
-                        <div className="space-y-2 p-3 bg-card border rounded">
-                            <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">On Card</div>
-                            <div className="text-info-inline">info-inline text</div>
-                            <div className="text-success-inline">success-inline text</div>
-                            <div className="text-warning-inline">warning-inline text</div>
-                            <div className="text-destructive-inline">destructive-inline text</div>
-                        </div>
-
-                        {/* Comparison with regular colors */}
-                        <div className="space-y-2 p-3 bg-card border rounded">
-                            <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Regular vs Inline</div>
-                            <div className="flex justify-between text-sm">
-                                <span className="text-destructive">regular</span>
-                                <span className="text-destructive-inline">inline</span>
-                            </div>
-                            <div className="flex justify-between text-sm">
-                                <span className="text-warning">regular</span>
-                                <span className="text-warning-inline">inline</span>
-                            </div>
-                        </div>
+                <SwatchGroup title="Buttons and links">
+                    <div className="flex flex-wrap gap-2">
+                        <Button size="sm">primary</Button>
+                        <Button size="sm" variant="secondary">secondary</Button>
+                        <Button size="sm" variant="outline-destructive">outline-destructive</Button>
+                        <Button size="sm" variant="link">link</Button>
+                        <Button size="sm" disabled>disabled</Button>
                     </div>
-                </div>
-
-                {/* Button Variants by Color */}
-                <div className="space-y-4">
-                    <h3 className="text-lg font-semibold mb-3">Button Variants by Color</h3>
-
-                    {/* Primary/Default */}
-                    <div className="space-y-2">
-                        <h4 className="text-sm font-medium text-muted-foreground">Primary</h4>
-                        <div className="flex flex-wrap gap-2">
-                            <Button size="sm" variant="default">default</Button>
-                            <Button size="sm" variant="outline">outline</Button>
-                            <Button size="sm" variant="ghost">ghost</Button>
-                        </div>
+                    <div className="flex flex-wrap gap-3 text-sm">
+                        <TxAnchor href="/settings">internal link</TxAnchor>
+                        <TxAnchor href="https://www.google.com">external link</TxAnchor>
                     </div>
-
-                    {/* Secondary */}
-                    <div className="space-y-2">
-                        <h4 className="text-sm font-medium text-muted-foreground">Secondary</h4>
-                        <div className="flex flex-wrap gap-2">
-                            <Button size="sm" variant="secondary">secondary</Button>
-                            <Button size="sm" variant="outline-secondary">outline-secondary</Button>
-                            <Button size="sm" variant="ghost-secondary">ghost-secondary</Button>
-                        </div>
-                    </div>
-
-                    {/* Destructive */}
-                    <div className="space-y-2">
-                        <h4 className="text-sm font-medium text-muted-foreground">Destructive</h4>
-                        <div className="flex flex-wrap gap-2">
-                            <Button size="sm" variant="destructive">destructive</Button>
-                            <Button size="sm" variant="outline-destructive">outline-destructive</Button>
-                            <Button size="sm" variant="ghost-destructive">ghost-destructive</Button>
-                        </div>
-                    </div>
-
-                    {/* Warning */}
-                    <div className="space-y-2">
-                        <h4 className="text-sm font-medium text-muted-foreground">Warning</h4>
-                        <div className="flex flex-wrap gap-2">
-                            <Button size="sm" variant="warning">warning</Button>
-                            <Button size="sm" variant="outline-warning">outline-warning</Button>
-                            <Button size="sm" variant="ghost-warning">ghost-warning</Button>
-                        </div>
-                    </div>
-
-                    {/* Success */}
-                    <div className="space-y-2">
-                        <h4 className="text-sm font-medium text-muted-foreground">Success</h4>
-                        <div className="flex flex-wrap gap-2">
-                            <Button size="sm" variant="success">success</Button>
-                            <Button size="sm" variant="outline-success">outline-success</Button>
-                            <Button size="sm" variant="ghost-success">ghost-success</Button>
-                        </div>
-                    </div>
-
-                    {/* Info */}
-                    <div className="space-y-2">
-                        <h4 className="text-sm font-medium text-muted-foreground">Info</h4>
-                        <div className="flex flex-wrap gap-2">
-                            <Button size="sm" variant="info">info</Button>
-                            <Button size="sm" variant="outline-info">outline-info</Button>
-                            <Button size="sm" variant="ghost-info">ghost-info</Button>
-                        </div>
-                    </div>
-
-                    {/* Muted */}
-                    <div className="space-y-2">
-                        <h4 className="text-sm font-medium text-muted-foreground">Muted</h4>
-                        <div className="flex flex-wrap gap-2">
-                            <Button size="sm" variant="muted">muted</Button>
-                            <Button size="sm" variant="outline-muted">outline-muted</Button>
-                            <Button size="sm" variant="ghost-muted">ghost-muted</Button>
-                        </div>
-                    </div>
-
-                    {/* Special Variants */}
-                    <div className="space-y-2">
-                        <h4 className="text-sm font-medium text-muted-foreground">Special</h4>
-                        <div className="flex flex-wrap gap-2">
-                            <Button size="sm" disabled>disabled</Button>
-                            <Button size="sm"><PersonStandingIcon className="w-4 h-4 mr-1" />with icon</Button>
-                            <Button size="icon" variant="outline"><PersonStandingIcon /></Button>
-                            <Button size="sm" variant="link">link</Button>
-                            <TxAnchor href="https://www.google.com">external link</TxAnchor>
-                        </div>
-                    </div>
-
-                    {/* Anchors */}
-                    <div className="space-y-2">
-                        <h4 className="text-sm font-medium text-muted-foreground">Anchors</h4>
-                        <div className="flex flex-wrap gap-2">
-                            <TxAnchor href="/settings">internal link</TxAnchor>
-                            <TxAnchor href="https://www.google.com">external link</TxAnchor>
-                        </div>
-                    </div>
-                </div>
+                </SwatchGroup>
             </div>
 
-            {/* Color Converter Tool */}
-            <div className="border-t pt-6">
-                <h3 className="text-lg font-semibold mb-3">Color Converter</h3>
+            <div className="border-t border-hairline pt-6">
+                <h3 className="mb-3 text-base font-semibold text-white">Color converter</h3>
                 <TmpHexHslConverter />
             </div>
         </div>

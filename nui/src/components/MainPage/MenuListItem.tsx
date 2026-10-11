@@ -1,156 +1,67 @@
 import React, { memo, useEffect, useRef, useState } from "react";
-import { Box, ButtonBase, Typography, alpha, styled } from "@mui/material";
-import { useKeyboardNavigation } from "../../hooks/useKeyboardNavigation";
-import { ChevronLeft, ChevronRight } from "@mui/icons-material";
-import { fetchNui } from "../../utils/fetchNui";
 import { useTranslate } from "react-polyglot";
+import { useSnackbar } from "notistack";
+import { useKeyboardNavigation } from "../../hooks/useKeyboardNavigation";
+import { fetchNui } from "../../utils/fetchNui";
 import {
   ResolvablePermission,
   usePermissionsValue,
 } from "../../state/permissions.state";
 import { userHasPerm } from "../../utils/miscUtils";
-import { useSnackbar } from "notistack";
-import { useTooltip } from "../../provider/TooltipProvider";
-import { microLabel, nuiTokens } from "@nui/src/styles/nuiTokens";
+import { useMenuHelp } from "../../provider/MenuHelpProvider";
 
 /**
- * A single actionable row. Selection is driven by keyboard navigation from
- * MainPageList, so the visual affordance has to read clearly without hover.
+ * Main-page rows are nav rows: 44px, radius-md, body text. The keyboard cursor
+ * reads like the active nav row (accent-soft background, accent text). Rows the
+ * admin cannot use are dimmed and explain why on Enter.
  */
-const RowButton = styled(ButtonBase, {
-  shouldForwardProp: (prop) => prop !== "isActive" && prop !== "isDimmed",
-})<{ isActive: boolean; isDimmed: boolean }>(({ theme, isActive, isDimmed }) => ({
-  width: "100%",
-  minHeight: 48,
-  padding: "8px 11px",
-  marginBottom: 4,
-  borderRadius: nuiTokens.radiusSm,
-  display: "flex",
-  alignItems: "center",
-  gap: 10,
-  textAlign: "left",
-  justifyContent: "flex-start",
-  color: theme.palette.text.primary,
-  opacity: isDimmed ? 0.58 : 1,
-  backgroundColor: isActive ? alpha(theme.palette.primary.main, 0.12) : "transparent",
-  borderLeft: `3px solid ${isActive ? theme.palette.primary.main : 'transparent'}`,
-  boxShadow: isActive
-    ? `inset 0 0 0 1px ${alpha(theme.palette.primary.main, 0.34)}`
-    : `inset 0 0 0 1px transparent`,
-  transition: "background-color 120ms ease, box-shadow 120ms ease",
-  "&:hover": {
-    backgroundColor: isActive
-      ? alpha(theme.palette.primary.main, 0.16)
-      : nuiTokens.surfaceHover,
-  },
-}));
+const rowClass = (selected: boolean, allowed: boolean) => [
+  "action-row",
+  selected ? "is-selected" : "",
+  allowed ? "" : "is-locked",
+].filter(Boolean).join(" ");
 
-/**
- * The leading icon chip. Uses the accent tint when the row is selected so the
- * eye lands on the same element the keyboard is pointing at.
- */
-const IconChip = styled(Box, {
-  shouldForwardProp: (prop) => prop !== "isActive",
-})<{ isActive: boolean }>(({ theme, isActive }) => ({
-  flexShrink: 0,
-  width: 32,
-  height: 32,
-  borderRadius: nuiTokens.radiusXs,
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  color: isActive ? theme.palette.primary.main : theme.palette.text.secondary,
-  backgroundColor: isActive
-    ? alpha(theme.palette.primary.main, 0.14)
-    : nuiTokens.surface,
-  boxShadow: `inset 0 0 0 1px ${nuiTokens.ring}`,
-  transition: "color 120ms ease, background-color 120ms ease",
-  "& svg": { fontSize: 18 },
-}));
-
-const RowTitle = styled(Typography)({
-  fontSize: 14.5,
-  fontWeight: 500,
-  lineHeight: 1.3,
-});
-
-const RowValue = styled(Typography)({
-  ...microLabel,
-  marginTop: 1,
-  letterSpacing: '0.06em',
-});
-
-/**
- * The left/right cycling affordance shown on multi-action rows. Only rendered
- * as interactive-looking when the row is selected, since the arrow keys only
- * act on the selected row.
- */
-const CycleHint = styled(Box, {
-  shouldForwardProp: (prop) => prop !== "isActive",
-})<{ isActive: boolean }>(({ theme, isActive }) => ({
-  flexShrink: 0,
-  display: "flex",
-  alignItems: "center",
-  color: isActive ? theme.palette.primary.main : theme.palette.text.secondary,
-  opacity: isActive ? 1 : 0.65,
-  "& svg": { fontSize: 15 },
-}));
+const useScrollIntoView = (selected: boolean) => {
+  const ref = useRef<HTMLButtonElement | null>(null);
+  useEffect(() => {
+    if (!selected) return;
+    ref.current?.scrollIntoView({ block: "nearest", inline: "start" });
+  }, [selected]);
+  return ref;
+};
 
 export interface MenuListItemProps {
   title: string;
   label: string;
   requiredPermission?: ResolvablePermission;
-  icon: JSX.Element;
   selected: boolean;
   onSelect: () => void;
 }
 
-
 export const MenuListItem: React.FC<MenuListItemProps> = memo(
-  ({ title, label, requiredPermission, icon, selected, onSelect }) => {
-
+  ({ title, label, requiredPermission, selected, onSelect }) => {
     const t = useTranslate();
-    const divRef = useRef<HTMLDivElement | null>(null);
     const userPerms = usePermissionsValue();
     const isUserAllowed = requiredPermission
       ? userHasPerm(requiredPermission, userPerms)
       : true;
     const { enqueueSnackbar } = useSnackbar();
-    const { setTooltipText } = useTooltip();
+    const { setHelpText } = useMenuHelp();
+    const rowRef = useScrollIntoView(selected);
 
     const handleEnter = (): void => {
       if (!selected) return;
-
       if (!isUserAllowed) {
-        enqueueSnackbar(t("nui_menu.misc.no_perms"), {
-          variant: "error",
-          anchorOrigin: {
-            horizontal: "center",
-            vertical: "bottom",
-          },
-        });
+        enqueueSnackbar(t("nui_menu.misc.no_perms"), { variant: "error" });
         return;
       }
-
       fetchNui("playSound", "enter");
       onSelect();
     };
 
     useEffect(() => {
-      if (selected && divRef) {
-        divRef.current?.scrollIntoView({
-          behavior: "smooth",
-          block: "nearest",
-          inline: "start",
-        });
-      }
-    }, [selected]);
-
-    useEffect(() => {
-      if (selected) {
-        setTooltipText(label);
-      }
-    }, [selected]);
+      if (selected) setHelpText(label);
+    }, [selected, label]);
 
     useKeyboardNavigation({
       onEnterDown: handleEnter,
@@ -158,17 +69,16 @@ export const MenuListItem: React.FC<MenuListItemProps> = memo(
     });
 
     return (
-      <div ref={divRef}>
-        <RowButton
-          onClick={handleEnter}
-          isActive={selected}
-          isDimmed={!isUserAllowed}
-          disableRipple
-        >
-          <IconChip isActive={selected}>{icon}</IconChip>
-          <RowTitle>{title}</RowTitle>
-        </RowButton>
-      </div>
+      <button
+        ref={rowRef}
+        type="button"
+        tabIndex={-1}
+        className={rowClass(selected, isUserAllowed)}
+        aria-current={selected ? "true" : undefined}
+        onClick={handleEnter}
+      >
+        <span className="truncate">{title}</span>
+      </button>
     );
   }
 );
@@ -177,7 +87,6 @@ interface MenuListItemMultiAction {
   name?: string | JSX.Element;
   label: string;
   value: string | number | boolean;
-  icon?: JSX.Element;
   onSelect: () => void;
 }
 
@@ -186,55 +95,28 @@ export interface MenuListItemMultiProps {
   requiredPermission?: ResolvablePermission;
   initialValue?: MenuListItemMultiAction;
   selected: boolean;
-  icon: JSX.Element;
   actions: MenuListItemMultiAction[];
 }
 
 export const MenuListItemMulti: React.FC<MenuListItemMultiProps> = memo(
-  ({ selected, title, actions, icon, initialValue, requiredPermission }) => {
-
+  ({ selected, title, actions, initialValue, requiredPermission }) => {
     const t = useTranslate();
     const [curState, setCurState] = useState(0);
     const userPerms = usePermissionsValue();
     const { enqueueSnackbar } = useSnackbar();
-    const { setTooltipText } = useTooltip();
+    const { setHelpText } = useMenuHelp();
+    const rowRef = useScrollIntoView(selected);
+    const compMounted = useRef(false);
 
     const isUserAllowed = requiredPermission
       ? userHasPerm(requiredPermission, userPerms)
       : true;
 
-    const compMounted = useRef(false);
-
-    const divRef = useRef<HTMLDivElement | null>(null);
-
-    const showNotAllowedAlert = () => {
-      enqueueSnackbar(t("nui_menu.misc.no_perms"), {
-        variant: "error",
-        anchorOrigin: {
-          horizontal: "center",
-          vertical: "bottom",
-        },
-      });
-    };
-
-    useEffect(() => {
-      if (selected && divRef) {
-        divRef.current?.scrollIntoView({
-          behavior: "smooth",
-          block: "nearest",
-          inline: "start",
-        });
-      }
-    }, [selected]);
-
-    // Mount/unmount detection
-    // We will only run this hook after initial mount
-    // and not on unmount.
-    // NOTE: This hook does not work if actions prop are dynamic
+    // Only on the initial mount: start on the option matching the current mode.
+    // NOTE: This does not work if the actions prop is dynamic
     useEffect(() => {
       if (!compMounted.current) {
         compMounted.current = true;
-        // We will set the initial value of the item based on the passed initial value
         const index = actions.findIndex((a) => a.value === initialValue?.value);
         setCurState(index > -1 ? index : 0);
       }
@@ -242,34 +124,28 @@ export const MenuListItemMulti: React.FC<MenuListItemMultiProps> = memo(
 
     useEffect(() => {
       if (actions[curState]?.label && selected) {
-        setTooltipText(actions[curState]?.label);
+        setHelpText(actions[curState].label);
       }
     }, [curState, selected]);
 
     const handleLeftArrow = () => {
       if (!selected) return;
-
       fetchNui("playSound", "move").catch();
-      const nextEstimatedItem = curState - 1;
-      const nextItem =
-        nextEstimatedItem < 0 ? actions.length - 1 : nextEstimatedItem;
-      setCurState(nextItem);
+      setCurState((current) => (current - 1 < 0 ? actions.length - 1 : current - 1));
     };
 
     const handleRightArrow = () => {
       if (!selected) return;
-
       fetchNui("playSound", "move");
-      const nextEstimatedItem = curState + 1;
-      const nextItem =
-        nextEstimatedItem >= actions.length ? 0 : nextEstimatedItem;
-      setCurState(nextItem);
+      setCurState((current) => (current + 1 >= actions.length ? 0 : current + 1));
     };
 
     const handleEnter = () => {
       if (!selected) return;
-      if (!isUserAllowed) return showNotAllowedAlert();
-
+      if (!isUserAllowed) {
+        enqueueSnackbar(t("nui_menu.misc.no_perms"), { variant: "error" });
+        return;
+      }
       fetchNui("playSound", "enter").catch();
       actions[curState].onSelect();
     };
@@ -282,28 +158,21 @@ export const MenuListItemMulti: React.FC<MenuListItemMultiProps> = memo(
     });
 
     return (
-      <div ref={divRef}>
-        <RowButton
-          onClick={handleEnter}
-          isActive={selected}
-          isDimmed={!isUserAllowed}
-          disableRipple
-        >
-          <IconChip isActive={selected}>
-            {actions[curState]?.icon ?? icon}
-          </IconChip>
-          <Box flex={1} minWidth={0}>
-            <RowTitle>{title}</RowTitle>
-            <RowValue color="text.secondary">
-              {actions[curState]?.name ?? "???"}
-            </RowValue>
-          </Box>
-          <CycleHint isActive={selected}>
-            <ChevronLeft />
-            <ChevronRight />
-          </CycleHint>
-        </RowButton>
-      </div>
+      <button
+        ref={rowRef}
+        type="button"
+        tabIndex={-1}
+        className={rowClass(selected, isUserAllowed)}
+        aria-current={selected ? "true" : undefined}
+        onClick={handleEnter}
+      >
+        <span className="truncate">{title}</span>
+        <span className="action-value">
+          <span className="cycle-hint" aria-hidden="true">‹</span>
+          {actions[curState]?.name ?? "?"}
+          <span className="cycle-hint" aria-hidden="true">›</span>
+        </span>
+      </button>
     );
   }
 );

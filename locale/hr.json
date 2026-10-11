@@ -66,7 +66,7 @@
         "spawning_discord": "**%{servername}** pokreće se."
     },
     "nui_warning": {
-        "title": "UPOZORENJE",
+        "title": "Upozorenje",
         "warned_by": "Upozorenje izdao",
         "stale_message": "Ovo upozorenje je izdano prije nego što ste se spojili na server.",
         "dismiss_key": "SPACE",
@@ -230,7 +230,11 @@
                 "online_players": "Igrači na serveru",
                 "players": "Igrači",
                 "search": "Pretraži",
-                "zero_players": "Nema pronađenih igrača"
+                "zero_players": "Nema pronađenih igrača",
+                "online_count": "%{online} / %{max} na mreži",
+                "onesync_off": "OneSync isključen",
+                "showing_count": "Prikazano %{shown} od %{total}",
+                "clear_filters": "Očisti filtre"
             },
             "filter": {
                 "label": "Filtriraj po",
@@ -249,7 +253,16 @@
                 "farthest": "Najdalji"
             },
             "card": {
-                "health": "%{percentHealth}% zdravlja"
+                "health": "%{percentHealth}% zdravlja",
+                "admin": "Administrator"
+            },
+            "activity": {
+                "unknown": "Nepoznato",
+                "walking": "Hoda",
+                "driving": "Vozi",
+                "boating": "Plovi",
+                "biking": "Vozi motocikl",
+                "flying": "Leti"
             }
         },
         "player_modal": {
@@ -335,14 +348,14 @@
                 "joined": "Ušao",
                 "whitelisted_label": "Na popisu dopuštenih",
                 "whitelisted_notyet": "još nije",
-                "btn_wl_add": "DODAJ",
-                "btn_wl_remove": "UKLONI",
+                "btn_wl_add": "Dodaj na popis dopuštenih",
+                "btn_wl_remove": "Ukloni s popisa dopuštenih",
                 "btn_wl_success": "Status popisa dopuštenih je promijenjen.",
-                "log_label": "Evidencija",
+                "log_label": "Povijest",
                 "log_empty": "Nema pronađenih zabrana ili upozorenja.",
                 "log_ban_count": "%{smart_count} zabrana |||| %{smart_count} zabrane |||| %{smart_count} zabrana",
                 "log_warn_count": "%{smart_count} upozorenje |||| %{smart_count} upozorenja |||| %{smart_count} upozorenja",
-                "log_btn": "DETALJI",
+                "log_btn": "Prikaži povijest",
                 "notes_title": "Bilješke osoblja",
                 "notes_changed": "Bilješka promijenjena.",
                 "notes_placeholder": "Bilješke o igraču...",
@@ -352,14 +365,18 @@
             },
             "history": {
                 "title": "Povezana povijest",
-                "btn_revoke": "MAKNI",
+                "btn_revoke": "Opozovi",
                 "revoked_success": "Radnja je opozvana.",
                 "banned_by": "Zabranu izrekao %{author}",
                 "warned_by": "Upozorenje izdao %{author}",
                 "revoked_by": "Opozvao %{author}.",
                 "expired_at": "Isteklo %{date}.",
                 "expires_at": "Ističe u %{date}.",
-                "empty": "Za ovog igrača nema povijesti moderacije."
+                "empty": "Za ovog igrača nema povijesti moderacije.",
+                "state_ban": "Zabrana",
+                "state_warn": "Upozorenje",
+                "state_revoked": "Opozvano",
+                "state_expired": "Isteklo"
             },
             "ban": {
                 "title": "Zabrani ulazak igraču",
@@ -375,7 +392,10 @@
                 "helper_text": "Odaberite trajanje",
                 "submit": "Potvrdi zabranu",
                 "reason_required": "Polje za razlog mora biti popunjeno.",
-                "success": "Igraču je zabranjen pristup."
+                "success": "Igraču je zabranjen pristup.",
+                "templates": "Predlošci",
+                "review": "Pregledaj zabranu",
+                "confirm_title": "Zabraniti igrača %{name} (%{duration})?"
             },
             "ids": {
                 "current_ids": "Trenutni profili",
@@ -387,6 +407,13 @@
                 "none_previous": "Nema spremljenih identifikatora.",
                 "none_hwids": "Nema dostupnih hardverskih ID-ova."
             }
+        },
+        "help": {
+            "pages": "Stranice izbornika",
+            "navigate": "Odabir",
+            "change": "Promjena",
+            "run": "Pokreni",
+            "switch_page": "Promjena stranice"
         }
     }
 }

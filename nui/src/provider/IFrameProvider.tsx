@@ -46,11 +46,12 @@ export const IFrameProvider: React.FC<IFrameProviderProps> = ({ children }) => {
   const [menuPage, setMenuPage] = usePage();
   const isMenuVisible = useIsMenuVisibleValue();
 
-  // Will reset the iFrame page to server logs everytime
+  // Every time the menu opens, the embedded panel starts on its dashboard.
+  // NOTE: the old `/server/server-log` page no longer exists and resolved to a 404.
   useEffect(() => {
     if (isMenuVisible) {
       const refreshBuster = Math.random().toString().padStart(8, "0").slice(-8);
-      setCurFramePg(`/server/server-log?refresh${refreshBuster}`);
+      setCurFramePg(`/?refresh${refreshBuster}`);
     }
   }, [isMenuVisible]);
 

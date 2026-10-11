@@ -92,7 +92,7 @@ describe('administrator authentication methods', () => {
         vi.stubGlobal('txCore', { cacheStore: { get: vi.fn() } });
         const admin = new AuthedAdmin(vaultAdmin({ preferences: { accent: 'rose' } }));
 
-        expect(admin.getAuthData()).toMatchObject({ accent: 'rose', accentColor: '#e11d48' });
+        expect(admin.getAuthData()).toMatchObject({ accent: 'rose', accentColor: '#be123c' });
     });
 
     test('ignores an unknown stored account accent', () => {

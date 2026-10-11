@@ -1,9 +1,24 @@
 import { type ClassValue, clsx } from "clsx";
-import { twMerge } from "tailwind-merge";
+import { extendTailwindMerge } from "tailwind-merge";
 import { Socket, io } from "socket.io-client";
 import type { BanDurationType } from "@shared/otherTypes";
 import { ListenEventsMap } from "@shared/socketioTypes";
 
+
+/**
+ * tailwind-merge taught the design system's custom scale (tailwind.config.cjs).
+ * Without this it reads `text-dense` and `text-micro` as text colours and drops
+ * the real colour next to them, eg. on every small button.
+ */
+const twMerge = extendTailwindMerge({
+    extend: {
+        classGroups: {
+            'font-size': [{ text: ['micro', '2xs', 'dense'] }],
+            shadow: [{ shadow: ['button', 'menu', 'modal'] }],
+            rounded: [{ rounded: ['xs', 'pill'] }],
+        },
+    },
+});
 
 /**
  * clsx then tailwind-merge

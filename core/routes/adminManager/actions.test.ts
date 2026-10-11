@@ -57,7 +57,55 @@ describe('administrator management password boundaries', () => {
 
         await AdminManagerActions(ctx);
 
-        expect(editAdmin).toHaveBeenCalledWith('target', false, false, []);
+        expect(editAdmin).toHaveBeenCalledWith('target', false, false, [], undefined);
         expect(ctx.send).toHaveBeenCalledWith({ type: 'success', refresh: true });
+    });
+});
+
+describe('administrator Rockstar license', () => {
+    afterEach(() => vi.unstubAllGlobals());
+    const stubStore = () => {
+        const editAdmin = vi.fn(async () => true);
+        vi.stubGlobal('txCore', {
+            adminStore: {
+                getAdminByName: vi.fn(() => ({ name: 'target', master: false, providers: {}, permissions: [] })),
+                editAdmin,
+            },
+        });
+        return editAdmin;
+    };
+
+    it('links a license given in any accepted form', async () => {
+        const editAdmin = stubStore();
+        const ctx = makeCtx();
+        ctx.request.body.licenseID = '  LICENSE2:ABCDEF0123456789ABCDEF0123456789ABCDEF01 ';
+
+        await AdminManagerActions(ctx);
+
+        expect(editAdmin).toHaveBeenCalledWith('target', false, false, [], {
+            id: 'abcdef0123456789abcdef0123456789abcdef01',
+            identifier: 'license:abcdef0123456789abcdef0123456789abcdef01',
+        });
+    });
+
+    it('removes the license when the field is sent empty', async () => {
+        const editAdmin = stubStore();
+        const ctx = makeCtx();
+        ctx.request.body.licenseID = '';
+
+        await AdminManagerActions(ctx);
+
+        expect(editAdmin).toHaveBeenCalledWith('target', false, false, [], false);
+    });
+
+    it('rejects a malformed license without editing the account', async () => {
+        const editAdmin = stubStore();
+        const ctx = makeCtx();
+        ctx.request.body.licenseID = 'license:1234';
+
+        await AdminManagerActions(ctx);
+
+        expect(editAdmin).not.toHaveBeenCalled();
+        expect(ctx.send).toHaveBeenCalledWith(expect.objectContaining({ type: 'danger' }));
     });
 });

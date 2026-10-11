@@ -1,9 +1,9 @@
 import React from 'react'
 import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
-import { ChevronDownIcon, ChevronRightIcon, ChevronUpIcon, Loader2Icon } from "lucide-react"
-import { useAutoAnimate } from '@formkit/auto-animate/react'
-import CardContentOverlay from '@/components/CardContentOverlay'
+import { Badge } from "@/components/ui/badge"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import Section from '@/components/Section'
+import { cn } from '@/lib/utils'
 import { SettingsCardContext, SettingsPageContext } from './utils'
 import { t } from '@/lib/i18n'
 
@@ -17,6 +17,10 @@ type SettingsCardShellProps = {
     children: React.ReactNode;
 };
 
+/**
+ * The settings card: one section with the fields, then the one Save button below them,
+ * left-aligned. Fields inside are never wrapped in further cards.
+ */
 export default function SettingsCardShell({
     cardCtx,
     pageCtx,
@@ -25,74 +29,49 @@ export default function SettingsCardShell({
     onClickSave,
     children,
 }: SettingsCardShellProps) {
-    const [animationParent] = useAutoAnimate();
     const isCardPendingSave = pageCtx.cardPendingSave?.cardId === cardCtx.cardId;
+    const isSavingThisCard = pageCtx.isSaving && isCardPendingSave;
 
-    // FIXME:NEXT:UPDATE remove
-    const visibleTabName = cardCtx.tabName === 'Whitelist' ? 'Allowlist' : cardCtx.tabName;
-    const visibleCardName = cardCtx.cardName === 'Whitelist' ? 'Allowlist' : cardCtx.cardName;
+    //The fields stay mounted while loading so uncontrolled inputs pick up their initial values
+    let statusNode: React.ReactNode = null;
+    if (pageCtx.isLoading) {
+        statusNode = <p role="status" className="text-sm text-muted-foreground">{t('Loading settings...')}</p>;
+    } else if (pageCtx.swrError) {
+        statusNode = <Alert variant="destructive">
+            <AlertTitle>{t('Could not load settings.')}</AlertTitle>
+            <AlertDescription>{pageCtx.swrError}</AlertDescription>
+        </Alert>;
+    }
 
     return (
-        <div id={`tab-${cardCtx.cardId}`} data-show-advanced={advancedVisible} className='group/card'>
-            <Card className="xs:x bg-transparent max-xs:rounded-none max-xs:shadow-none">
-                <ol className="bg-muted/50 border-b p-4 flex flex-wrap items-center gap-1 sm:gap-2.5 select-none text-sm text-muted-foreground tracking-wide">
-                    {cardCtx.tabName !== cardCtx.cardName ? (
-                        <>
-                            <li>{cardCtx.tabName}</li>
-                            <ChevronRightIcon className='size-3.5 mt-0.5 inline align-text-top opacity-75' />
-                            <li>{t('{name} Settings', { name: cardCtx.cardName })}</li>
-                        </>
-                    ) : (
-                        <li>{t('{name} Settings', { name: visibleTabName })}</li>
-                    )}
-                    {isCardPendingSave && (
-                        // <div className="grow text-right xflex xitems-center xgap-1.5 xbg-lime-300">
-                        //     <li className="text-warning-inline italicx tracking-wide">
-                        //         You are in read-only mode because you do not have the <InlineCode>Settings: Change</InlineCode> permission.
-                        //     </li>
-                        //     <li className="text-warning-inline italic tracking-wide">you have unsaved changes</li>
-                        // </div>
-                        <li className="text-warning-inline italic tracking-wide">{t('(unsaved changes)')}</li>
-                    )}
-                </ol>
-
-                <div className='relative rounded-b-[inherit]'>
-                    <CardContent
-                        className="space-y-6 pt-6 bg-transparent overflow-x-clip"
-                        ref={animationParent}
+        <Section
+            id={`tab-${cardCtx.cardId}`}
+            data-show-advanced={advancedVisible}
+            className="group/card"
+            title={cardCtx.cardTitle}
+            actions={isCardPendingSave ? <Badge variant="warning">{t('Unsaved changes')}</Badge> : undefined}
+        >
+            {statusNode}
+            <div className={cn('flex min-w-0 flex-col gap-6', statusNode !== null && 'hidden')}>
+                {children}
+                <div className="flex flex-wrap items-center gap-2">
+                    <Button
+                        disabled={!isCardPendingSave || pageCtx.isReadOnly}
+                        onClick={onClickSave}
                     >
-                        {children}
-                        <div className="flex flex-wrap-reverse justify-center xs:justify-start gap-2">
-                            <Button
-                                size='xs'
-                                disabled={!isCardPendingSave || pageCtx.isReadOnly}
-                                onClick={onClickSave}
-                            >
-                                {t('Save {name} Settings', { name: visibleCardName })}
-                                {pageCtx.isSaving && (
-                                    <Loader2Icon className="h-3.5 mt-0.5 inline animate-spin" />
-                                )}
-                            </Button>
-                            {advancedVisible !== undefined && advancedSetter ? (
-                                <Button
-                                    size='xs'
-                                    variant={'muted'}
-                                    onClick={() => advancedSetter(!advancedVisible)}
-                                >
-                                    {advancedVisible ? t('Discard') : t('Show')} {t('Advanced')}
-                                    {advancedVisible
-                                        ? <ChevronUpIcon className="size-4 ml-1.5" />
-                                        : <ChevronDownIcon className="size-4 ml-1.5" />}
-                                </Button>
-                            ) : null}
-                        </div>
-                    </CardContent>
-                    <CardContentOverlay
-                        loading={pageCtx.isLoading}
-                        error={pageCtx.swrError}
-                    />
+                        {isSavingThisCard ? t('Saving...') : t('Save changes')}
+                    </Button>
+                    {advancedVisible !== undefined && advancedSetter ? (
+                        <Button
+                            variant="secondary"
+                            aria-expanded={advancedVisible}
+                            onClick={() => advancedSetter(!advancedVisible)}
+                        >
+                            {advancedVisible ? t('Discard advanced') : t('Show advanced')}
+                        </Button>
+                    ) : null}
                 </div>
-            </Card>
-        </div>
+            </div>
+        </Section>
     )
 }

@@ -201,6 +201,16 @@ export default class FxMonitor {
         if (result.action === 'RESTART') {
             if (txCore.fxRunner.isIdle) return; //should never happen
 
+            //A restart before the boot completed is a failed boot, the build manager counts
+            //it before the restart below picks the build to spawn
+            if (!this.tsServerBooted) {
+                try {
+                    txCore.fxBuilds.handleBootFailed();
+                } catch (error) {
+                    console.verbose.error(`FxBuilds boot failure hook failed: ${(error as any).message}`);
+                }
+            }
+
             //Logging
             const timesSuffix = result.times ? ` ${result.times}.` : '.';
             const logMessage = `Restarting server: ${result.reason}` + timesSuffix;
@@ -547,6 +557,11 @@ export default class FxMonitor {
         txCore.metrics.txRuntime.registerFxserverBoot(bootDuration);
         txCore.metrics.svRuntime.logServerBoot(bootDuration);
         txCore.fxRunner.signalSpawnBackoffRequired(false);
+        try {
+            txCore.fxBuilds.handleBootCompleted();
+        } catch (error) {
+            console.verbose.error(`FxBuilds boot completion hook failed: ${(error as any).message}`);
+        }
 
         //Fetching runtime data
         const infoJson = await fetchInfoJson(childState.netEndpoint);

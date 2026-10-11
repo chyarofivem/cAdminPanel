@@ -19,11 +19,11 @@ export default function LiveConsoleOptionsPopover({
     setHasPendingRefresh,
 }: LiveConsoleOptionsPopoverProps) {
     return (
-        <PopoverContent className="w-96">
+        <PopoverContent className="w-[min(24rem,calc(100vw-2rem))]" align="end">
             <div className="grid gap-6">
                 {/* Header */}
-                <div className="space-y-1.5">
-                    <h4 className="font-medium leading-none">{t('Console display settings')}</h4>
+                <div className="space-y-1">
+                    <h4 className="text-base font-semibold leading-tight text-white">{t('Console display settings')}</h4>
                     <p className="text-sm text-muted-foreground">
                         {t('Customize the console appearance and behavior. These settings are saved in this browser.')}
                     </p>
@@ -31,16 +31,16 @@ export default function LiveConsoleOptionsPopover({
 
                 {/* Display Settings */}
                 <div className="space-y-4">
-                    <h5 className="text-sm font-medium leading-none">{t('Display options')}</h5>
+                    <h5 className="text-sm font-medium leading-tight text-white">{t('Display options')}</h5>
                     <div className="grid gap-4">
-                        <div className="grid grid-cols-4 items-center gap-4">
-                            <Label htmlFor="density" className="col-span-1">{t('Font size')}</Label>
-                            <div className="col-span-3">
+                        <div className="grid gap-2">
+                            <Label htmlFor="density">{t('Font size')}</Label>
+                            <div>
                                 <Select
                                     value={options.density}
                                     onValueChange={(value) => setOptions({ density: value as DensityMode })}
                                 >
-                                    <SelectTrigger>
+                                    <SelectTrigger id="density">
                                         <SelectValue placeholder={t('Select density')} />
                                     </SelectTrigger>
                                     <SelectContent>
@@ -53,9 +53,9 @@ export default function LiveConsoleOptionsPopover({
                         </div>
 
                         <div className="grid gap-4">
-                            <div className="grid grid-cols-4 items-center gap-4">
-                                <Label htmlFor="timestamp" className="col-span-1">{t('Timestamp')}</Label>
-                                <div className="col-span-3">
+                            <div className="grid gap-2">
+                                <Label htmlFor="timestamp">{t('Timestamp')}</Label>
+                                <div>
                                     <Select
                                         value={options.timestamp}
                                         onValueChange={(value) => {
@@ -63,7 +63,7 @@ export default function LiveConsoleOptionsPopover({
                                             setOptions({ timestamp: value as TimestampMode });
                                         }}
                                     >
-                                        <SelectTrigger>
+                                        <SelectTrigger id="timestamp">
                                             <SelectValue placeholder={t('Select timestamp mode')} />
                                         </SelectTrigger>
                                         <SelectContent>
@@ -77,14 +77,14 @@ export default function LiveConsoleOptionsPopover({
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-4 items-center gap-4">
-                            <Label htmlFor="scrollback" className="col-span-1">{t('Scrollback')}</Label>
-                            <div className="col-span-3">
+                        <div className="grid gap-2">
+                            <Label htmlFor="scrollback">{t('Scrollback')}</Label>
+                            <div>
                                 <Select
                                     value={options.scrollback.toString()}
                                     onValueChange={(value) => setOptions({ scrollback: Number(value) as ScrollbackSize })}
                                 >
-                                    <SelectTrigger>
+                                    <SelectTrigger id="scrollback">
                                         <SelectValue placeholder={t('Select size')} />
                                     </SelectTrigger>
                                     <SelectContent>
@@ -102,9 +102,9 @@ export default function LiveConsoleOptionsPopover({
 
                 {/* Copy Settings */}
                 <div className="space-y-4">
-                    <h5 className="text-sm font-medium leading-none">{t('Copy options')}</h5>
+                    <h5 className="text-sm font-medium leading-tight text-white">{t('Copy options')}</h5>
                     <div className="grid gap-4">
-                        <div className="flex items-center justify-between">
+                        <div className="flex min-h-11 items-center justify-between gap-4">
                             <Label htmlFor="copyTimestamp">{t('Include timestamp')}</Label>
                             <Switch
                                 id="copyTimestamp"
@@ -112,7 +112,7 @@ export default function LiveConsoleOptionsPopover({
                                 onCheckedChange={(checked) => setOptions({ copyTimestamp: checked })}
                             />
                         </div>
-                        <div className="flex items-center justify-between">
+                        <div className="flex min-h-11 items-center justify-between gap-4">
                             <Label htmlFor="copyChannel">{t('Include channel')}</Label>
                             <Switch
                                 id="copyChannel"

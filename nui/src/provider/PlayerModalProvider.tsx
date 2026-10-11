@@ -10,9 +10,9 @@ import { useSetDisableTab, useSetListenForExit } from "../state/keys.state";
 import { useIsMenuVisible } from "../state/visibility.state";
 import { fetchNui } from "../utils/fetchNui";
 import { useSnackbar } from "notistack";
-import { Dialog } from "@mui/material";
 import { usePlayerModalVisibility } from "@nui/src/state/playerModal.state";
 import { txAdminMenuPage, usePageValue } from "../state/page.state";
+import { Modal } from "../components/ui/Modal";
 
 const PlayerContext = createContext<PlayerProviderCtx>({} as PlayerProviderCtx);
 
@@ -74,28 +74,15 @@ export const PlayerModalProvider: React.FC<PlayerModalProviderProps> = ({
         closeMenu,
       }}
     >
-      <Dialog
+      <Modal
         open={modalOpen}
-        fullWidth
         onClose={handleClose}
-        maxWidth="lg"
-        PaperProps={{
-          sx: {
-            width: "min(980px, calc(100vw - 48px))",
-            height: "min(680px, calc(100vh - 48px))",
-            maxHeight: "calc(100vh - 48px)",
-            overflow: "hidden",
-            borderRadius: 3,
-            border: "1px solid rgba(255,255,255,0.12)",
-            backgroundColor: "background.default",
-            backgroundImage: "none",
-            boxShadow: "0 30px 90px rgba(0,0,0,0.58)",
-          },
-          id: "player-modal-container",
-        }}
+        labelledBy="player-modal-title"
+        id="player-modal-container"
+        wide
       >
         <PlayerModal onClose={handleClose} />
-      </Dialog>
+      </Modal>
       {children}
     </PlayerContext.Provider>
   );

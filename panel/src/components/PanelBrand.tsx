@@ -14,7 +14,7 @@ export default function PanelBrand({ compact = false, className, useLogo = false
             alt={window.txConsts.panelName}
             title={window.txConsts.panelName}
             className={cn(
-                'object-contain transition-transform hover:scale-[1.02]',
+                'object-contain',
                 compact ? 'size-9' : 'h-9 max-w-56',
                 className,
             )}

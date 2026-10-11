@@ -1,4 +1,5 @@
 import { txToast, validToastTypes } from "@/components/TxToaster";
+import { trackRequest } from '@/lib/requestActivity';
 import { useCsrfToken, useExpireAuthData } from "@/hooks/auth";
 import { msToShortDuration } from "@/lib/dateTime";
 import { useEffect, useRef } from "react";
@@ -56,7 +57,7 @@ export const useAuthedFetcher = () => {
         }
 
         fetchOpts.method ??= 'GET';
-        const resp = await fetch(fetchUrl, {
+        const resp = await trackRequest(fetch(fetchUrl, {
             method: fetchOpts.method,
             headers: {
                 ...defaultHeaders,
@@ -65,7 +66,7 @@ export const useAuthedFetcher = () => {
             },
             body: fetchOpts.body ? JSON.stringify(fetchOpts.body) : undefined,
             signal: abortController?.signal,
-        });
+        }));
         const data = await resp.json();
         if (data?.logout) {
             expireSess('useAuthedFetcher', data?.reason ?? 'unknown');

@@ -4,7 +4,7 @@
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import SwitchText from '@/components/SwitchText'
-import { AdvancedDivider, SettingItem, SettingItemDesc } from '../settingsItems'
+import { AdvancedDivider, SettingGroupHeading, SettingItem, SettingItemDesc } from '../settingsItems'
 import { useState, useEffect, useRef, useMemo, useReducer } from "react"
 import { getConfigEmptyState, getConfigAccessors, SettingsCardProps, getPageConfig, configsReducer, getConfigDiff } from "../utils"
 import { Button } from "@/components/ui/button"
@@ -23,15 +23,15 @@ type ItemWithStateProps = {
 
 function ItemWithState({ value, setValue, disabled }: ItemWithStateProps) {
     return (
-        <div className="py-3 px-2 min-h-[4.5rem] flex items-center border rounded-lg font-mono gap-2">
-            <Button onClick={() => value !== undefined && setValue(value - 1)} disabled={disabled}>
-                \/
+        <div className="flex items-center gap-2 font-mono">
+            <Button variant="secondary" onClick={() => value !== undefined && setValue(value - 1)} disabled={disabled}>
+                -1
             </Button>
-            <Button disabled>
+            <span className="min-w-12 text-center tabular-nums text-white">
                 {value}
-            </Button>
-            <Button onClick={() => value !== undefined && setValue(value + 1)} disabled={disabled}>
-                /\
+            </span>
+            <Button variant="secondary" onClick={() => value !== undefined && setValue(value + 1)} disabled={disabled}>
+                +1
             </Button>
         </div>
     )
@@ -131,7 +131,7 @@ export default function SettingsCardTemplate({ cardCtx, pageCtx }: SettingsCardP
             advancedVisible={showAdvanced}
             advancedSetter={setShowAdvanced}
         >
-            <h2 className="text-2xl text-warning-inline">Simple Examples</h2>
+            <SettingGroupHeading title="Simple Examples" />
 
             <SettingItem label="Switch">
                 <SwitchText
@@ -198,7 +198,7 @@ export default function SettingsCardTemplate({ cardCtx, pageCtx }: SettingsCardP
                 </SettingItemDesc>
             </SettingItem>
 
-            <h2 className="text-2xl text-warning-inline">Compex Examples (data marshalling)</h2>
+            <SettingGroupHeading title="Complex Examples (data marshalling)" />
 
             <SettingItem label="Select Number" htmlFor={cfg.selectNumber.eid}>
                 <Select
@@ -250,7 +250,7 @@ export default function SettingsCardTemplate({ cardCtx, pageCtx }: SettingsCardP
             </SettingItem>
 
             {showAdvanced && <AdvancedDivider />}
-            {showAdvanced && <h2 className="text-2xl text-warning-inline">Advanced Examples (custom components)</h2>}
+            {showAdvanced && <SettingGroupHeading title="Advanced Examples (custom components)" />}
 
             <SettingItem label="Custom Component" showIf={showAdvanced}>
                 <ItemWithState
@@ -280,7 +280,7 @@ export default function SettingsCardTemplate({ cardCtx, pageCtx }: SettingsCardP
                         value="adminOnly"
                         title="Admin-only (maintenance mode)"
                         desc={(<>
-                            desc as <InlineCode className="text-warning-inline">JSX</InlineCode>
+                            desc as <InlineCode className="text-warning-text">JSX</InlineCode>
                         </>)}
                     />
                     <BigRadioItem

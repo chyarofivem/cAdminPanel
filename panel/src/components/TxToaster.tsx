@@ -1,8 +1,7 @@
 import MarkdownProse from "@/components/MarkdownProse";
 import { cn } from "@/lib/utils";
 import { t as translate } from "@/lib/i18n";
-import { cva } from "class-variance-authority";
-import { AlertCircleIcon, AlertOctagonIcon, CheckCircleIcon, ChevronRightCircle, InfoIcon, Loader2Icon, XIcon } from "lucide-react";
+import { XIcon } from "lucide-react";
 import toast, { Toast, Toaster } from "react-hot-toast";
 import { useEffect, useState } from "react";
 import { ApiToastResp } from "@shared/genericApiTypes";
@@ -25,53 +24,20 @@ type TxToastOptions = {
 
 
 //MARK: Components
-const toastBarVariants = cva(
-    `pointer-events-none relative z-40 w-full max-w-xl overflow-hidden sm:w-auto sm:min-w-[26rem]
-    rounded-xl border bg-card text-card-foreground shadow-xl shadow-black/10 dark:shadow-black/40
-    supports-[backdrop-filter]:bg-card/85 supports-[backdrop-filter]:backdrop-blur-md`,
-    {
-        variants: {
-            type: {
-                default: "border-border",
-                loading: "border-border",
-                info: "border-info/40",
-                success: "border-success/40",
-                warning: "border-warning/40",
-                error: "border-destructive/40",
-            },
-        },
-        defaultVariants: {
-            type: "default",
-        },
-    }
-);
+/**
+ * Toasts are small menus: menu surface, radius-xs, menu elevation, and a 4px status
+ * bar on the start edge. No icon chips, no blur, no entrance animation.
+ */
+const toastBarClass = 'pointer-events-none relative z-40 w-full max-w-xl overflow-hidden rounded-xs bg-menu text-body shadow-menu transition-opacity duration-150 sm:w-auto sm:min-w-[24rem]';
 
-//Left accent bar + icon chip, per type
+//Start-edge bar and countdown fill, per type. Default and loading follow the accent.
 const toastAccentMap = {
-    default: "bg-brand-500/60",
-    loading: "bg-brand-500/60",
+    default: "bg-accent",
+    loading: "bg-accent",
     info: "bg-info",
     success: "bg-success",
     warning: "bg-warning",
-    error: "bg-destructive",
-} as const;
-
-const toastChipMap = {
-    default: "bg-muted text-muted-foreground",
-    loading: "bg-muted text-muted-foreground",
-    info: "bg-info-hint text-info-inline",
-    success: "bg-success-hint text-success-inline",
-    warning: "bg-warning-hint text-warning-inline",
-    error: "bg-destructive-hint text-destructive-inline",
-} as const;
-
-const toastIconMap = {
-    default: <ChevronRightCircle className="size-4 animate-toastbar-icon" />,
-    loading: <Loader2Icon className="size-4 animate-spin" />,
-    info: <InfoIcon className="size-4 animate-toastbar-icon" />,
-    success: <CheckCircleIcon className="size-4 animate-toastbar-icon" />,
-    warning: <AlertCircleIcon className="size-4 animate-toastbar-icon" />,
-    error: <AlertOctagonIcon className="size-4 animate-toastbar-icon" />,
+    error: "bg-danger",
 } as const;
 
 const toastAriaMap = {
@@ -116,24 +82,13 @@ export const CustomToast = ({ t, type, data }: CustomToastProps) => {
         <div
             role={toastAriaMap[type]}
             aria-live={toastAriaMap[type] === 'alert' ? 'assertive' : 'polite'}
-            className={cn(
-                toastBarVariants({ type }),
-                t.visible ? "animate-toastbar-enter" : "animate-toastbar-leave"
-            )}
+            className={cn(toastBarClass, t.visible ? 'opacity-100' : 'opacity-0')}
         >
             <div aria-hidden className={cn('absolute inset-y-0 left-0 w-1', toastAccentMap[type])} />
-            <div className="flex items-start gap-3 py-3 pl-4 pr-10">
-                <div className={cn(
-                    'mt-px flex size-7 shrink-0 items-center justify-center rounded-lg',
-                    toastChipMap[type],
-                )}>
-                    {type === "loading" && elapsedTime > 4 ? (
-                        <span className="text-2xs font-semibold tabular-nums">{elapsedTime}s</span>
-                    ) : toastIconMap[type]}
-                </div>
-                <div className="min-w-0 flex-grow pt-0.5 text-sm leading-snug">
+            <div className="flex items-start gap-3 py-3 pl-5 pr-12">
+                <div className="min-w-0 flex-grow text-sm">
                     {typeof data === "string" ? (
-                        <span className="block whitespace-pre-line">{data}</span>
+                        <span className="block whitespace-pre-line text-white">{data}</span>
                     ) : data.md ? (
                         <>
                             {data.title ? <MarkdownProse md={`**${data.title}**`} isSmall isTitle isToast /> : null}
@@ -142,30 +97,36 @@ export const CustomToast = ({ t, type, data }: CustomToastProps) => {
                     ) : (
                         <>
                             {data.title ? (
-                                <span className="block font-semibold tracking-tight">{data.title}</span>
+                                <span className="block font-semibold text-white">{data.title}</span>
                             ) : null}
                             <span className={cn(
                                 'block whitespace-pre-line',
-                                data.title && 'mt-0.5 text-muted-foreground',
+                                data.title ? 'mt-0.5 text-muted-foreground' : 'text-white',
                             )}>{data.msg}</span>
                         </>
                     )}
                 </div>
+                {type === "loading" && (
+                    <span className="shrink-0 pt-px text-xs tabular-nums text-muted-foreground">
+                        {elapsedTime > 0 ? `${elapsedTime}s` : translate('Working…')}
+                    </span>
+                )}
             </div>
 
             <button
                 type="button"
                 onClick={() => toast.dismiss(t.id)}
-                className="pointer-events-auto absolute right-2 top-2 rounded-md p-1.5 text-muted-foreground
-                    transition-colors hover:bg-muted hover:text-foreground
-                    focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                aria-label={translate('Close')}
+                title={translate('Close')}
+                className="pointer-events-auto absolute right-1.5 top-1.5 grid size-9 place-items-center rounded-sm text-body
+                    transition-colors duration-150 hover:bg-raise hover:text-white
+                    focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-text"
             >
-                <XIcon className="size-4" />
-                <span className="sr-only">{translate('Close')}</span>
+                <XIcon className="size-4" aria-hidden="true" />
             </button>
 
             {hasProgressBar && (
-                <div aria-hidden className="absolute inset-x-0 bottom-0 h-0.5 bg-foreground/5">
+                <div aria-hidden className="absolute inset-x-0 bottom-0 h-0.5 bg-raise">
                     <div
                         className={cn(
                             'h-full origin-left animate-toastbar-progress motion-reduce:hidden',

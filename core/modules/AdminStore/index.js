@@ -9,7 +9,8 @@ import consoleFactory from '@lib/console';
 import fatalError from '@lib/fatalError';
 import { chalkInversePad } from '@lib/misc';
 import { panelDisplayName } from '@lib/branding';
-import { ACCENTS } from '@lib/theme';
+import { accentFillHex, isValidAccent, resolveAccent } from '@lib/theme';
+import { licenseIdentifierAliases } from '@shared/licenseIdentifier';
 const console = consoleFactory(modulename);
 
 //NOTE: The way I'm doing versioning right now is horrible but for now it's the best I can do
@@ -97,6 +98,8 @@ export default class AdminStore {
             this.providers = {
                 discord: false,
                 citizenfx: false,
+                //Rockstar license, stored as `license:<hex>`; it matches `license2:<hex>` too
+                license: false,
             };
         } catch (error) {
             throw new Error(`Failed to load providers with error: ${error.message}`);
@@ -269,7 +272,8 @@ export default class AdminStore {
 
 
     /**
-     * Returns an array with all identifiers of the admins (fivem/discord)
+     * Returns an array with all identifiers of the admins (fivem/discord/license).
+     * A license is returned as both its `license:` and `license2:` forms.
      */
     getAdminsIdentifiers() {
         if (this.admins === false) return [];
@@ -277,6 +281,7 @@ export default class AdminStore {
         for (const admin of this.admins) {
             admin.providers.citizenfx && ids.push(admin.providers.citizenfx.identifier);
             admin.providers.discord && ids.push(admin.providers.discord.identifier);
+            admin.providers.license && ids.push(...licenseIdentifierAliases(admin.providers.license.identifier));
         }
         return ids;
     }
@@ -303,7 +308,9 @@ export default class AdminStore {
      */
     getAdminByIdentifiers(identifiers) {
         if (!this.admins) return false;
+        //`license2:<hex>` is an alias of `license:<hex>`, so either matches a linked license
         identifiers = identifiers
+            .flatMap((i) => licenseIdentifierAliases(i))
             .map((i) => i.trim().toLowerCase())
             .filter((i) => i.length);
         if (!identifiers.length) return false;
@@ -369,8 +376,9 @@ export default class AdminStore {
      * @param {object|false} discordData or false
      * @param {array} permissions
      * @param {string|undefined} password initial local password
+     * @param {object|false} [licenseData] Rockstar license, as `{ id: <hex>, identifier: 'license:<hex>' }`
      */
-    async addAdmin(name, citizenfxData, discordData, permissions, password) {
+    async addAdmin(name, citizenfxData, discordData, permissions, password, licenseData) {
         if (this.admins == false) throw new Error('Admins not set');
 
         //Check if username is already taken
@@ -410,6 +418,16 @@ export default class AdminStore {
                 data: {},
             };
         }
+        if (licenseData) {
+            const existingLicense = this.getAdminByProviderUID(licenseData.id)
+                || this.getAdminByIdentifiers([licenseData.identifier]);
+            if (existingLicense) throw new Error('Rockstar license already taken');
+            admin.providers.license = {
+                id: licenseData.id,
+                identifier: licenseData.identifier,
+                data: {},
+            };
+        }
 
         //Saving admin file
         this.admins.push(admin);
@@ -428,8 +446,9 @@ export default class AdminStore {
      * @param {object|false} [citizenfxData] or false
      * @param {object|false} [discordData] or false
      * @param {string[]} [permissions]
+     * @param {object|false} [licenseData] Rockstar license, false to remove, undefined to leave untouched
      */
-    async editAdmin(name, citizenfxData, discordData, permissions) {
+    async editAdmin(name, citizenfxData, discordData, permissions, licenseData) {
         if (this.admins == false) throw new Error('Admins not set');
 
         //Find admin index
@@ -451,8 +470,15 @@ export default class AdminStore {
                 throw new Error(`${label} already taken`);
             }
         };
+        if (
+            licenseData !== undefined && licenseData !== false
+            && (typeof licenseData !== 'object' || typeof licenseData?.id !== 'string' || typeof licenseData?.identifier !== 'string')
+        ) {
+            throw new Error('Invalid Rockstar license data.');
+        }
         assertProviderAvailable(citizenfxData, 'CitizenFX ID');
         assertProviderAvailable(discordData, 'Discord ID');
+        assertProviderAvailable(licenseData, 'Rockstar license');
 
         //Editing admin
         if (typeof citizenfxData !== 'undefined') {
@@ -473,6 +499,17 @@ export default class AdminStore {
                 this.admins[adminIndex].providers.discord = {
                     id: discordData.id,
                     identifier: discordData.identifier,
+                    data: {},
+                };
+            }
+        }
+        if (typeof licenseData !== 'undefined') {
+            if (!licenseData) {
+                delete this.admins[adminIndex].providers.license;
+            } else {
+                this.admins[adminIndex].providers.license = {
+                    id: licenseData.id,
+                    identifier: licenseData.identifier,
                     data: {},
                 };
             }
@@ -617,7 +654,8 @@ export default class AdminStore {
             //Getting all admin identifiers
             //FIXME: use getAdminsIdentifiers() instead
             const adminIDs = this.admins.reduce((ids, adm) => {
-                const adminIDs = Object.keys(adm.providers).map((pName) => adm.providers[pName].identifier);
+                const adminIDs = Object.keys(adm.providers)
+                    .flatMap((pName) => licenseIdentifierAliases(adm.providers[pName].identifier));
                 return ids.concat(adminIDs);
             }, []);
 
@@ -673,15 +711,14 @@ export default class AdminStore {
         if (!admin) throw new Error('Admin not found');
         admin.preferences = { ...(admin.preferences || {}), ...preferences };
         await this.writeAdminsFile();
-        const accent = typeof admin.preferences.accent === 'string'
-            && Object.prototype.hasOwnProperty.call(ACCENTS, admin.preferences.accent)
-            ? admin.preferences.accent
+        const accent = isValidAccent(admin.preferences.accent)
+            ? resolveAccent(admin.preferences.accent)
             : undefined;
         txCore.fxRunner.sendEvent('adminPreferencesUpdated', {
             username: admin.name,
             locale: typeof admin.preferences.locale === 'string' ? admin.preferences.locale : null,
             accent: accent || null,
-            accentColor: accent ? ACCENTS[accent].hex : null,
+            accentColor: accent ? accentFillHex(accent) : null,
         });
     }
 

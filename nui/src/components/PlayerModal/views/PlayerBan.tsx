@@ -1,15 +1,4 @@
 import React, { useMemo, useState } from "react";
-import {
-  Autocomplete,
-  Box,
-  Button,
-  CircularProgress,
-  MenuItem,
-  styled,
-  TextField,
-  Typography,
-} from "@mui/material";
-import { BlockRounded } from "@mui/icons-material";
 import { useTranslate } from "react-polyglot";
 import { useSnackbar } from "notistack";
 import type { GenericApiResp } from "@shared/genericApiTypes";
@@ -19,7 +8,8 @@ import { usePermissionsValue } from "@nui/src/state/permissions.state";
 import { useSetPlayerModalVisibility } from "@nui/src/state/playerModal.state";
 import { fetchWebPipe } from "@nui/src/utils/fetchWebPipe";
 import { userHasPerm } from "@nui/src/utils/miscUtils";
-import { fontMono, nuiTokens } from "@nui/src/styles/nuiTokens";
+import { Button } from "@nui/src/components/ui/Button";
+import { Select } from "@nui/src/components/ui/Select";
 
 type DurationValue =
   | "2 hours"
@@ -31,7 +21,6 @@ type DurationValue =
   | "permanent"
   | "custom";
 type DurationUnit = "hours" | "days" | "weeks" | "months";
-type TemplateOption = { id: string; label: string };
 
 const defaultDurations: DurationValue[] = [
   "2 hours",
@@ -60,21 +49,16 @@ const durationToShortString = (duration: BanDurationType) => {
   return `${duration.value}${suffixes[duration.unit]}`;
 };
 
-const ViewRoot = styled(Box)({
-  width: "100%",
-  height: "100%",
-  overflow: "auto",
-  padding: 24,
-});
+type PendingBan = {
+  reason: string;
+  duration: string;
+  durationLabel: string;
+};
 
-const FormCard = styled("form")({
-  width: "min(620px, 100%)",
-  padding: 20,
-  borderRadius: nuiTokens.radiusSm,
-  backgroundColor: "rgba(255,255,255,0.035)",
-  boxShadow: `inset 0 0 0 1px ${nuiTokens.ring}`,
-});
-
+/**
+ * The ban form: reason, ban templates, duration, then a confirmation step.
+ * Filled red appears only on that confirmation's confirm button.
+ */
 export const PlayerBan: React.FC<PlayerModalViewProps> = ({ details, target }) => {
   const t = useTranslate();
   const { enqueueSnackbar } = useSnackbar();
@@ -85,81 +69,16 @@ export const PlayerBan: React.FC<PlayerModalViewProps> = ({ details, target }) =
   const [customLength, setCustomLength] = useState("1");
   const [customUnit, setCustomUnit] = useState<DurationUnit>("hours");
   const [submitting, setSubmitting] = useState(false);
+  const [pendingBan, setPendingBan] = useState<PendingBan | null>(null);
   const templates = details.banTemplates ?? [];
 
-  const templateOptions = useMemo<TemplateOption[]>(
-    () => templates.map((template) => ({ id: template.id, label: template.reason })),
-    [templates]
-  );
-
-  const applyTemplate = (template: BanTemplatesDataType) => {
-    setReason(template.reason);
-    const processedDuration = durationToString(template.duration);
-    if (defaultDurations.includes(processedDuration as DurationValue)) {
-      setDuration(processedDuration as DurationValue);
-      return;
-    }
-    if (template.duration !== "permanent") {
-      setDuration("custom");
-      setCustomLength(String(template.duration.value));
-      setCustomUnit(template.duration.unit);
-    }
-  };
-
-  const handleSubmit = async (event: React.FormEvent) => {
-    event.preventDefault();
-    if (!userHasPerm("players.ban", permissions)) return;
-
-    const trimmedReason = reason.trim();
-    if (!trimmedReason) {
-      enqueueSnackbar(t("nui_menu.player_modal.ban.reason_required"), {
-        variant: "error",
-      });
-      return;
-    }
-
-    const numericCustomLength = Number(customLength);
-    if (
-      duration === "custom" &&
-      (!Number.isFinite(numericCustomLength) || numericCustomLength <= 0)
-    ) {
-      enqueueSnackbar(t("nui_menu.player_modal.ban.duration_required"), {
-        variant: "error",
-      });
-      return;
-    }
-
-    const actualDuration =
-      duration === "custom" ? `${numericCustomLength} ${customUnit}` : duration;
-    setSubmitting(true);
-    try {
-      const result = await fetchWebPipe<GenericApiResp>(
-        getPlayerActionPath("ban", target, details),
-        {
-          method: "POST",
-          data: { reason: trimmedReason, duration: actualDuration },
-        }
-      );
-      if ("success" in result && result.success) {
-        enqueueSnackbar(t("nui_menu.player_modal.ban.success"), {
-          variant: "success",
-        });
-        setModalOpen(false);
-      } else {
-        enqueueSnackbar(
-          "error" in result ? result.error : t("nui_menu.misc.unknown_error"),
-          { variant: "error" }
-        );
-      }
-    } catch (error) {
-      enqueueSnackbar(
-        error instanceof Error ? error.message : t("nui_menu.misc.unknown_error"),
-        { variant: "error" }
-      );
-    } finally {
-      setSubmitting(false);
-    }
-  };
+  const matchingTemplates = useMemo(() => {
+    const query = reason.trim().toLowerCase();
+    const list = query
+      ? templates.filter((template) => template.reason.toLowerCase().includes(query))
+      : templates;
+    return list.slice(0, 6);
+  }, [reason, templates]);
 
   const durationOptions: Array<{ value: DurationValue; label: string }> = [
     { value: "2 hours", label: `2 ${t("nui_menu.player_modal.ban.hours")}` },
@@ -178,106 +97,186 @@ export const PlayerBan: React.FC<PlayerModalViewProps> = ({ details, target }) =
     { value: "months", label: t("nui_menu.player_modal.ban.months") },
   ];
 
+  const applyTemplate = (template: BanTemplatesDataType) => {
+    setPendingBan(null);
+    setReason(template.reason);
+    const processedDuration = durationToString(template.duration);
+    if (defaultDurations.includes(processedDuration as DurationValue)) {
+      setDuration(processedDuration as DurationValue);
+      return;
+    }
+    if (template.duration !== "permanent") {
+      setDuration("custom");
+      setCustomLength(String(template.duration.value));
+      setCustomUnit(template.duration.unit);
+    }
+  };
+
+  //Validates the form, then asks for confirmation.
+  const handleSubmit = (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!userHasPerm("players.ban", permissions)) return;
+
+    const trimmedReason = reason.trim();
+    if (!trimmedReason) {
+      enqueueSnackbar(t("nui_menu.player_modal.ban.reason_required"), { variant: "error" });
+      return;
+    }
+
+    const numericCustomLength = Number(customLength);
+    if (
+      duration === "custom" &&
+      (!Number.isFinite(numericCustomLength) || numericCustomLength <= 0)
+    ) {
+      enqueueSnackbar(t("nui_menu.player_modal.ban.duration_required"), { variant: "error" });
+      return;
+    }
+
+    const isCustom = duration === "custom";
+    setPendingBan({
+      reason: trimmedReason,
+      duration: isCustom ? `${numericCustomLength} ${customUnit}` : duration,
+      durationLabel: isCustom
+        ? `${numericCustomLength} ${unitOptions.find((option) => option.value === customUnit)?.label ?? customUnit}`
+        : durationOptions.find((option) => option.value === duration)?.label ?? duration,
+    });
+  };
+
+  const confirmBan = async () => {
+    if (!pendingBan) return;
+    setSubmitting(true);
+    try {
+      const result = await fetchWebPipe<GenericApiResp>(
+        getPlayerActionPath("ban", target, details),
+        {
+          method: "POST",
+          data: { reason: pendingBan.reason, duration: pendingBan.duration },
+        }
+      );
+      if ("success" in result && result.success) {
+        enqueueSnackbar(t("nui_menu.player_modal.ban.success"), { variant: "success" });
+        setModalOpen(false);
+      } else {
+        enqueueSnackbar(
+          "error" in result ? result.error : t("nui_menu.misc.unknown_error"),
+          { variant: "error" }
+        );
+      }
+    } catch (error) {
+      enqueueSnackbar(
+        error instanceof Error ? error.message : t("nui_menu.misc.unknown_error"),
+        { variant: "error" }
+      );
+    } finally {
+      setSubmitting(false);
+      setPendingBan(null);
+    }
+  };
+
   return (
-    <ViewRoot>
-      <Typography variant="h6" sx={{ mb: 2, fontWeight: 780 }}>
-        {t("nui_menu.player_modal.ban.title")}
-      </Typography>
-
-      <FormCard onSubmit={handleSubmit}>
-        <Autocomplete<TemplateOption, false, false, true>
-          freeSolo
-          options={templateOptions}
-          inputValue={reason}
-          onInputChange={(_event, value) => setReason(value)}
-          onChange={(_event, value, changeReason) => {
-            if (changeReason !== "selectOption" || typeof value === "string" || !value) {
-              return;
-            }
-            const template = templates.find((item) => item.id === value.id);
-            if (template) applyTemplate(template);
+    <form className="stack" style={{ maxWidth: 640 }} onSubmit={handleSubmit}>
+      <div className="field">
+        <label className="field-label" htmlFor="ban-reason">
+          {t("nui_menu.player_modal.ban.reason_placeholder")}
+        </label>
+        <input
+          id="ban-reason"
+          className="input"
+          autoFocus
+          autoComplete="off"
+          maxLength={2048}
+          value={reason}
+          onChange={(event) => {
+            setReason(event.target.value);
+            setPendingBan(null);
           }}
-          getOptionLabel={(option) =>
-            typeof option === "string" ? option : option.label
-          }
-          renderOption={(props, option) => {
-            const template = templates.find((item) => item.id === option.id);
-            const { key, ...optionProps } = props;
-            return (
-              <li key={key ?? option.id} {...optionProps}>
-                <Typography
-                  component="span"
-                  sx={{ mr: 1, minWidth: 40, fontFamily: fontMono, opacity: 0.72 }}
-                >
-                  {template ? durationToShortString(template.duration) : "?"}
-                </Typography>
-                <Typography component="span" noWrap>
-                  {option.label}
-                </Typography>
-              </li>
-            );
-          }}
-          renderInput={(params) => (
-            <TextField
-              {...params}
-              autoFocus
-              label={t("nui_menu.player_modal.ban.reason_placeholder")}
-              inputProps={{ ...params.inputProps, maxLength: 2048 }}
-            />
-          )}
         />
+      </div>
 
-        <TextField
-          select
-          required
-          fullWidth
-          sx={{ mt: 2 }}
-          label={t("nui_menu.player_modal.ban.duration_placeholder")}
+      {matchingTemplates.length > 0 && (
+        <section>
+          <h3 className="heading">{t("nui_menu.player_modal.ban.templates")}</h3>
+          <div className="rows">
+            {matchingTemplates.map((template) => (
+              <button
+                key={template.id}
+                type="button"
+                className="template-row"
+                onClick={() => applyTemplate(template)}
+              >
+                <span className="template-duration">{durationToShortString(template.duration)}</span>
+                <span className="truncate">{template.reason}</span>
+              </button>
+            ))}
+          </div>
+        </section>
+      )}
+
+      <div className="field">
+        <label className="field-label" htmlFor="ban-duration">
+          {t("nui_menu.player_modal.ban.duration_placeholder")}
+        </label>
+        <Select<DurationValue>
+          id="ban-duration"
           value={duration}
-          helperText={t("nui_menu.player_modal.ban.helper_text")}
-          onChange={(event) => setDuration(event.target.value as DurationValue)}
-        >
-          {durationOptions.map((option) => (
-            <MenuItem key={option.value} value={option.value}>
-              {option.label}
-            </MenuItem>
-          ))}
-        </TextField>
-
+          options={durationOptions}
+          onChange={(value) => {
+            setDuration(value);
+            setPendingBan(null);
+          }}
+        />
         {duration === "custom" && (
-          <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1.4fr", gap: 1, mt: 1 }}>
-            <TextField
-              required
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1.4fr", gap: 8 }}>
+            <input
+              className="input"
               type="number"
+              min={1}
+              step={1}
+              aria-label={t("nui_menu.player_modal.ban.duration_placeholder")}
               value={customLength}
-              inputProps={{ min: 1, step: 1 }}
-              onChange={(event) => setCustomLength(event.target.value)}
+              onChange={(event) => {
+                setCustomLength(event.target.value);
+                setPendingBan(null);
+              }}
             />
-            <TextField
-              select
+            <Select<DurationUnit>
+              aria-label={t("nui_menu.player_modal.ban.custom")}
               value={customUnit}
-              onChange={(event) => setCustomUnit(event.target.value as DurationUnit)}
-            >
-              {unitOptions.map((option) => (
-                <MenuItem key={option.value} value={option.value}>
-                  {option.label}
-                </MenuItem>
-              ))}
-            </TextField>
-          </Box>
+              options={unitOptions}
+              onChange={(value) => {
+                setCustomUnit(value);
+                setPendingBan(null);
+              }}
+            />
+          </div>
         )}
+      </div>
 
-        <Button
-          type="submit"
-          color="error"
-          variant="contained"
-          sx={{ mt: 2 }}
-          disabled={submitting}
-          startIcon={submitting ? <CircularProgress size={16} /> : <BlockRounded />}
-        >
-          {t("nui_menu.player_modal.ban.submit")}
-        </Button>
-      </FormCard>
-    </ViewRoot>
+      {pendingBan ? (
+        <div className="callout callout-danger" role="alertdialog" aria-labelledby="ban-confirm-title">
+          <p id="ban-confirm-title" className="callout-title">
+            {t("nui_menu.player_modal.ban.confirm_title", {
+              name: details.player.displayName,
+              duration: pendingBan.durationLabel,
+            })}
+          </p>
+          <p style={{ overflowWrap: "anywhere" }}>{pendingBan.reason}</p>
+          <div className="modal-footer" style={{ padding: "16px 0 0" }}>
+            <Button onClick={() => setPendingBan(null)} disabled={submitting}>
+              {t("nui_menu.common.cancel")}
+            </Button>
+            <Button variant="danger" onClick={() => void confirmBan()} disabled={submitting}>
+              {t("nui_menu.player_modal.ban.submit")}
+            </Button>
+          </div>
+        </div>
+      ) : (
+        <div>
+          <Button type="submit" destructive>
+            {t("nui_menu.player_modal.ban.review")}
+          </Button>
+        </div>
+      )}
+    </form>
   );
 };

@@ -3,20 +3,25 @@ import { cva, type VariantProps } from "class-variance-authority"
 
 import { cn } from "@/lib/utils"
 
+/**
+ * Callout: a tinted block with a 4px bar on the start edge, radius 0 16px 16px 0,
+ * 24px padding (16px on phones). The bar is the one place a box may carry both a
+ * fill and an edge.
+ * - `default`/`accent` follows the accent.
+ * - Status variants use their status colour and never follow the accent.
+ */
 const alertVariants = cva(
-  "relative w-full rounded-lg border p-4 [&>svg~*]:pl-7 [&>svg+div]:translate-y-[-3px] [&>svg]:absolute [&>svg]:left-4 [&>svg]:top-4 [&>svg]:text-foreground text-black/75 dark:text-white/90",
+  "relative w-full rounded-r-lg border-l-4 p-4 text-sm text-white/60 sm:p-6",
   {
     variants: {
       variant: {
-        default: "bg-background text-foreground",
-        warning:
-          "border-warning/50 bg-warning/10 text-warning-foreground [&>svg]:text-warning",
-        info:
-          "border-info/50 bg-info/10 text-info-foreground [&>svg]:text-info",
-        success:
-          "border-success/50 bg-success/10 text-success-foreground [&>svg]:text-success",
-        destructive:
-          "border-destructive/50 text-destructive dark:border-destructive [&>svg]:text-destructive",
+        default: "border-accent bg-accent-tint",
+        accent: "border-accent bg-accent-tint",
+        info: "border-info bg-info/15",
+        success: "border-success bg-success/15",
+        warning: "border-warning bg-warning/15",
+        destructive: "border-danger bg-danger/15",
+        danger: "border-danger bg-danger/15",
       },
     },
     defaultVariants: {
@@ -31,7 +36,7 @@ const Alert = React.forwardRef<
 >(({ className, variant, ...props }, ref) => (
   <div
     ref={ref}
-    role="alert"
+    role={variant === "destructive" || variant === "danger" || variant === "warning" ? "alert" : "status"}
     className={cn(alertVariants({ variant }), className)}
     {...props}
   />
@@ -44,7 +49,7 @@ const AlertTitle = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <h5
     ref={ref}
-    className={cn("mb-1 font-medium leading-none tracking-tight", className)}
+    className={cn("mb-1 text-lg font-semibold leading-tight text-white/90", className)}
     {...props}
   />
 ))
@@ -56,7 +61,7 @@ const AlertDescription = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <div
     ref={ref}
-    className={cn("text-sm [&_p]:leading-relaxed", className)}
+    className={cn("text-sm leading-normal text-white/60", className)}
     {...props}
   />
 ))

@@ -1,26 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { Box, List, styled } from "@mui/material";
 import { MenuListItem, MenuListItemMulti } from "./MenuListItem";
-import {
-  AccessibilityNew,
-  Announcement,
-  Build,
-  CenterFocusWeak,
-  ControlCamera,
-  DirectionsCar,
-  Favorite,
-  FileCopy,
-  GpsFixed,
-  LocalHospital,
-  PersonPinCircle,
-  Groups,
-  Restore,
-  Security,
-  DeleteForever,
-  RocketLaunch,
-  AirlineStops,
-  // Stream //Spawn Weapon action
-} from "@mui/icons-material";
 import { useKeyboardNavigation } from "../../hooks/useKeyboardNavigation";
 import { useDialogContext } from "../../provider/DialogProvider";
 import { fetchNui } from "../../utils/fetchNui";
@@ -37,24 +16,6 @@ import { useIsRedmValue } from "@nui/src/state/isRedm.state";
 import { getVehicleSpawnDialogData, vehiclePlaceholderReplacer } from "@nui/src/utils/vehicleSpawnDialogHelper";
 import { useNuiEvent } from "@nui/src/hooks/useNuiEvent";
 import { usePlayerModalContext } from "@nui/src/provider/PlayerModalProvider";
-
-const listHeight = 402;
-
-/**
- * The scrolling action area. The old build faked depth with two gradient
- * overlays and a floating chevron; this uses a mask so the fade tracks the
- * real scroll position instead of the selected index.
- */
-const StyledList = styled(List)({
-  maxHeight: listHeight,
-  overflow: "auto",
-  padding: 0,
-  maskImage:
-    "linear-gradient(to bottom, transparent 0, #000 12px, #000 calc(100% - 12px), transparent 100%)",
-  "&::-webkit-scrollbar": {
-    display: "none",
-  },
-});
 
 // TODO: This component is kinda getting out of hand, might want to split it somehow
 export const MainPageList: React.FC = () => {
@@ -315,7 +276,6 @@ export const MainPageList: React.FC = () => {
             name: t("nui_menu.page_main.player_mode.noclip.title"),
             label: t("nui_menu.page_main.player_mode.noclip.label"),
             value: PlayerMode.NOCLIP,
-            icon: <ControlCamera />,
             onSelect: () => {
               handlePlayermodeToggle(PlayerMode.NOCLIP);
             },
@@ -324,7 +284,6 @@ export const MainPageList: React.FC = () => {
             name: t("nui_menu.page_main.player_mode.godmode.title"),
             label: t("nui_menu.page_main.player_mode.godmode.label"),
             value: PlayerMode.GOD_MODE,
-            icon: <Security />,
             onSelect: () => {
               handlePlayermodeToggle(PlayerMode.GOD_MODE);
             },
@@ -333,7 +292,6 @@ export const MainPageList: React.FC = () => {
             name: t("nui_menu.page_main.player_mode.superjump.title"),
             label: t("nui_menu.page_main.player_mode.superjump.label"),
             value: PlayerMode.SUPER_JUMP,
-            icon: <AirlineStops />,
             onSelect: () => {
               handlePlayermodeToggle(PlayerMode.SUPER_JUMP);
             },
@@ -342,7 +300,6 @@ export const MainPageList: React.FC = () => {
             name: t("nui_menu.page_main.player_mode.normal.title"),
             label: t("nui_menu.page_main.player_mode.normal.label"),
             value: PlayerMode.DEFAULT,
-            icon: <AccessibilityNew />,
             onSelect: () => {
               handlePlayermodeToggle(PlayerMode.DEFAULT);
             },
@@ -361,7 +318,6 @@ export const MainPageList: React.FC = () => {
             name: t("nui_menu.page_main.teleport.waypoint.title"),
             label: t("nui_menu.page_main.teleport.waypoint.label"),
             value: TeleportMode.WAYPOINT,
-            icon: <PersonPinCircle />,
             onSelect: () => {
               setTeleportMode(TeleportMode.WAYPOINT);
               fetchNui("tpToWaypoint", {});
@@ -371,7 +327,6 @@ export const MainPageList: React.FC = () => {
             name: t("nui_menu.page_main.teleport.coords.title"),
             label: t("nui_menu.page_main.teleport.coords.label"),
             value: TeleportMode.COORDINATES,
-            icon: <GpsFixed />,
             onSelect: () => {
               setTeleportMode(TeleportMode.COORDINATES);
               handleTeleportCoords();
@@ -381,14 +336,12 @@ export const MainPageList: React.FC = () => {
             name: t("nui_menu.page_main.teleport.back.title"),
             label: t("nui_menu.page_main.teleport.back.label"),
             value: TeleportMode.PREVIOUS,
-            icon: <Restore />,
             onSelect: handleTeleportBack,
           },
           {
             name: t("nui_menu.page_main.teleport.copy.title"),
             label: t("nui_menu.page_main.teleport.copy.label"),
             value: TeleportMode.COPY,
-            icon: <FileCopy />,
             onSelect: handleCopyCoords,
           },
         ],
@@ -405,7 +358,6 @@ export const MainPageList: React.FC = () => {
             name: t("nui_menu.page_main.vehicle.spawn.title"),
             label: t("nui_menu.page_main.vehicle.spawn.label"),
             value: VehicleMode.SPAWN,
-            icon: <DirectionsCar />,
             onSelect: () => {
               setVehicleMode(VehicleMode.SPAWN);
               handleSpawnVehicle();
@@ -415,7 +367,6 @@ export const MainPageList: React.FC = () => {
             name: t("nui_menu.page_main.vehicle.fix.title"),
             label: t("nui_menu.page_main.vehicle.fix.label"),
             value: VehicleMode.FIX,
-            icon: <Build />,
             onSelect: () => {
               setVehicleMode(VehicleMode.FIX);
               handleFixVehicle();
@@ -425,7 +376,6 @@ export const MainPageList: React.FC = () => {
             name: t("nui_menu.page_main.vehicle.delete.title"),
             label: t("nui_menu.page_main.vehicle.delete.label"),
             value: VehicleMode.DELETE,
-            icon: <DeleteForever />,
             onSelect: () => {
               setVehicleMode(VehicleMode.DELETE);
               handleDeleteVehicle();
@@ -435,7 +385,6 @@ export const MainPageList: React.FC = () => {
             name: t("nui_menu.page_main.vehicle.boost.title"),
             label: t("nui_menu.page_main.vehicle.boost.label"),
             value: VehicleMode.BOOST,
-            icon: <RocketLaunch />,
             onSelect: () => {
               setVehicleMode(VehicleMode.BOOST);
               handleBoostVehicle();
@@ -455,7 +404,6 @@ export const MainPageList: React.FC = () => {
             name: t("nui_menu.page_main.heal.myself.title"),
             label: t("nui_menu.page_main.heal.myself.label"),
             value: HealMode.SELF,
-            icon: <Favorite />,
             onSelect: () => {
               setHealMode(HealMode.SELF);
               handleHealMyself();
@@ -465,7 +413,6 @@ export const MainPageList: React.FC = () => {
             name: t("nui_menu.page_main.heal.everyone.title"),
             label: t("nui_menu.page_main.heal.everyone.label"),
             value: HealMode.ALL,
-            icon: <LocalHospital />,
             onSelect: () => {
               setHealMode(HealMode.ALL);
               handleHealAllPlayers();
@@ -479,21 +426,18 @@ export const MainPageList: React.FC = () => {
         title: t("nui_menu.page_main.announcement.title"),
         label: t("nui_menu.page_main.announcement.label"),
         requiredPermission: "announcement",
-        icon: <Announcement />,
         onSelect: handleAnnounceMessage,
       },
       {
         title: t("nui_menu.page_main.clear_area.title"),
         label: t("nui_menu.page_main.clear_area.label"),
         requiredPermission: "menu.clear_area",
-        icon: <CenterFocusWeak />,
         onSelect: handleClearArea,
       },
       {
         title: t("nui_menu.page_main.player_ids.title"),
         label: t("nui_menu.page_main.player_ids.label"),
         requiredPermission: "menu.viewids",
-        icon: <Groups />,
         onSelect: handleTogglePlayerIds,
       },
       // {
@@ -506,26 +450,24 @@ export const MainPageList: React.FC = () => {
   );
 
   return (
-    <Box sx={{ pointerEvents: 'none' }}>
-      <StyledList>
-        {menuListItems.map((item, index) =>
-          item.isMultiAction ? (
-            // @ts-ignore
-            (<MenuListItemMulti
-              key={index}
-              selected={curSelected === index}
-              {...item}
-            />)
-          ) : (
-            // @ts-ignore
-            (<MenuListItem
-              key={index}
-              selected={curSelected === index}
-              {...item}
-            />)
-          )
-        )}
-      </StyledList>
-    </Box>
+    <div className="action-list" role="list">
+      {menuListItems.map((item, index) =>
+        item.isMultiAction ? (
+          // @ts-ignore
+          (<MenuListItemMulti
+            key={index}
+            selected={curSelected === index}
+            {...item}
+          />)
+        ) : (
+          // @ts-ignore
+          (<MenuListItem
+            key={index}
+            selected={curSelected === index}
+            {...item}
+          />)
+        )
+      )}
+    </div>
   );
 };

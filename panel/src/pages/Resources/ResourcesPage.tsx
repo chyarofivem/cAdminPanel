@@ -1,40 +1,35 @@
 import { useMemo, useState } from 'react';
 import useSWR from 'swr';
-import {
-    ChevronDown, ChevronUp, Folder, FolderSync, Loader2, Play, RefreshCw,
-    RotateCcw, Search, Square, Wrench,
-} from 'lucide-react';
+import { RefreshCwIcon } from 'lucide-react';
+import type {
+    ResourceBackupInfo,
+    ResourceInfo,
+    ResourceReportError,
+    ResourcesDataResp,
+    ResourceUpdateApplyResp,
+    ResourceUpdatesCheckResp,
+} from '@shared/resourceManagerTypes';
 import { PageHeader } from '@/components/page-header';
+import { ListRow, ListRows } from '@/components/ListRow';
+import EmptyState from '@/components/EmptyState';
 import { txToast } from '@/components/TxToaster';
-import { Badge } from '@/components/ui/badge';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Badge, type BadgeProps } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
+import { IconButton } from '@/components/ui/icon-button';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAdminPerms } from '@/hooks/auth';
+import { useOpenConfirmDialog } from '@/hooks/dialogs';
 import { useAuthedFetcher } from '@/hooks/fetch';
 import { tsToLocaleDateTimeString } from '@/lib/dateTime';
 import { t } from '@/lib/i18n';
+import ResourceDetails from './ResourceDetails';
+import StartOrder from './StartOrder';
+import { checkFailureCopy, reportErrorCopy, updateFailureCopy } from './resourceCopy';
 
-type ResourceEntry = {
-    name: string;
-    status: string;
-    group: string;
-    version: string;
-    author: string;
-    description: string;
-};
-
-type ResourcesResponse = {
-    success: true;
-    data: {
-        generatedAt: number;
-        resources: ResourceEntry[];
-    };
-} | {
-    success: false;
-    error: 'server_offline' | 'report_unavailable' | 'report_timeout';
-};
+type ResourcesData = Extract<ResourcesDataResp, { success: true }>['data'];
 
 type ResourceActionResponse = {
     type: 'default' | 'loading' | 'info' | 'success' | 'warning' | 'error';
@@ -42,7 +37,7 @@ type ResourceActionResponse = {
 };
 
 type StatusFilter = 'all' | 'running' | 'stopped';
-type ReportError = 'server_offline' | 'report_unavailable' | 'report_timeout';
+type PageView = 'resources' | 'start-order';
 
 const builtInResourceNames = new Set([
     'baseevents', 'basic-gamemode', 'betaguns', 'channelfeed', 'chat-theme-gtao', 'chat',
@@ -53,12 +48,6 @@ const builtInResourceNames = new Set([
     'scoreboard', 'sessionmanager-rdr3', 'sessionmanager', 'spawnmanager', 'webadmin', 'webpack', 'yarn',
 ]);
 
-const reportErrors: Record<ReportError, string> = {
-    server_offline: 'Start the server to inspect its resources.',
-    report_unavailable: 'The resource report could not be requested.',
-    report_timeout: 'The server did not return a resource report in time.',
-};
-
 const statusLabel = (status: string) => {
     if (status === 'started') return t('Running');
     if (status === 'stopped') return t('Stopped');
@@ -66,11 +55,13 @@ const statusLabel = (status: string) => {
     return t('Unknown');
 };
 
-const statusClasses = (status: string) => {
-    if (status === 'started') return 'border-emerald-500/20 bg-emerald-500/10 text-emerald-300';
-    if (status === 'stopped') return 'border-zinc-500/20 bg-zinc-500/10 text-zinc-400';
-    return 'border-amber-500/20 bg-amber-500/10 text-amber-300';
+const statusVariant = (status: string): BadgeProps['variant'] => {
+    if (status === 'started') return 'success';
+    if (status === 'starting') return 'warning';
+    return 'default';
 };
+
+const detailsId = (name: string) => `resource-details-${name.replace(/[^A-Za-z0-9_-]/g, '_')}`;
 
 function readStoredBoolean(key: string, fallback: boolean) {
     try {
@@ -90,26 +81,32 @@ function readCollapsedGroups() {
     }
 }
 
-function Stat({ label, value, color }: { label: string; value: number; color?: string }) {
-    return <div className="rounded-xl border border-white/5 bg-white/[0.035] px-4 py-3">
-        <p className="text-xs text-zinc-500">{label}</p>
-        <p className={`mt-1 text-lg font-semibold ${color || 'text-white'}`}>{value.toLocaleString(window.txBrowserLocale)}</p>
-    </div>;
+//A filter tab with its live count, so the counts double as the page summary.
+function FilterTab({ value, label, count }: { value: StatusFilter; label: string; count: number }) {
+    return <TabsTrigger value={value} className="gap-2">
+        {label}
+        <span className="tabular-nums text-muted-foreground">{count.toLocaleString(window.txBrowserLocale)}</span>
+    </TabsTrigger>;
 }
 
 export default function ResourcesPage() {
     const fetcher = useAuthedFetcher();
-    const { hasPerm } = useAdminPerms();
+    const openConfirmDialog = useOpenConfirmDialog();
+    const { hasPerm, isMaster } = useAdminPerms();
     const canControl = hasPerm('commands.resources');
+    const [view, setView] = useState<PageView>('resources');
     const [query, setQuery] = useState('');
     const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
     const [showBuiltIn, setShowBuiltIn] = useState(() => readStoredBoolean('resourcesPageShowDefault', false));
     const [collapsedGroups, setCollapsedGroups] = useState(readCollapsedGroups);
+    const [expandedResources, setExpandedResources] = useState<Set<string>>(() => new Set());
     const [busyResource, setBusyResource] = useState<string>();
+    const [replacingResource, setReplacingResource] = useState<string>();
     const [isRescanning, setIsRescanning] = useState(false);
+    const [isCheckingUpdates, setIsCheckingUpdates] = useState(false);
 
     const resourcesSWR = useSWR('/resources/data', async (url) => {
-        const response = await fetcher<ResourcesResponse>(url);
+        const response = await fetcher<ResourcesDataResp>(url);
         if (!response.success) throw new Error(response.error);
         return response.data;
     }, { revalidateOnFocus: false });
@@ -129,7 +126,7 @@ export default function ResourcesPage() {
             return [resource.name, resource.group, resource.author, resource.description]
                 .some(value => value.toLocaleLowerCase().includes(normalizedQuery));
         });
-        const groups = new Map<string, ResourceEntry[]>();
+        const groups = new Map<string, ResourceInfo[]>();
         filtered.forEach(resource => {
             const existing = groups.get(resource.group) ?? [];
             existing.push(resource);
@@ -143,6 +140,14 @@ export default function ResourcesPage() {
             const next = new Set(current);
             next.has(group) ? next.delete(group) : next.add(group);
             try { window.localStorage.setItem('resourcesPageCollapsedGroups', JSON.stringify([...next])); } catch { /* noop */ }
+            return next;
+        });
+    };
+
+    const toggleDetails = (name: string) => {
+        setExpandedResources(current => {
+            const next = new Set(current);
+            next.has(name) ? next.delete(name) : next.add(name);
             return next;
         });
     };
@@ -199,6 +204,113 @@ export default function ResourcesPage() {
         }
     };
 
+    const checkForUpdates = async () => {
+        if (!canControl) return;
+        setIsCheckingUpdates(true);
+        const toastId = txToast.loading(t('Checking GitHub releases…'));
+        try {
+            const response = await fetcher<ResourceUpdatesCheckResp>('/resources/updates/check', {
+                method: 'POST',
+                body: {},
+            });
+            if (!response.success) {
+                txToast.error({ title: t('Update check failed'), msg: t(checkFailureCopy[response.error]) }, { id: toastId });
+                return;
+            }
+            void resourcesSWR.mutate((current) => current && {
+                ...current,
+                resources: current.resources.map(resource => response.results[resource.name]
+                    ? { ...resource, update: response.results[resource.name] }
+                    : resource),
+            }, { revalidate: false });
+
+            const results = Object.values(response.results);
+            if (!results.length) {
+                txToast.info(t('No resource links a GitHub repository.'), { id: toastId });
+                return;
+            }
+            const updates = results.filter(result => result.hasUpdate).length;
+            const failed = results.filter(result => result.error && result.error !== 'unknown_version').length;
+            const summary = [
+                updates ? t('Updates available: {count}.', { count: updates }) : t('No updates available.'),
+                failed ? t('{count} could not be checked.', { count: failed }) : '',
+            ].filter(Boolean).join(' ');
+            if (failed && !updates) {
+                txToast.warning(summary, { id: toastId });
+            } else {
+                txToast.success(summary, { id: toastId });
+            }
+        } catch (error) {
+            txToast.error({
+                title: t('Update check failed'),
+                msg: t(error instanceof Error ? error.message : 'Unknown error.'),
+            }, { id: toastId });
+        } finally {
+            setIsCheckingUpdates(false);
+        }
+    };
+
+    const replaceResource = async (resource: ResourceInfo, backup?: ResourceBackupInfo) => {
+        const isRollback = Boolean(backup);
+        setReplacingResource(resource.name);
+        const toastId = txToast.loading(isRollback
+            ? t('Rolling back {resource}…', { resource: resource.name })
+            : t('Updating {resource}…', { resource: resource.name }));
+        try {
+            const response = await fetcher<ResourceUpdateApplyResp>(`/resources/updates/${isRollback ? 'rollback' : 'apply'}`, {
+                method: 'POST',
+                body: backup ? { resource: resource.name, backupId: backup.id } : { resource: resource.name },
+            });
+            if (!response.success) {
+                txToast.error({
+                    title: isRollback ? t('Rollback failed') : t('Update failed'),
+                    msg: t(updateFailureCopy[response.error] ?? 'Unknown error.'),
+                }, { id: toastId });
+                return;
+            }
+            const done = isRollback
+                ? t('{resource} rolled back to {version}.', { resource: response.resource, version: response.version })
+                : t('{resource} updated to {version}.', { resource: response.resource, version: response.version });
+            txToast.success({
+                title: done,
+                msg: response.pendingRestart
+                    ? t('Restart it to load the new files.')
+                    : t('The new files load the next time it starts.'),
+            }, { id: toastId });
+            window.setTimeout(() => { void resourcesSWR.mutate(); }, 1000);
+        } catch (error) {
+            txToast.error({
+                title: isRollback ? t('Rollback failed') : t('Update failed'),
+                msg: t(error instanceof Error ? error.message : 'Unknown error.'),
+            }, { id: toastId });
+        } finally {
+            setReplacingResource(undefined);
+        }
+    };
+
+    const confirmUpdate = (resource: ResourceInfo) => {
+        const version = resource.update?.latest ?? '';
+        openConfirmDialog({
+            title: t('Update {resource} to {version}?', { resource: resource.name, version }),
+            message: t('Every file in the resource folder is replaced with the release, including files you edited there, such as configs. A backup of the current files is kept and can be restored with Roll back. The resource is not restarted.'),
+            actionLabel: t('Update'),
+            confirmBtnVariant: 'destructive',
+            onConfirm: () => void replaceResource(resource),
+        });
+    };
+
+    const confirmRollback = (resource: ResourceInfo, backup: ResourceBackupInfo) => {
+        openConfirmDialog({
+            title: t('Roll back {resource} to {version}?', { resource: resource.name, version: backup.version }),
+            message: t('Every file in the resource folder is replaced with the backup from {date}. A backup of the current files is kept first. The resource is not restarted.', {
+                date: tsToLocaleDateTimeString(backup.createdAt, 'medium', 'short'),
+            }),
+            actionLabel: t('Roll back'),
+            confirmBtnVariant: 'destructive',
+            onConfirm: () => void replaceResource(resource, backup),
+        });
+    };
+
     const allCollapsed = groupedResources.length > 0 && groupedResources.every(([group]) => collapsedGroups.has(group));
     const toggleAllGroups = () => {
         const next = allCollapsed ? new Set<string>() : new Set(groupedResources.map(([group]) => group));
@@ -206,105 +318,173 @@ export default function ResourcesPage() {
         try { window.localStorage.setItem('resourcesPageCollapsedGroups', JSON.stringify([...next])); } catch { /* noop */ }
     };
 
+    const reportError = resourcesSWR.error?.message as ResourceReportError | undefined;
+    const errorAlert = resourcesSWR.error && <Alert variant="destructive">
+        <AlertDescription className="flex flex-wrap items-center gap-x-3 gap-y-2">
+            <span>{t(reportErrorCopy[reportError as ResourceReportError] || 'The resources list could not be loaded.')}</span>
+            {reportError !== 'server_offline' && <Button variant="link" className="text-sm" onClick={() => void resourcesSWR.mutate()}>
+                {t('Try again')}
+            </Button>}
+        </AlertDescription>
+    </Alert>;
+    const loadingState = resourcesSWR.isLoading && !resourcesSWR.data && <p role="status" className="text-sm text-muted-foreground">
+        {t('Loading resources…')}
+    </p>;
+
+    const shownCount = groupedResources.reduce((total, [, entries]) => total + entries.length, 0);
+    const data: ResourcesData | undefined = resourcesSWR.data;
     return <div className="pb-8">
-        <PageHeader title={t('Resources')} icon={<Wrench className="size-6" />}>
-            <div className="flex gap-2">
-                <Button variant="outline" onClick={() => void resourcesSWR.mutate()} disabled={resourcesSWR.isLoading || resourcesSWR.isValidating}>
-                    <RefreshCw className={`mr-2 size-4 ${resourcesSWR.isValidating ? 'animate-spin' : ''}`} />{t('Refresh list')}
-                </Button>
-                <Button onClick={() => void rescanResources()} disabled={!canControl || isRescanning} title={!canControl ? t('You do not have permission to control resources.') : undefined}>
-                    {isRescanning ? <Loader2 className="mr-2 size-4 animate-spin" /> : <FolderSync className="mr-2 size-4" />}{t('Rescan')}
-                </Button>
-            </div>
+        <PageHeader title={t('Resources')}>
+            <IconButton
+                label={t('Refresh list')}
+                icon={<RefreshCwIcon />}
+                className="size-11 sm:size-9"
+                onClick={() => void resourcesSWR.mutate()}
+                disabled={resourcesSWR.isLoading || resourcesSWR.isValidating}
+            />
+            <Button
+                variant="secondary"
+                onClick={() => void checkForUpdates()}
+                disabled={!canControl || !data || isCheckingUpdates}
+                title={!canControl ? t('You do not have permission to control resources.') : undefined}
+            >
+                {isCheckingUpdates ? t('Checking…') : t('Check for updates')}
+            </Button>
+            <Button onClick={() => void rescanResources()} disabled={!canControl || isRescanning} title={!canControl ? t('You do not have permission to control resources.') : undefined}>
+                {t('Rescan')}
+            </Button>
         </PageHeader>
 
-        <div className="mb-5 grid gap-3 sm:grid-cols-3">
-            <Stat label={t('Total resources')} value={resources.length} />
-            <Stat label={t('Running')} value={runningCount} color="text-emerald-300" />
-            <Stat label={t('Stopped')} value={stoppedCount} color="text-zinc-300" />
-        </div>
+        <Tabs value={view} onValueChange={value => setView(value as PageView)} className="flex flex-col gap-6">
+            <TabsList className="w-full sm:w-auto sm:self-start">
+                <TabsTrigger value="resources">{t('Resources')}</TabsTrigger>
+                <TabsTrigger value="start-order">{t('Start order')}</TabsTrigger>
+            </TabsList>
 
-        <Card className="mb-4">
-            <CardContent className="grid gap-4 p-4 lg:grid-cols-[minmax(16rem,1fr)_auto_auto] lg:items-center">
-                <div className="relative">
-                    <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-zinc-600" />
-                    <Input value={query} onChange={event => setQuery(event.target.value)} className="pl-9" placeholder={t('Search name, folder, author, or description')} />
+            {!canControl && <Alert variant="info">
+                <AlertDescription>{t('You can view resources, but your account cannot start, stop, or update them.')}</AlertDescription>
+            </Alert>}
+
+            <TabsContent value="resources" className="mt-0 flex flex-col gap-6">
+                <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
+                    <Input
+                        value={query}
+                        onChange={event => setQuery(event.target.value)}
+                        className="text-dense sm:h-9 lg:max-w-sm"
+                        aria-label={t('Search name, folder, author, or description')}
+                        placeholder={t('Search name, folder, author, or description')}
+                    />
+                    <Tabs value={statusFilter} onValueChange={value => setStatusFilter(value as StatusFilter)} className="min-w-0 max-w-full">
+                        <TabsList className="max-w-full">
+                            <FilterTab value="all" label={t('All')} count={resources.length} />
+                            <FilterTab value="running" label={t('Running')} count={runningCount} />
+                            <FilterTab value="stopped" label={t('Stopped')} count={stoppedCount} />
+                        </TabsList>
+                    </Tabs>
+                    <label className="flex min-h-11 cursor-pointer items-center gap-3 text-sm text-body lg:ml-auto">
+                        <Switch checked={showBuiltIn} onCheckedChange={(checked) => {
+                            setShowBuiltIn(checked);
+                            try { window.localStorage.setItem('resourcesPageShowDefault', String(checked)); } catch { /* noop */ }
+                        }} />
+                        <span>{t('Show built-in')}</span>
+                    </label>
                 </div>
-                <div className="grid grid-cols-3 rounded-lg border border-white/5 bg-black/10 p-1">
-                    {(['all', 'running', 'stopped'] as const).map(filter => <Button
-                        key={filter}
-                        size="sm"
-                        variant={statusFilter === filter ? 'secondary' : 'ghost-muted'}
-                        onClick={() => setStatusFilter(filter)}
-                    >{filter === 'all' ? t('All') : filter === 'running' ? t('Running') : t('Stopped')}</Button>)}
-                </div>
-                <label className="flex cursor-pointer items-center justify-between gap-3 rounded-lg border border-white/5 bg-black/10 px-3 py-2 text-sm text-zinc-300">
-                    <span>{t('Show built-in')}</span>
-                    <Switch checked={showBuiltIn} onCheckedChange={(checked) => {
-                        setShowBuiltIn(checked);
-                        try { window.localStorage.setItem('resourcesPageShowDefault', String(checked)); } catch { /* noop */ }
-                    }} />
-                </label>
-            </CardContent>
-        </Card>
 
-        {resourcesSWR.data && <div className="mb-3 flex items-center justify-between px-1 text-xs text-zinc-600">
-            <span>{t('{count} resources shown', { count: groupedResources.reduce((total, [, entries]) => total + entries.length, 0) })}</span>
-            <div className="flex items-center gap-3">
-                <span>{t('Updated {time}', { time: tsToLocaleDateTimeString(resourcesSWR.data.generatedAt, 'medium', 'short') })}</span>
-                <button type="button" className="text-zinc-400 hover:text-white" onClick={toggleAllGroups}>{allCollapsed ? t('Expand all') : t('Collapse all')}</button>
-            </div>
-        </div>}
+                {loadingState}
+                {errorAlert}
 
-        {resourcesSWR.isLoading && !resourcesSWR.data && <Card><CardContent className="flex items-center justify-center gap-2 p-14 text-sm text-zinc-500"><Loader2 className="size-4 animate-spin" />{t('Loading resources…')}</CardContent></Card>}
-        {resourcesSWR.error && <Card className="border-red-500/20 bg-red-500/10"><CardContent className="p-6 text-sm text-red-300">
-            {t(reportErrors[resourcesSWR.error.message as keyof typeof reportErrors] || 'The resources list could not be loaded.')}
-        </CardContent></Card>}
+                {data && <div className="flex flex-col gap-6">
+                    <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 text-xs text-muted-foreground">
+                        <span className="tabular-nums">{t('{count} resources shown', { count: shownCount })}</span>
+                        <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+                            <span className="tabular-nums">{t('Updated {time}', { time: tsToLocaleDateTimeString(data.generatedAt, 'medium', 'short') })}</span>
+                            {groupedResources.length > 0 && <Button variant="link" className="text-xs" onClick={toggleAllGroups}>
+                                {allCollapsed ? t('Expand all') : t('Collapse all')}
+                            </Button>}
+                        </div>
+                    </div>
 
-        <div className="space-y-3">
-            {groupedResources.map(([group, entries]) => {
-                const collapsed = collapsedGroups.has(group);
-                return <Card key={group} className="overflow-hidden">
-                    <button type="button" className="flex w-full items-center gap-3 border-b border-white/5 px-4 py-3 text-left transition-colors hover:bg-white/[0.025]" onClick={() => toggleGroup(group)} aria-expanded={!collapsed}>
-                        <span className="grid size-8 place-items-center rounded-lg bg-white/5 text-zinc-500"><Folder className="size-4" /></span>
-                        <span className="min-w-0 flex-1 truncate font-mono text-sm text-zinc-200">{group}</span>
-                        <Badge variant="secondary" className="border-0 bg-white/5">{entries.length}</Badge>
-                        {collapsed ? <ChevronDown className="size-4 text-zinc-500" /> : <ChevronUp className="size-4 text-zinc-500" />}
-                    </button>
-                    {!collapsed && <div className="divide-y divide-white/5">
-                        {entries.map(resource => {
-                            const running = resource.status === 'started';
-                            const busy = busyResource === resource.name;
-                            return <div key={resource.name} className="flex flex-col gap-4 px-4 py-4 transition-colors hover:bg-white/[0.018] md:flex-row md:items-center">
-                                <div className="min-w-0 flex-1">
-                                    <div className="flex flex-wrap items-center gap-2">
-                                        <p className="font-medium text-white">{resource.name}</p>
-                                        <span className={`rounded-full border px-2 py-0.5 text-[11px] font-medium ${statusClasses(resource.status)}`}>{statusLabel(resource.status)}</span>
-                                        {resource.version && <span className="font-mono text-[11px] text-zinc-600">{resource.version}</span>}
-                                    </div>
-                                    {(resource.author || resource.description) && <p className="mt-1 max-w-4xl truncate text-xs text-zinc-500">
-                                        {resource.author && <span>{t('by {author}', { author: resource.author })}{resource.description ? ' · ' : ''}</span>}{resource.description}
-                                    </p>}
-                                </div>
-                                <div className="flex shrink-0 gap-2">
-                                    {running ? <>
-                                        <Button size="sm" variant="outline-warning" disabled={!canControl || Boolean(busyResource)} onClick={() => void runResourceAction(resource.name, 'restart_res')}>
-                                            {busy ? <Loader2 className="mr-2 size-4 animate-spin" /> : <RotateCcw className="mr-2 size-4" />}{t('Restart')}
-                                        </Button>
-                                        <Button size="sm" variant="outline-destructive" disabled={!canControl || Boolean(busyResource)} onClick={() => void runResourceAction(resource.name, 'stop_res')}>
-                                            <Square className="mr-2 size-3.5" />{t('Stop')}
-                                        </Button>
-                                    </> : <Button size="sm" variant="outline-success" disabled={!canControl || Boolean(busyResource)} onClick={() => void runResourceAction(resource.name, 'start_res')}>
-                                        {busy ? <Loader2 className="mr-2 size-4 animate-spin" /> : <Play className="mr-2 size-4" />}{t('Start')}
-                                    </Button>}
-                                </div>
-                            </div>;
-                        })}
-                    </div>}
-                </Card>;
-            })}
-        </div>
+                    {groupedResources.map(([group, entries]) => {
+                        const collapsed = collapsedGroups.has(group);
+                        return <section key={group} className="flex flex-col gap-2">
+                            <button
+                                type="button"
+                                className="flex min-h-11 w-full items-center gap-3 rounded-sm text-left transition-colors duration-150 hover:text-white"
+                                onClick={() => toggleGroup(group)}
+                                aria-expanded={!collapsed}
+                            >
+                                <span className="min-w-0 truncate font-mono text-dense font-medium text-white">{group}</span>
+                                <span className="text-xs tabular-nums text-muted-foreground">{entries.length}</span>
+                                <span className="ml-auto text-dense text-muted-foreground">{collapsed ? t('Show') : t('Hide')}</span>
+                            </button>
+                            {!collapsed && <ListRows>
+                                {entries.map(resource => {
+                                    const running = resource.status === 'started';
+                                    const actionsDisabled = !canControl || Boolean(busyResource) || replacingResource === resource.name;
+                                    const expanded = expandedResources.has(resource.name);
+                                    const hasMissingDependency = resource.dependencies.some(dependency => dependency.missing);
+                                    return <ListRow key={resource.name} className="flex-col items-stretch">
+                                        <div className="flex min-w-0 flex-col gap-3 md:flex-row md:items-center">
+                                            <div className="min-w-0 flex-1">
+                                                <div className="flex flex-wrap items-center gap-2">
+                                                    <p className="break-all font-medium text-white">{resource.name}</p>
+                                                    <Badge variant={statusVariant(resource.status)}>{statusLabel(resource.status)}</Badge>
+                                                    {resource.version && <span className="font-mono text-xs text-muted-foreground">{resource.version}</span>}
+                                                    {resource.pendingRestart && <Badge variant="warning">{t('Restart to apply')}</Badge>}
+                                                    {resource.update?.hasUpdate && !resource.pendingRestart && <Badge variant="info">
+                                                        {t('Update available: {version}', { version: resource.update.latest ?? '' })}
+                                                    </Badge>}
+                                                    {hasMissingDependency && <Badge variant="danger">{t('Missing dependency')}</Badge>}
+                                                </div>
+                                                {(resource.author || resource.description) && <p className="mt-1 truncate text-dense text-muted-foreground">
+                                                    {resource.author && <span>{t('by {author}', { author: resource.author })}{resource.description ? ' · ' : ''}</span>}{resource.description}
+                                                </p>}
+                                            </div>
+                                            <div className="flex shrink-0 flex-wrap gap-2">
+                                                <Button
+                                                    size="sm"
+                                                    variant="secondary"
+                                                    aria-expanded={expanded}
+                                                    aria-controls={expanded ? detailsId(resource.name) : undefined}
+                                                    onClick={() => toggleDetails(resource.name)}
+                                                >
+                                                    {expanded ? t('Hide details') : t('Details')}
+                                                </Button>
+                                                {running ? <>
+                                                    <Button size="sm" variant="secondary" disabled={actionsDisabled} onClick={() => void runResourceAction(resource.name, 'restart_res')}>
+                                                        {t('Restart')}
+                                                    </Button>
+                                                    <Button size="sm" variant="outline-destructive" disabled={actionsDisabled} onClick={() => void runResourceAction(resource.name, 'stop_res')}>
+                                                        {t('Stop')}
+                                                    </Button>
+                                                </> : <Button size="sm" variant="secondary" disabled={actionsDisabled} onClick={() => void runResourceAction(resource.name, 'start_res')}>
+                                                    {t('Start')}
+                                                </Button>}
+                                            </div>
+                                        </div>
+                                        {expanded && <ResourceDetails
+                                            id={detailsId(resource.name)}
+                                            resource={resource}
+                                            isMaster={isMaster}
+                                            isBusy={Boolean(replacingResource)}
+                                            onUpdate={confirmUpdate}
+                                            onRollback={confirmRollback}
+                                        />}
+                                    </ListRow>;
+                                })}
+                            </ListRows>}
+                        </section>;
+                    })}
 
-        {resourcesSWR.data && !groupedResources.length && <Card><CardContent className="p-14 text-center text-sm text-zinc-500">{t('No resources match the current filters.')}</CardContent></Card>}
+                    {!groupedResources.length && <EmptyState message={t('No resources match the current filters.')} />}
+                </div>}
+            </TabsContent>
+
+            <TabsContent value="start-order" className="mt-0 flex flex-col gap-6">
+                {loadingState}
+                {errorAlert}
+                {data && <StartOrder bootOrder={data.bootOrder} />}
+            </TabsContent>
+        </Tabs>
     </div>;
 }

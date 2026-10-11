@@ -1,9 +1,9 @@
-import { CalendarIcon, ChevronRightIcon, SaveIcon, UserIcon } from "lucide-react";
 import { ConfigChangelogEntry } from "@shared/otherTypes";
-import { useMemo, useState } from "react";
+import { Fragment, useMemo, useState } from "react";
 import { dateToLocaleDateString, dateToLocaleTimeString, isDateToday, tsToLocaleDateTimeString } from "@/lib/dateTime";
 import TxAnchor from "@/components/TxAnchor";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 import { Link } from "wouter";
 import { t } from '@/lib/i18n';
 
@@ -20,10 +20,9 @@ export function PageHeaderChangelog({ changelogData }: PageHeaderChangelogProps)
         const lastDate = new Date(last.ts);
         const timeStr = dateToLocaleTimeString(lastDate, '2-digit', '2-digit');
         const dateStr = dateToLocaleDateString(lastDate, 'long');
-        const titleTimeIndicator = isDateToday(lastDate) ? timeStr : dateStr;
         return {
             author: last.author,
-            dateTime: titleTimeIndicator,
+            dateTime: isDateToday(lastDate) ? timeStr : dateStr,
         }
     }, [changelogData]);
 
@@ -32,42 +31,25 @@ export function PageHeaderChangelog({ changelogData }: PageHeaderChangelogProps)
         return [...changelogData].reverse();
     }, [changelogData]);
 
-    const handleOpenChangelog = () => {
-        setIsModalOpen(true);
-    }
-
     const placeholder = Array.isArray(changelogData) ? t('No changes yet') : t('loading...');
 
     return (<>
-        <div className='flex xs:flex-col max-xs:items-center max-xs:gap-2 max-xs:w-full px-2 py-1 rounded-lg text-muted-foreground group relative'>
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-dense">
+            <span className="text-muted-foreground">
+                {t('Last Updated')}: <span className="tabular-nums text-white">{mostRecent?.dateTime ?? placeholder}</span>
+            </span>
             {reversedChangelog?.length ? (
-                <div
-                    className="absolute inset-0 flex items-center justify-center rounded-[inherit] bg-card opacity-0 border group-hover:opacity-100 transition-opacity text-primary group-active:bg-primary group-active:text-primary-foreground group-active:border-none select-none cursor-pointer"
-                    onClick={handleOpenChangelog}
-                >
+                <Button variant="link" className="text-dense" onClick={() => setIsModalOpen(true)}>
                     {t('View Changelog')}
-                </div>
+                </Button>
             ) : null}
-            <div className='tracking-wider leading-3 font-semibold'>
-                <SaveIcon className='max-xs:hidden size-4 inline-block align-text-bottom' /> {t('Last Updated')}
-                <span className="xs:hidden">:</span>
-            </div>
-            <div className='text-xs'>
-                <CalendarIcon className='size-4 inline-block align-text-bottom' /> {mostRecent?.dateTime ?? placeholder}
-            </div>
-            {/* <div className='text-xs'>
-                <UserIcon className='size-4 inline-block align-text-bottom' /> {mostRecent?.author ?? placeholder}
-            </div> */}
         </div>
         <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-            <DialogContent className='max-sm:p-4 max-w-xl'>
+            <DialogContent className="max-w-xl">
                 <DialogHeader>
                     <DialogTitle>{t('Recent Changes')}</DialogTitle>
                 </DialogHeader>
-                <div
-                    className="pr-3 max-h-[80vh] overflow-auto space-y-3"
-                    style={{ scrollbarWidth: 'thin' }}
-                >
+                <div className="max-h-[70vh] space-y-2 overflow-auto">
                     {reversedChangelog?.map((entry, i) => <ChangelogEntry key={i} entry={entry} />)}
                 </div>
             </DialogContent>
@@ -78,24 +60,18 @@ export function PageHeaderChangelog({ changelogData }: PageHeaderChangelogProps)
 
 function ChangelogEntry({ entry }: { entry: ConfigChangelogEntry }) {
     return (
-        <div className='flex flex-col gap-2 px-3 py-2 rounded-md border odd:bg-card/75'>
-            <div className="flex justify-between items-center">
-                <div className='font-semibold text-accent'>
-                    <UserIcon className='size-5 mr-2 inline-block align-text-bottom opacity-65' />
-                    {entry.author}
-                </div>
-                <div className='text-sm text-muted-foreground'>
+        <div className="flex flex-col gap-2 rounded-lg bg-raise px-4 py-3">
+            <div className="flex items-center justify-between gap-3">
+                <div className="font-medium text-white">{entry.author}</div>
+                <div className="text-dense tabular-nums text-muted-foreground">
                     {tsToLocaleDateTimeString(entry.ts, 'short', 'short')}
                 </div>
             </div>
-            <div className='flex gap-1 flex-wrap text-sm'>
-                {entry.keys.length ? entry.keys.map((cfg, index) => (
-                    <span>
-                        <div key={cfg} className='inline px-1 py-0.5 font-mono tracking-wide rounded bg-secondary/50'>{cfg}</div>
-                        {index < entry.keys.length - 1 && ','}
-                    </span>
+            <div className="flex flex-wrap gap-1 text-dense">
+                {entry.keys.length ? entry.keys.map((cfg) => (
+                    <code key={cfg} className="rounded-xs bg-raise-2 px-1.5 py-0.5 font-mono text-xs text-body">{cfg}</code>
                 )) : (
-                    <div className='italic'>{t('No changes')}</div>
+                    <span className="text-muted-foreground">{t('No changes')}</span>
                 )}
             </div>
         </div>
@@ -112,42 +88,69 @@ type PageHeaderLinksProps = {
 }
 export function PageHeaderLinks(props: PageHeaderLinksProps) {
     return (
-        <div className='flex max-xs:gap-2 xs:flex-col px-2 py-1'>
-            <TxAnchor href={props.topLink} className='text-sm'>{props.topLabel}</TxAnchor>
-            <TxAnchor href={props.bottomLink} className='text-sm'>{props.bottomLabel}</TxAnchor>
+        <div className="flex flex-wrap gap-x-4 gap-y-1">
+            <TxAnchor href={props.topLink} className="text-sm">{props.topLabel}</TxAnchor>
+            <TxAnchor href={props.bottomLink} className="text-sm">{props.bottomLabel}</TxAnchor>
         </div>
     )
+}
+
+
+//MARK: Breadcrumbs
+export type BreadcrumbItem = {
+    label: string;
+    href?: string;
+};
+/**
+ * Breadcrumbs: raise background, radius-md, 8px x 16px, 13px muted text with the
+ * current page in white.
+ */
+export function Breadcrumbs({ items }: { items: BreadcrumbItem[] }) {
+    if (!items.length) return null;
+    return (
+        <nav aria-label={t('Breadcrumb')} className="w-fit max-w-full rounded-md bg-raise px-4 py-2">
+            <ol className="flex flex-wrap items-center gap-x-2 text-dense text-muted-foreground">
+                {items.map((item, index) => {
+                    const isLast = index === items.length - 1;
+                    return <Fragment key={`${index}-${item.label}`}>
+                        <li className={isLast ? 'min-w-0 truncate text-white' : undefined} aria-current={isLast ? 'page' : undefined}>
+                            {!isLast && item.href
+                                ? <Link href={item.href} className="transition-colors duration-150 hover:text-white">{item.label}</Link>
+                                : item.label}
+                        </li>
+                        {!isLast && <li aria-hidden="true">/</li>}
+                    </Fragment>;
+                })}
+            </ol>
+        </nav>
+    );
 }
 
 
 //MARK: PageHeader
 type PageHeaderProps = {
     title: string;
-    icon: React.ReactNode;
+    subtitle?: React.ReactNode;
+    /** Renders breadcrumbs above the title, ending at this page. */
     parentName?: string;
     parentLink?: string;
+    /** Page actions: right-aligned on desktop, wrapped under the title on phones. */
     children?: React.ReactNode;
 }
-export function PageHeader(props: PageHeaderProps) {
-    const titleNodes = useMemo(() => {
-        if (props.parentName && props.parentLink) {
-            return (<>
-                <Link href={props.parentLink} className='hover:text-secondary-foreground hover:underline'>{props.parentName}</Link>
-                <ChevronRightIcon className='opacity-75' />
-                <li className="text-secondary-foreground">{props.title}</li>
-            </>)
-        } else {
-            return <li className="text-secondary-foreground">{props.title}</li>;
-        }
-    }, [props]);
+/**
+ * Page header: 20px/600 white title, 16px muted subtitle, actions on the same row.
+ * No icons.
+ */
+export function PageHeader({ title, subtitle, parentName, parentLink, children }: PageHeaderProps) {
     return (
-        <header className='mb-6 mt-6'>
-            <div className='flex max-xs:flex-col gap-2 xs:gap-4 max-xs:items-start justify-between items-center'>
-                <ol className='flex flex-wrap items-center gap-1 sm:gap-2.5 text-2xl font-semibold text-zinc-400 leading-none'>
-                    <span className='text-brand-500/60'>{props.icon}</span>
-                    {titleNodes}
-                </ol>
-                {props.children}
+        <header className="mb-6 mt-4 flex flex-col gap-4 sm:mt-6">
+            {parentName && parentLink && <Breadcrumbs items={[{ label: parentName, href: parentLink }, { label: title }]} />}
+            <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between md:gap-6">
+                <div className="min-w-0">
+                    <h1 className="break-words text-xl font-semibold leading-tight text-white">{title}</h1>
+                    {subtitle && <p className="mt-1 text-base text-muted-foreground">{subtitle}</p>}
+                </div>
+                {children && <div className="flex flex-wrap items-center gap-2 md:justify-end">{children}</div>}
             </div>
         </header>
     )

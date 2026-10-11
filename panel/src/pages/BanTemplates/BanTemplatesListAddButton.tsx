@@ -1,5 +1,5 @@
-import { cn } from "@/lib/utils";
-import { PlusIcon } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { t } from "@/lib/i18n";
 
 
 type BanTemplatesListAddButtonProps = {
@@ -7,17 +7,13 @@ type BanTemplatesListAddButtonProps = {
     disabled: boolean;
 }
 
+/**
+ * The page's primary action, rendered in the page header.
+ */
 export default function BanTemplatesListAddButton({ onClick, disabled }: BanTemplatesListAddButtonProps) {
     return (
-        <li
-            onClick={onClick}
-            className={cn(
-                "rounded-lg bg-card border px-2 py-3 flex gap-3",
-                disabled ? "opacity-50 cursor-not-allowed" : "hover:bg-primary hover:text-primary-foreground cursor-pointer"
-            )}
-        >
-            <PlusIcon className="size-6" />
-            <span>Add New Reason</span>
-        </li>
+        <Button onClick={onClick} disabled={disabled}>
+            {t('Add template')}
+        </Button>
     )
 }

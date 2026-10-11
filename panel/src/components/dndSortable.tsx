@@ -17,6 +17,7 @@ import {
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { useAutoAnimate } from '@formkit/auto-animate/react';
+import { t } from '@/lib/i18n';
 
 
 type DndSortableItemProps = {
@@ -48,21 +49,23 @@ export function DndSortableItem({ id, disabled, className, children }: DndSortab
         <li
             ref={setNodeRef} style={style} {...attributes}
             className={cn(
-                "bg-card rounded-lg border px-2 py-3 flex gap-3 relative aria-pressed:z-50 aria-pressed:opacity-85 aria-pressed:shadow-xl",
+                //Same shape as a ListRow; the row being dragged is only dimmed.
+                "relative flex min-h-11 w-full min-w-0 items-center gap-3 rounded-lg bg-raise py-3 pl-2 pr-4 aria-pressed:z-50 aria-pressed:opacity-85 sm:pr-5",
                 className
             )}
         >
             <div
                 {...listeners}
-                title="Drag to reorder"
+                title={t('Drag to reorder')}
+                aria-label={t('Drag to reorder')}
                 className={cn(
-                    "text-muted-foreground my-auto",
+                    "grid size-9 shrink-0 place-items-center rounded-sm text-muted-foreground transition-colors duration-150",
                     disabled
                         ? "cursor-not-allowed opacity-50"
-                        : "cursor-grab hover:text-primary hover:scale-110"
+                        : "cursor-grab hover:bg-raise hover:text-white active:cursor-grabbing"
                 )}
             >
-                <GripVerticalIcon className="size-6" />
+                <GripVerticalIcon className="size-4" aria-hidden="true" />
             </div>
             {children}
         </li>

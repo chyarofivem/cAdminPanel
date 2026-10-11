@@ -27,8 +27,23 @@ describe('administrator account preferences', () => {
             success: true,
             locale: 'en',
             accent: 'rose',
-            accentColor: '#e11d48',
+            accentColor: '#be123c',
         });
+    });
+
+    it('accepts a custom accent colour and stores it lowercased', async () => {
+        const setAdminPreferences = vi.fn(async () => undefined);
+        vi.stubGlobal('txCore', { adminStore: { setAdminPreferences } });
+        const ctx = makeCtx({ accent: '#1D4ED8' });
+
+        await AuthSelfPreferences(ctx);
+
+        expect(setAdminPreferences).toHaveBeenCalledWith('admin', { accent: '#1d4ed8' });
+        expect(ctx.send).toHaveBeenCalledWith(expect.objectContaining({
+            success: true,
+            accent: '#1d4ed8',
+            accentColor: '#1d4ed8',
+        }));
     });
 
     it('rejects unknown accents without modifying the account', async () => {

@@ -3,12 +3,11 @@ import useSWR from 'swr';
 import Editor, { loader, type BeforeMount, type OnMount } from '@monaco-editor/react';
 import * as monaco from 'monaco-editor';
 import EditorWorker from 'monaco-editor/esm/vs/editor/editor.worker?worker';
-import { AlertTriangle, FileCode2, Loader2, RotateCcw, Save } from 'lucide-react';
 import { PageHeader } from '@/components/page-header';
 import { txToast } from '@/components/TxToaster';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useOpenConfirmDialog } from '@/hooks/dialogs';
 import { useAuthedFetcher } from '@/hooks/fetch';
 import { t } from '@/lib/i18n';
@@ -185,36 +184,34 @@ export default function CfgEditorPage() {
     const loadError = cfgSWR.error?.message as keyof typeof loadErrors | undefined;
 
     return <div className="flex min-h-0 flex-col pb-6">
-        <PageHeader title={t('CFG Editor')} icon={<FileCode2 className="size-6" />}>
-            <div className="flex items-center gap-2">
-                <Button variant="outline" disabled={!isDirty || isSaving} onClick={() => setContents(savedContents)}>
-                    <RotateCcw className="mr-2 size-4" />{t('Discard')}
-                </Button>
-                <Button disabled={!isDirty || isSaving} onClick={requestSave}>
-                    {isSaving ? <Loader2 className="mr-2 size-4 animate-spin" /> : <Save className="mr-2 size-4" />}{t('Save changes')}
-                </Button>
-            </div>
+        <PageHeader title={t('CFG Editor')}>
+            <Button variant="secondary" disabled={!isDirty || isSaving} onClick={() => setContents(savedContents)}>
+                {t('Discard')}
+            </Button>
+            <Button disabled={!isDirty || isSaving} onClick={requestSave}>
+                {isSaving ? t('Saving…') : t('Save changes')}
+            </Button>
         </PageHeader>
 
-        {cfgSWR.isLoading && !initialized && <Card><CardContent className="flex items-center justify-center gap-2 p-14 text-sm text-zinc-500"><Loader2 className="size-4 animate-spin" />{t('Loading CFG file…')}</CardContent></Card>}
-        {cfgSWR.error && <Card className="border-red-500/20 bg-red-500/10"><CardContent className="flex items-start gap-3 p-5 text-sm text-red-300">
-            <AlertTriangle className="mt-0.5 size-4 shrink-0" />{t(loadError ? loadErrors[loadError] : 'The CFG file could not be loaded.')}
-        </CardContent></Card>}
+        {cfgSWR.isLoading && !initialized && <p role="status" className="text-sm text-muted-foreground">{t('Loading CFG file…')}</p>}
+        {cfgSWR.error && <Alert variant="destructive">
+            <AlertDescription>{t(loadError ? loadErrors[loadError] : 'The CFG file could not be loaded.')}</AlertDescription>
+        </Alert>}
 
-        {initialized && <Card className="min-h-0 overflow-hidden border-white/10 bg-[#0b0d11]">
-            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/5 bg-[#111318] px-4 py-2.5">
+        {initialized && <div className="flex min-h-0 flex-col gap-3">
+            <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
                 <div className="flex min-w-0 items-center gap-3">
-                    <span className="truncate font-mono text-sm text-zinc-200">{fileName}</span>
-                    <Badge variant="outline" className={isDirty ? 'border-amber-500/20 bg-amber-500/10 text-amber-300' : 'border-emerald-500/20 bg-emerald-500/10 text-emerald-300'}>
+                    <span className="truncate font-mono text-dense text-white">{fileName}</span>
+                    <Badge variant={isDirty ? 'warning' : 'success'}>
                         {isDirty ? t('Unsaved') : t('Saved')}
                     </Badge>
                 </div>
-                <div className="flex items-center gap-3 text-xs text-zinc-600">
+                <div className="flex items-center gap-3 text-xs tabular-nums text-muted-foreground">
                     <span>{t('{count} lines', { count: lineCount })}</span>
                     <span>{t('{count} characters', { count: contents.length })}</span>
                 </div>
             </div>
-            <div className="h-[calc(100vh-19rem)] min-h-[26rem]">
+            <div className="h-[calc(100vh-19rem)] min-h-[26rem] overflow-hidden rounded-lg bg-sunken">
                 <Editor
                     beforeMount={configureMonaco}
                     onMount={handleEditorMount}
@@ -222,7 +219,7 @@ export default function CfgEditorPage() {
                     theme="cadmin-cfg"
                     value={contents}
                     onChange={value => setContents(value ?? '')}
-                    loading={<div className="flex h-full items-center justify-center gap-2 text-sm text-zinc-500"><Loader2 className="size-4 animate-spin" />{t('Starting editor…')}</div>}
+                    loading={<p role="status" className="text-sm text-muted-foreground">{t('Starting editor…')}</p>}
                     options={{
                         automaticLayout: true,
                         contextmenu: true,
@@ -242,10 +239,10 @@ export default function CfgEditorPage() {
                     }}
                 />
             </div>
-            <div className="flex flex-wrap items-center justify-between gap-2 border-t border-white/5 bg-[#111318] px-4 py-2 text-[11px] text-zinc-600">
+            <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 text-xs text-muted-foreground">
                 <span>{t('A backup is created before every successful save.')}</span>
-                <span>{t('Ctrl+S save · Ctrl+; toggle comment')}</span>
+                <span className="font-mono">{t('Ctrl+S save · Ctrl+; toggle comment')}</span>
             </div>
-        </Card>}
+        </div>}
     </div>;
 }

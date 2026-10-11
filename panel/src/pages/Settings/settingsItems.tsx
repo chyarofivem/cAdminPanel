@@ -1,33 +1,16 @@
 import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { t } from "@/lib/i18n";
 
 
-function LabelRequired() {
-    return (
-        <span className="tracking-widest text-2xs text-destructive-inline opacity-65 group-hover/cfgCardItem:opacity-100">{t('Required').toUpperCase()}</span>
-    )
-}
-function LabelOptional() {
-    return (
-        <span className="tracking-widest text-2xs text-info-inline opacity-0 group-hover/cfgCardItem:opacity-85 group-hover/cfgCardItem:dark:opacity-35">{t('Optional').toUpperCase()}</span>
-    )
-}
-function LabelNew() {
-    return (
-        <span className='rounded-sm bg-accent text-accent-foreground text-2xs tracking-wider font-semibold leading-snug pb-0.5 px-0.5 w-fit mt-0.5'>
-            {t('New').toUpperCase()}
-        </span>
-    )
-}
-
 /**
- * An optional description line with conditional rendering
+ * An optional warning line with conditional rendering
  */
 export function SettingItemWarningLine({ visible, children, className }: SettingItemWarningLineProps) {
     if (!visible) return null;
     return (
-        <div className={cn("text-warning-inline opacity-45 group-hover/cfgCardItem:opacity-100", className)}>
+        <div className={cn("text-warning-text", className)}>
             {children}
         </div>
     );
@@ -41,11 +24,12 @@ type SettingItemWarningLineProps = {
 
 
 /**
- * A description for a setting item.
+ * The helper text below a control: 13px muted.
+ * NOTE: `text-dense` stays outside cn(), because tailwind-merge reads it as a text colour.
  */
 export function SettingItemDesc({ children, className }: SettingItemDescProps) {
     return (
-        <div className={cn("text-sm text-muted-foreground", className)}>
+        <div className={`text-dense ${cn("attempt-word-wrap text-muted-foreground", className)}`}>
             {children}
         </div>
     );
@@ -58,7 +42,7 @@ type SettingItemDescProps = {
 
 
 /**
- * A setting item.
+ * A setting item: 14px/500 white label above the control, helper text below it.
  */
 export function SettingItem({
     label,
@@ -71,18 +55,14 @@ export function SettingItem({
 }: SettingItemProps) {
     if (showIf !== undefined && !showIf) return null;
     return (
-        <div className='max-w-4xl space-y-2 sm:grid sm:grid-cols-8 sm:gap-4 sm:space-y-0 sm:items-start group/cfgCardItem'>
-            <div className="sm:col-span-2">
-                <Label className="flex flex-col text-sm font-medium leading-6" htmlFor={htmlFor}>
-                    {label}
-                    {showNew && <LabelNew />}
-                    {isRequired && <LabelRequired />}
-                    {showOptional && <LabelOptional />}
-                </Label>
+        <div className="flex max-w-2xl flex-col gap-2">
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                <Label htmlFor={htmlFor}>{label}</Label>
+                {showNew && <Badge variant="accent">{t('New')}</Badge>}
+                {isRequired && <span className="text-dense text-muted-foreground">{t('Required')}</span>}
+                {showOptional && <span className="text-dense text-muted-foreground">{t('Optional')}</span>}
             </div>
-            <div className="sm:col-span-6 space-y-2">
-                {children}
-            </div>
+            {children}
         </div>
     )
 }
@@ -99,19 +79,26 @@ type SettingItemProps = {
 
 
 /**
- * A divider for advanced options.
+ * A heading that starts a group of settings inside a settings card.
  */
-export function AdvancedDivider() {
+export function SettingGroupHeading({ title, description }: SettingGroupHeadingProps) {
     return (
-        <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-                <hr className="w-full border-t" />
-            </div>
-            <div className="relative flex justify-center tracking-wider text-xs">
-                <span className="bg-background px-2 text-muted-foreground/75">
-                    {t('Advanced Options')}
-                </span>
-            </div>
+        <div className="border-t border-hairline pt-6">
+            <h3 className="text-sm font-semibold text-white">{title}</h3>
+            {description && <p className="mt-1 text-dense text-muted-foreground">{description}</p>}
         </div>
     )
+}
+
+type SettingGroupHeadingProps = {
+    title: string;
+    description?: React.ReactNode;
+}
+
+
+/**
+ * The heading above the advanced options.
+ */
+export function AdvancedDivider() {
+    return <SettingGroupHeading title={t('Advanced Options')} />;
 }

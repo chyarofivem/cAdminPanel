@@ -1,22 +1,4 @@
 import React from "react";
-import {
-  alpha,
-  Box,
-  Button,
-  styled,
-  Typography,
-} from "@mui/material";
-import {
-  AcUnitRounded,
-  AdminPanelSettingsRounded,
-  ChatRounded,
-  HealthAndSafetyRounded,
-  LogoutRounded,
-  NearMeRounded,
-  PersonPinCircleRounded,
-  VisibilityRounded,
-  WarningAmberRounded,
-} from "@mui/icons-material";
 import { useTranslate } from "react-polyglot";
 import { useSnackbar } from "notistack";
 import type { GenericApiResp } from "@shared/genericApiTypes";
@@ -31,51 +13,7 @@ import { useServerCtxValue } from "@nui/src/state/server.state";
 import { fetchNui } from "@nui/src/utils/fetchNui";
 import { fetchWebPipe } from "@nui/src/utils/fetchWebPipe";
 import { userHasPerm } from "@nui/src/utils/miscUtils";
-import { nuiTokens } from "@nui/src/styles/nuiTokens";
-
-const ViewRoot = styled(Box)({
-  width: "100%",
-  height: "100%",
-  overflow: "auto",
-  padding: 24,
-});
-
-const Section = styled(Box)(({ theme }) => ({
-  padding: 18,
-  borderRadius: nuiTokens.radiusSm,
-  backgroundColor: "rgba(255,255,255,0.035)",
-  boxShadow: `inset 0 0 0 1px ${nuiTokens.ring}`,
-  "& + &": { marginTop: 16 },
-  "& h3": {
-    margin: 0,
-    color: theme.palette.text.primary,
-    fontSize: 15,
-    fontWeight: 760,
-  },
-}));
-
-const ActionGrid = styled(Box)({
-  display: "grid",
-  gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))",
-  gap: 10,
-  marginTop: 14,
-});
-
-const ActionButton = styled(Button)(({ theme }) => ({
-  minHeight: 48,
-  justifyContent: "flex-start",
-  padding: "10px 13px",
-  color: theme.palette.text.primary,
-  borderColor: nuiTokens.ringStrong,
-  backgroundColor: "rgba(0,0,0,0.14)",
-  "& .MuiButton-startIcon": {
-    color: theme.palette.primary.main,
-  },
-  "&:hover": {
-    borderColor: alpha(theme.palette.primary.main, 0.7),
-    backgroundColor: alpha(theme.palette.primary.main, 0.08),
-  },
-}));
+import { Button } from "@nui/src/components/ui/Button";
 
 export const PlayerActions: React.FC<PlayerModalViewProps> = ({ details, target }) => {
   const t = useTranslate();
@@ -233,6 +171,8 @@ export const PlayerActions: React.FC<PlayerModalViewProps> = ({ details, target 
       for (const identifier of details.player.idsOnline) {
         if (identifier.startsWith("discord:")) params.set("discord", identifier);
         if (identifier.startsWith("fivem:")) params.set("citizenfx", identifier);
+        //The Rockstar license is what every player has, so it is the surest in-game match
+        if (identifier.startsWith("license:")) params.set("license", identifier);
       }
       goToFramePage(`/admins?${params}`);
       setModalOpen(false);
@@ -244,127 +184,87 @@ export const PlayerActions: React.FC<PlayerModalViewProps> = ({ details, target 
     return false;
   };
 
+  const moderation = [
+    { label: directMessageLabel, permission: "players.direct_message" as const, onClick: handleDirectMessage },
+    { label: warnLabel, permission: "players.warn" as const, onClick: handleWarn },
+    { label: kickLabel, permission: "players.kick" as const, onClick: handleKick, destructive: true },
+    { label: giveAdminLabel, permission: "manage.admins" as const, onClick: handleGiveAdmin },
+  ];
+
+  const interaction = [
+    {
+      label: t("nui_menu.player_modal.actions.interaction.options.heal"),
+      permission: "players.heal" as const,
+      onClick: () => guard("players.heal", "Heal", () => {
+        void runNuiAction("healPlayer");
+      }),
+    },
+    {
+      label: t("nui_menu.player_modal.actions.interaction.options.go_to"),
+      permission: "players.teleport" as const,
+      onClick: () => guard("players.teleport", "Teleport", () => {
+        if (!requireOneSync()) return;
+        void runNuiAction("tpToPlayer", true);
+      }),
+    },
+    {
+      label: t("nui_menu.player_modal.actions.interaction.options.bring"),
+      permission: "players.teleport" as const,
+      onClick: () => guard("players.teleport", "Teleport", () => {
+        if (!requireOneSync()) return;
+        void runNuiAction("summonPlayer", true);
+      }),
+    },
+    {
+      label: t("nui_menu.player_modal.actions.interaction.options.spectate"),
+      permission: "players.spectate" as const,
+      onClick: () => guard("players.spectate", "Spectate", () => {
+        void runNuiAction("spectatePlayer", true);
+      }),
+    },
+    {
+      label: t("nui_menu.player_modal.actions.interaction.options.toggle_freeze"),
+      permission: "players.freeze" as const,
+      onClick: () => guard("players.freeze", "Freeze", () => {
+        void runNuiAction("togglePlayerFreeze");
+      }),
+    },
+  ];
+
+  //Every action is a secondary button: none of them is the one primary action,
+  //and kick is destructive, so it carries red text.
   return (
-    <ViewRoot>
-      <Typography variant="h6" sx={{ mb: 2, fontWeight: 780 }}>
-        {t("nui_menu.player_modal.actions.title")}
-      </Typography>
+    <div className="stack">
+      <section>
+        <h3 className="heading">{t("nui_menu.player_modal.actions.moderation.title")}</h3>
+        <div className="action-grid">
+          {moderation.map((action) => (
+            <Button
+              key={action.label}
+              destructive={action.destructive}
+              disabled={!hasPermission(action.permission)}
+              onClick={action.onClick}
+            >
+              {action.label}
+            </Button>
+          ))}
+        </div>
+      </section>
 
-      <Section>
-        <Typography component="h3">
-          {t("nui_menu.player_modal.actions.moderation.title")}
-        </Typography>
-        <ActionGrid>
-          <ActionButton
-            variant="outlined"
-            startIcon={<ChatRounded />}
-            disabled={!hasPermission("players.direct_message")}
-            onClick={handleDirectMessage}
-          >
-            {directMessageLabel}
-          </ActionButton>
-          <ActionButton
-            variant="outlined"
-            startIcon={<WarningAmberRounded />}
-            disabled={!hasPermission("players.warn")}
-            onClick={handleWarn}
-          >
-            {warnLabel}
-          </ActionButton>
-          <ActionButton
-            variant="outlined"
-            startIcon={<LogoutRounded />}
-            disabled={!hasPermission("players.kick")}
-            onClick={handleKick}
-          >
-            {kickLabel}
-          </ActionButton>
-          <ActionButton
-            variant="outlined"
-            startIcon={<AdminPanelSettingsRounded />}
-            disabled={!hasPermission("manage.admins")}
-            onClick={handleGiveAdmin}
-          >
-            {giveAdminLabel}
-          </ActionButton>
-        </ActionGrid>
-      </Section>
-
-      <Section>
-        <Typography component="h3">
-          {t("nui_menu.player_modal.actions.interaction.title")}
-        </Typography>
-        <ActionGrid>
-          <ActionButton
-            variant="outlined"
-            startIcon={<HealthAndSafetyRounded />}
-            disabled={!hasPermission("players.heal")}
-            onClick={() =>
-              guard("players.heal", "Heal", () => {
-                void runNuiAction("healPlayer");
-              })
-            }
-          >
-            {t("nui_menu.player_modal.actions.interaction.options.heal")}
-          </ActionButton>
-          <ActionButton
-            variant="outlined"
-            startIcon={<NearMeRounded />}
-            disabled={!hasPermission("players.teleport")}
-            onClick={() =>
-              guard("players.teleport", "Teleport", () => {
-                if (!requireOneSync()) return;
-                void runNuiAction(
-                  "tpToPlayer",
-                  true
-                );
-              })
-            }
-          >
-            {t("nui_menu.player_modal.actions.interaction.options.go_to")}
-          </ActionButton>
-          <ActionButton
-            variant="outlined"
-            startIcon={<PersonPinCircleRounded />}
-            disabled={!hasPermission("players.teleport")}
-            onClick={() =>
-              guard("players.teleport", "Teleport", () => {
-                if (!requireOneSync()) return;
-                void runNuiAction(
-                  "summonPlayer",
-                  true
-                );
-              })
-            }
-          >
-            {t("nui_menu.player_modal.actions.interaction.options.bring")}
-          </ActionButton>
-          <ActionButton
-            variant="outlined"
-            startIcon={<VisibilityRounded />}
-            disabled={!hasPermission("players.spectate")}
-            onClick={() =>
-              guard("players.spectate", "Spectate", () => {
-                void runNuiAction("spectatePlayer", true);
-              })
-            }
-          >
-            {t("nui_menu.player_modal.actions.interaction.options.spectate")}
-          </ActionButton>
-          <ActionButton
-            variant="outlined"
-            startIcon={<AcUnitRounded />}
-            disabled={!hasPermission("players.freeze")}
-            onClick={() =>
-              guard("players.freeze", "Freeze", () => {
-                void runNuiAction("togglePlayerFreeze");
-              })
-            }
-          >
-            {t("nui_menu.player_modal.actions.interaction.options.toggle_freeze")}
-          </ActionButton>
-        </ActionGrid>
-      </Section>
-    </ViewRoot>
+      <section>
+        <h3 className="heading">{t("nui_menu.player_modal.actions.interaction.title")}</h3>
+        <div className="action-grid">
+          {interaction.map((action) => (
+            <Button
+              key={action.label}
+              disabled={!hasPermission(action.permission)}
+              onClick={action.onClick}
+            >
+              {action.label}
+            </Button>
+          ))}
+        </div>
+      </section>
+    </div>
   );
 };

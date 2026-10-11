@@ -2,7 +2,7 @@ import { z } from "zod";
 import { typeDefinedConfig } from "./utils";
 import { SYM_FIXER_DEFAULT } from "@lib/symbols";
 import localeMap from "@shared/localeMap";
-import { ACCENTS, DEFAULT_ACCENT } from "@lib/theme";
+import { DEFAULT_ACCENT, isValidAccent } from "@lib/theme";
 import { isStoredBrandingFilename } from "@lib/branding";
 
 
@@ -26,7 +26,8 @@ const language = typeDefinedConfig({
 const accent = typeDefinedConfig({
     name: 'Accent Colour',
     default: DEFAULT_ACCENT,
-    validator: z.enum(Object.keys(ACCENTS) as [keyof typeof ACCENTS, ...(keyof typeof ACCENTS)[]]),
+    //A preset id, or a custom fill colour stored as a lowercase #rrggbb string.
+    validator: z.string().refine(isValidAccent, 'Choose a preset accent or a #rrggbb colour.').transform(value => value.toLowerCase()),
     fixer: SYM_FIXER_DEFAULT,
 });
 

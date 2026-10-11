@@ -1,11 +1,13 @@
 import { useMemo, useState } from 'react';
 import useSWR from 'swr';
 import useSWRInfinite from 'swr/infinite';
-import { AlertTriangle, Car, Database, Search, ShieldCheck, UserRoundCog, UsersRound } from 'lucide-react';
-import { useLocation } from 'wouter';
+import { Link, useLocation } from 'wouter';
+import EmptyState from '@/components/EmptyState';
+import { ListRow, ListRows } from '@/components/ListRow';
 import { PageHeader } from '@/components/page-header';
+import { Alert } from '@/components/ui/alert';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { useAdminPerms } from '@/hooks/auth';
 import { useAuthedFetcher } from '@/hooks/fetch';
@@ -20,6 +22,7 @@ import {
     type CadminPlayer,
     type CadminResponse,
 } from '@/pages/CAdmin/api';
+import { nativeSelectClass } from '@/pages/CAdmin/nativeSelect';
 import PlayerActions, { type PlayerActionTarget } from './PlayerActions';
 import { buildPlayerLicenseAliasIndex, resolveFrameworkPlayerLicense } from './playerIdentity';
 
@@ -200,148 +203,138 @@ export default function PlayerManagementPage() {
     };
     const reachedEnd = txSearch.data?.at(-1)?.hasReachedEnd ?? false;
     const frameworkCharacters = managedPlayers.reduce((total, player) => total + player.characters.length, 0);
+    const vehiclesShown = managedPlayers.reduce((total, player) => total + player.characters.reduce((count, character) => count + (character.vehicles?.length ?? 0), 0), 0);
+    const staffShown = managedPlayers.filter(player => player.isAdmin).length;
+    const isLoadingPlayers = (txSearch.isLoading || characterSearch.isLoading) && !managedPlayers.length;
 
     return <div className="flex w-full min-w-0 flex-col pb-10">
-        <PageHeader title={t('Player Management')} icon={<UserRoundCog className="size-6" />} />
-        <div className={cn('mb-5 grid grid-cols-2 gap-3', canViewCharacters ? 'lg:grid-cols-4' : 'lg:grid-cols-2')}>
-            <Metric icon={<UsersRound />} label={t('Players shown')} value={managedPlayers.length} />
-            {canViewCharacters && <Metric icon={<Database />} label={t('Framework characters')} value={frameworkCharacters} />}
-            {canViewCharacters && <Metric icon={<Car />} label={t('Vehicles shown')} value={managedPlayers.reduce((total, player) => total + player.characters.reduce((count, character) => count + (character.vehicles?.length ?? 0), 0), 0)} />}
-            <Metric icon={<ShieldCheck />} label={t('Staff shown')} value={managedPlayers.filter(player => player.isAdmin).length} />
-        </div>
+        <PageHeader title={t('Player Management')} />
+        <div className="flex flex-col gap-6">
+            <dl className={cn('grid grid-cols-2 gap-4 rounded-lg bg-raise p-4 sm:p-6', canViewCharacters ? 'lg:grid-cols-4' : 'lg:grid-cols-2')}>
+                <Metric label={t('Players shown')} value={managedPlayers.length} />
+                {canViewCharacters && <Metric label={t('Framework characters')} value={frameworkCharacters} />}
+                {canViewCharacters && <Metric label={t('Vehicles shown')} value={vehiclesShown} />}
+                <Metric label={t('Staff shown')} value={staffShown} />
+            </dl>
 
-        <Card className="mb-4 border-white/5 bg-white/[0.035] shadow-none">
-            <CardContent className="p-4">
-                <form className="flex flex-col gap-3 lg:flex-row" onSubmit={submit}>
-                    <div className="relative min-w-0 flex-1">
-                        <Search className="pointer-events-none absolute left-3 top-3 size-4 text-zinc-500" />
-                        <Input
-                            className="pl-9"
-                            value={search}
-                            onChange={event => setSearch(event.target.value)}
-                            placeholder={t('Search players...')}
-                        />
-                    </div>
+            <div className="flex flex-col gap-3">
+                <form className="flex flex-col gap-2 sm:flex-row sm:items-center" onSubmit={submit}>
+                    <Input
+                        className="min-w-0 flex-1 sm:h-9 sm:text-dense"
+                        value={search}
+                        onChange={event => setSearch(event.target.value)}
+                        placeholder={t('Search players...')}
+                        aria-label={t('Search players...')}
+                    />
                     <select
-                        className="h-10 rounded-lg border border-white/10 bg-[#0f1116] px-3 text-sm text-white outline-none focus:border-brand-600"
+                        className={cn(nativeSelectClass, 'sm:h-9 sm:w-auto sm:text-dense')}
                         value={mode}
                         onChange={event => setMode(event.target.value as SearchMode)}
                         aria-label={t('Search field')}
                     >
                         {(Object.keys(searchModeLabels) as SearchMode[]).map(key => <option key={key} value={key}>{t(searchModeLabels[key])}</option>)}
                     </select>
-                    <Button type="submit">{t('Search')}</Button>
-                    {submitted && <Button type="button" variant="outline" onClick={clearSearch}>{t('Clear')}</Button>}
+                    <div className="flex gap-2">
+                        <Button type="submit" size="sm">{t('Search')}</Button>
+                        {submitted && <Button type="button" size="sm" variant="secondary" onClick={clearSearch}>{t('Clear')}</Button>}
+                    </div>
                 </form>
-                <div className="mt-3 flex flex-wrap gap-2">
-                    <Button size="sm" variant={onlineOnly ? 'secondary' : 'ghost'} onClick={() => setOnlineOnly(value => !value)}>{t('Online only')}</Button>
-                    <Button size="sm" variant={staffOnly ? 'secondary' : 'ghost'} onClick={() => setStaffOnly(value => !value)}>{t('Staff only')}</Button>
-                    {canViewCharacters && <span className="self-center text-xs text-zinc-500">{t('Panel records and framework characters are matched by FiveM license.')}</span>}
+                <div className="flex flex-wrap items-center gap-2">
+                    <Button size="sm" variant={onlineOnly ? 'secondary' : 'ghost'} aria-pressed={onlineOnly} onClick={() => setOnlineOnly(value => !value)}>{t('Online only')}</Button>
+                    <Button size="sm" variant={staffOnly ? 'secondary' : 'ghost'} aria-pressed={staffOnly} onClick={() => setStaffOnly(value => !value)}>{t('Staff only')}</Button>
+                    {canViewCharacters && <span className="text-dense text-muted-foreground">{t('Panel records and framework characters are matched by FiveM license.')}</span>}
                 </div>
-            </CardContent>
-        </Card>
-
-        {(txSearch.error || characterSearch.error) && <div className="mb-4 rounded-2xl border border-red-500/20 bg-red-500/10 p-4 text-sm text-red-300">
-            {txSearch.error ? t('Panel player search failed: {error}', { error: txSearch.error.message }) : null}
-            {txSearch.error && characterSearch.error ? <br /> : null}
-            {characterSearch.error ? t('Character search failed: {error}', { error: characterSearch.error.message }) : null}
-        </div>}
-
-        <div className="overflow-hidden rounded-2xl border border-white/5 bg-white/[0.025]">
-            <div className="overflow-x-auto">
-                <table className={cn('w-full text-sm', canViewCharacters ? 'min-w-[940px]' : 'min-w-[760px]')}>
-                    <thead className="border-b border-dashed border-white/5 text-xs uppercase tracking-widest text-zinc-500">
-                        <tr>
-                            <th className="px-5 py-3 text-left font-medium">{t('Player')}</th>
-                            {canViewCharacters && <th className="px-5 py-3 text-left font-medium">{t('Character')}</th>}
-                            <th className="px-5 py-3 text-left font-medium">{t('Status')}</th>
-                            <th className="px-5 py-3 text-left font-medium">{t('Activity')}</th>
-                            <th className="px-5 py-3 text-right font-medium">{t('Quick actions')}</th>
-                        </tr>
-                    </thead>
-                    <tbody className="divide-y divide-dashed divide-white/5">
-                        {managedPlayers.map(player => {
-                            const character = player.characters.find(item => item.online) ?? player.characters[0];
-                            const detailUrl = `/administration/players/${encodeURIComponent(player.license)}`
-                                + (character ? `?character=${encodeURIComponent(cadminCharacterIdentifier(character))}` : '');
-                            const target: PlayerActionTarget = {
-                                license: player.license,
-                                name: player.displayName,
-                                isOnline: player.isOnline,
-                                isRegistered: Boolean(player.txAdmin),
-                            };
-                            return <tr
-                                key={player.identityKey}
-                                className={cn(
-                                    'transition',
-                                    player.identityError ? 'cursor-default bg-amber-500/[0.025]' : 'cursor-pointer hover:bg-white/[0.04]',
-                                )}
-                                onClick={() => {
-                                    if (!player.identityError) setLocation(detailUrl);
-                                }}
-                            >
-                                <td className="px-5 py-4">
-                                    <div className="flex items-center gap-3">
-                                        <span className={cn('size-2.5 rounded-full', player.isOnline ? 'bg-emerald-400 shadow-[0_0_12px_rgba(52,211,153,.6)]' : 'bg-zinc-700')} />
-                                        <div className="min-w-0">
-                                            <p className="max-w-64 truncate font-medium text-white">{player.displayName}</p>
-                                            <p className="max-w-64 truncate font-mono text-[11px] text-zinc-600">license:{player.license}</p>
-                                            {player.identityError && <p className="mt-1 flex max-w-64 items-center gap-1 text-xs text-amber-300">
-                                                <AlertTriangle className="size-3" />{player.identityError}
-                                            </p>}
-                                        </div>
-                                    </div>
-                                </td>
-                                {canViewCharacters && <td className="px-5 py-4">
-                                    {character ? <>
-                                        <p className="font-medium text-zinc-200">{character.name || t('Unnamed character')}</p>
-                                        <p className="mt-0.5 text-xs text-zinc-500">
-                                            {character.job?.label || character.job?.name || t('No job')}
-                                            {player.characters.length > 1 ? ` · ${t('{count} characters', { count: player.characters.length })}` : ''}
-                                        </p>
-                                    </> : <span className="text-zinc-600">{characterSearch.isLoading
-                                        ? t('Loading character...')
-                                        : t('No framework character')}</span>}
-                                </td>}
-                                <td className="px-5 py-4">
-                                    <div className="flex flex-wrap gap-1.5">
-                                        <span className={cn('rounded-md px-2 py-1 text-xs', player.isOnline ? 'bg-emerald-500/10 text-emerald-300' : 'bg-white/5 text-zinc-500')}>{player.isOnline ? t('Online') : t('Offline')}</span>
-                                        {player.isAdmin && <span className="rounded-md bg-amber-500/10 px-2 py-1 text-xs text-amber-300">{t('Staff')}</span>}
-                                        {character && <span className="rounded-md bg-brand-500/10 px-2 py-1 text-xs text-brand-300">{character.group || 'user'}</span>}
-                                    </div>
-                                </td>
-                                <td className="px-5 py-4 text-xs text-zinc-400">
-                                    {character ? <>
-                                        <p>{t('Cash')}: <span className="font-mono text-zinc-300">{money(character.money?.cash)}</span></p>
-                                        <p className="mt-0.5">{t('Vehicles')}: <span className="font-mono text-zinc-300">{character.vehicles?.length ?? 0}</span></p>
-                                    </> : player.txAdmin ? <p>{t('Play time')}: <span className="font-mono text-zinc-300">{player.txAdmin.playTime.toLocaleString()} min</span></p> : '—'}
-                                </td>
-                                <td className="px-5 py-4">
-                                    {player.identityError
-                                        ? <span className="text-xs text-amber-300">{t('Resolve identifiers first')}</span>
-                                        : <PlayerActions target={target} onChanged={refresh} className="flex justify-end gap-2" />}
-                                </td>
-                            </tr>;
-                        })}
-                    </tbody>
-                </table>
             </div>
-            {!managedPlayers.length && !txSearch.isLoading && <p className="px-6 py-14 text-center text-sm text-zinc-500">{t('No players matched this view.')}</p>}
-            {(txSearch.isLoading || characterSearch.isLoading) && !managedPlayers.length && <p className="px-6 py-14 text-center text-sm text-zinc-500">{t('Loading players...')}</p>}
-        </div>
 
-        {!reachedEnd && txSearch.data?.length ? <Button
-            className="mx-auto mt-4"
-            variant="outline"
-            disabled={txSearch.isValidating}
-            onClick={() => void txSearch.setSize(size => size + 1)}
-        >{txSearch.isValidating ? t('Loading...') : t('Load more')}</Button> : null}
+            {(txSearch.error || characterSearch.error) && <Alert variant="destructive">
+                {txSearch.error ? <p>{t('Panel player search failed: {error}', { error: txSearch.error.message })}</p> : null}
+                {characterSearch.error ? <p>{t('Character search failed: {error}', { error: characterSearch.error.message })}</p> : null}
+            </Alert>}
+
+            <section className="flex min-w-0 flex-col gap-3" aria-labelledby="player-management-list">
+                <h2 id="player-management-list" className="text-base font-semibold text-white">{t('Players')}</h2>
+                {isLoadingPlayers
+                    ? <p role="status" className="rounded-lg bg-raise p-4 text-sm text-muted-foreground sm:p-6">{t('Loading players...')}</p>
+                    : !managedPlayers.length && !txSearch.isLoading
+                        ? <EmptyState message={t('No players matched this view.')} />
+                        : null}
+
+                {managedPlayers.length > 0 && <ListRows>
+                    {managedPlayers.map(player => {
+                        const character = player.characters.find(item => item.online) ?? player.characters[0];
+                        const detailUrl = `/administration/players/${encodeURIComponent(player.license)}`
+                            + (character ? `?character=${encodeURIComponent(cadminCharacterIdentifier(character))}` : '');
+                        const target: PlayerActionTarget = {
+                            license: player.license,
+                            name: player.displayName,
+                            isOnline: player.isOnline,
+                            isRegistered: Boolean(player.txAdmin),
+                        };
+                        const canOpen = !player.identityError;
+                        return <ListRow
+                            key={player.identityKey}
+                            interactive={canOpen}
+                            className={cn('flex-col items-stretch lg:flex-row lg:items-center', canOpen && 'cursor-pointer')}
+                            onClick={event => {
+                                //The name link navigates on its own, including modifier clicks.
+                                if ((event.target as HTMLElement).closest('a')) return;
+                                if (canOpen) setLocation(detailUrl);
+                            }}
+                        >
+                            <div className="min-w-0 lg:flex-1">
+                                {canOpen
+                                    ? <Link href={detailUrl} className="block truncate font-medium text-white transition-colors duration-150 hover:text-accent-glow">{player.displayName}</Link>
+                                    : <p className="truncate font-medium text-white">{player.displayName}</p>}
+                                <p className="truncate font-mono text-xs text-muted-foreground">license:{player.license}</p>
+                                {player.identityError && <p className="mt-1 text-dense text-warning-text">{player.identityError}</p>}
+                            </div>
+                            {canViewCharacters && <div className="min-w-0 lg:w-56">
+                                {character ? <>
+                                    <p className="truncate text-sm text-body">{character.name || t('Unnamed character')}</p>
+                                    <p className="truncate text-dense text-muted-foreground">
+                                        {character.job?.label || character.job?.name || t('No job')}
+                                        {player.characters.length > 1 ? ` · ${t('{count} characters', { count: player.characters.length })}` : ''}
+                                    </p>
+                                </> : <p className="text-dense text-muted-foreground">{characterSearch.isLoading
+                                    ? t('Loading character...')
+                                    : t('No framework character')}</p>}
+                            </div>}
+                            <div className="flex flex-wrap gap-1.5 lg:w-44">
+                                <Badge variant={player.isOnline ? 'success' : 'default'}>{player.isOnline ? t('Online') : t('Offline')}</Badge>
+                                {player.isAdmin && <Badge variant="info">{t('Staff')}</Badge>}
+                                {character && <Badge className="font-mono">{character.group || 'user'}</Badge>}
+                            </div>
+                            <div className="text-dense text-muted-foreground lg:w-36">
+                                {character ? <>
+                                    <p>{t('Cash')}: <span className="font-mono tabular-nums text-body">{money(character.money?.cash)}</span></p>
+                                    <p>{t('Vehicles')}: <span className="font-mono tabular-nums text-body">{character.vehicles?.length ?? 0}</span></p>
+                                </> : player.txAdmin
+                                    ? <p>{t('Play time')}: <span className="font-mono tabular-nums text-body">{player.txAdmin.playTime.toLocaleString()} min</span></p>
+                                    : <p aria-hidden="true">—</p>}
+                            </div>
+                            <div className="lg:shrink-0">
+                                {player.identityError
+                                    ? <p className="text-dense text-warning-text">{t('Resolve identifiers first')}</p>
+                                    : <PlayerActions target={target} onChanged={refresh} className="flex flex-wrap gap-2 lg:justify-end" />}
+                            </div>
+                        </ListRow>;
+                    })}
+                </ListRows>}
+
+                {!reachedEnd && txSearch.data?.length ? <Button
+                    className="self-center"
+                    variant="secondary"
+                    disabled={txSearch.isValidating}
+                    onClick={() => void txSearch.setSize(size => size + 1)}
+                >{txSearch.isValidating ? t('Loading...') : t('Load more')}</Button> : null}
+            </section>
+        </div>
     </div>;
 }
 
-function Metric({ icon, label, value }: { icon: React.ReactNode; label: string; value: number }) {
-    return <div className="rounded-2xl border border-white/5 bg-white/[0.035] p-4">
-        <div className="flex items-center justify-between text-zinc-500"><span className="text-xs uppercase tracking-widest">{label}</span><span className="[&_svg]:size-4">{icon}</span></div>
-        <p className="mt-2 text-2xl font-semibold text-white">{value.toLocaleString()}</p>
+function Metric({ label, value }: { label: string; value: number }) {
+    return <div className="min-w-0">
+        <dt className="text-dense text-muted-foreground">{label}</dt>
+        <dd className="mt-1 text-lg font-semibold tabular-nums text-white">{value.toLocaleString()}</dd>
     </div>;
 }

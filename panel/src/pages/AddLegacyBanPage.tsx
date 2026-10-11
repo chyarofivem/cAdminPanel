@@ -1,10 +1,10 @@
-import InlineCode from "@/components/InlineCode";
 import { useAdminPerms } from "@/hooks/auth";
 import { useRef, useState } from "react";
 import { ApiAddLegacyBanReqSchema, GetBanTemplatesSuccessResp, SaveBanTemplatesReq } from "@shared/otherTypes";
 import { useBackendApi } from "@/hooks/fetch";
-import { Loader2Icon } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { PageHeader } from "@/components/page-header";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import BanForm, { BanFormType } from "@/components/BanForm";
@@ -62,9 +62,9 @@ export default function AddLegacyBanPage() {
         setIsSaving(true);
         legacyBanApi({
             data: { identifiers, reason, duration },
-            toastLoadingMessage: 'Banning identifiers...',
+            toastLoadingMessage: t('Banning identifiers...'),
             genericHandler: {
-                successMsg: 'Identifiers banned.',
+                successMsg: t('Identifiers banned.'),
             },
             finally: () => setIsSaving(false),
             success: (data) => {
@@ -85,60 +85,54 @@ export default function AddLegacyBanPage() {
 
     const canBan = hasPerm('players.ban');
     return (
-        <div className="space-y-4 w-full max-w-screen-lg mx-auto px-2 md:px-0">
-            <div className="px-2 md:px-0">
-                <h1 className="text-3xl mb-2">Ban Identifiers</h1>
-                <p>
-                    Here you can ban specific player identifiers (like <InlineCode>license</InlineCode> and <InlineCode>discord</InlineCode>) without having to search for a registered player.<br />
-                    Bans without a single <InlineCode>license</InlineCode> identifier are considered <em>Legacy Bans</em> and should be avoided if possible. <br />
-                    {!canBan ? (
-                        <span className="text-warning-inline">
-                            You need the <InlineCode className="text-warning-inline">Player: Ban</InlineCode> permission to use this feature.
-                        </span>
-                    ) : null}
-                </p>
-            </div>
-            <div className="grid lg:grid-cols-2 gap-4 border bg-card p-4 rounded-lg">
-                <div className="flex flex-col gap-3">
-                    <Label htmlFor="banIdentifiers">
-                        Identifiers
-                    </Label>
-                    <Textarea
-                        ref={idsTextareaRef}
-                        className="h-full"
+        <div className="w-full pb-8">
+            <PageHeader
+                title={t('Ban Identifiers')}
+                subtitle={t('Ban identifiers such as license and discord without searching for a registered player.')}
+            />
+            <div className="flex w-full max-w-screen-lg flex-col gap-6">
+                {!canBan && <Alert variant="warning">
+                    <AlertDescription>{t('Read-only: you need the Player: Ban permission to ban identifiers.')}</AlertDescription>
+                </Alert>}
+                <section className="grid gap-6 rounded-lg bg-raise p-4 sm:p-6 lg:grid-cols-2">
+                    <div className="flex flex-col gap-2">
+                        <Label htmlFor="banIdentifiers">
+                            {t('Identifiers')}
+                        </Label>
+                        <Textarea
+                            id="banIdentifiers"
+                            ref={idsTextareaRef}
+                            className="min-h-32 flex-1 font-mono"
+                            disabled={isSaving || !canBan}
+                            placeholder="discord:xxxx, fivem:xxxx, license:xxxx, steam:xxxx, etc..."
+                        />
+                        <p className="text-dense text-muted-foreground">
+                            {t('Bans without a license identifier are legacy bans. Avoid them when you can.')}
+                        </p>
+                    </div>
+                    <BanForm
+                        ref={banFormRef}
+                        banTemplates={swrBanTemplates.data}
                         disabled={isSaving || !canBan}
-                        placeholder="discord:xxxx, fivem:xxxx, license:xxxx, steam:xxxx, etc..."
                     />
+                </section>
+                <div className="flex flex-wrap gap-2">
+                    <Button
+                        disabled={isSaving || !canBan}
+                        onClick={handleSave}
+                    >
+                        {isSaving ? t('Banning...') : t('Apply Ban')}
+                    </Button>
+                    <Button
+                        variant="secondary"
+                        disabled={isSaving || !canBan}
+                        onClick={() => {
+                            banFormRef.current?.clearData()
+                        }}
+                    >
+                        {t('Clear')}
+                    </Button>
                 </div>
-                <BanForm
-                    ref={banFormRef}
-                    banTemplates={swrBanTemplates.data}
-                    disabled={isSaving || !canBan}
-                />
-            </div>
-            <div className="flex place-content-center gap-4">
-                <Button
-                    size="sm"
-                    variant='outline'
-                    disabled={isSaving || !canBan}
-                    onClick={() => {
-                        banFormRef.current?.clearData()
-                    }}
-                >
-                    Clear
-                </Button>
-                <Button
-                    size="sm"
-                    variant="destructive"
-                    disabled={isSaving || !canBan}
-                    onClick={handleSave}
-                >
-                    {isSaving ? (
-                        <span className="flex items-center leading-relaxed">
-                            <Loader2Icon className="inline animate-spin h-4" /> Banning...
-                        </span>
-                    ) : 'Apply Ban'}
-                </Button>
             </div>
         </div>
     );

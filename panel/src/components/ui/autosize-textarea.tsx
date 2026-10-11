@@ -136,8 +136,8 @@ export const AutosizeTextarea = React.forwardRef<AutosizeTextAreaRef, AutosizeTe
                 {counter && (
                     <span
                         className={cn(
-                            "absolute bottom-1 right-4 text-xs tabular-nums pointer-events-none select-none bg-background px-1 py-0.5 rounded-md",
-                            counter.isOverLimit ? "text-destructive" : "text-muted-foreground",
+                            "absolute bottom-1.5 right-3 text-xs tabular-nums pointer-events-none select-none rounded-xs bg-modal px-1.5 py-0.5",
+                            counter.isOverLimit ? "text-danger-text" : "text-muted-foreground",
                         )}
                     >
                         {counter.text}
@@ -149,7 +149,7 @@ export const AutosizeTextarea = React.forwardRef<AutosizeTextAreaRef, AutosizeTe
                     maxLength={maxLength}
                     ref={textAreaRef}
                     className={cn(
-                        "flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
+                        "flex min-h-[80px] py-2.5 w-full rounded-sm bg-sunken px-3 text-sm text-white ring-1 ring-inset ring-hairline transition-shadow duration-150 placeholder:text-faint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-text disabled:cursor-not-allowed disabled:opacity-50",
                         "bg-black/5 dark:bg-black/30 placeholder:opacity-50", //TX CUSTOM
                         //NOTE: check if already available:
                         // https://developer.mozilla.org/en-US/docs/Web/CSS/field-sizing

@@ -37,31 +37,31 @@ export default function TmpSwr() {
                     Note how there is no useEffect to do swr.mutate() on counter change.
                 </p>
 
-                <div className="flex gap-3 font-mono tracking-wider">
-                    <Button size={'sm'} onClick={() => setCounter((curr) => curr - 1)}>--</Button>
-                    <div className="px-2 py-1.5 min-w-[4ch] rounded-md text-center bg-primary text-primary-foreground">{counter}</div>
-                    <Button size={'sm'} onClick={() => setCounter((curr) => curr + 1)}>++</Button>
+                <div className="flex items-center gap-3 font-mono">
+                    <Button size={'sm'} variant="secondary" onClick={() => setCounter((curr) => curr - 1)}>--</Button>
+                    <div className="min-w-[4ch] rounded-sm bg-raise-2 px-2 py-1.5 text-center tabular-nums text-white">{counter}</div>
+                    <Button size={'sm'} variant="secondary" onClick={() => setCounter((curr) => curr + 1)}>++</Button>
                     {/* <Button size={'sm'} onClick={() => mut.trigger()}>mut</Button> */}
                 </div>
-                <table className="text-left border">
+                <table className="overflow-hidden rounded-lg bg-raise text-left text-sm">
                     <tbody>
                         <tr>
-                            <th className="p-2 border">Data</th>
-                            <td className="p-2 border text-center min-w-[8ch]">
+                            <th className="p-2 font-medium text-white">Data</th>
+                            <td className="min-w-[8ch] p-2 text-center tabular-nums">
                                 {swr.data?.counter}
                             </td>
                         </tr>
                         <tr>
-                            <th className="p-2 border bg-muted">Rand</th>
-                            <td className="p-2 border bg-muted text-center">
+                            <th className="bg-raise p-2 font-medium text-white">Rand</th>
+                            <td className="bg-raise p-2 text-center font-mono">
                                 {swr.data?.rand}
                             </td>
                         </tr>
                         <tr>
-                            <th className="p-2 border">Status</th>
+                            <th className="p-2 font-medium text-white">Status</th>
                             <td className={cn(
-                                "p-2 border text-center",
-                                swr.data ? isDataFresh ? 'bg-green-600' : 'bg-red-600' : 'bg-gray-600',
+                                "p-2 text-center",
+                                swr.data ? isDataFresh ? 'bg-success/15 text-success-text' : 'bg-danger/15 text-danger-text' : 'bg-raise-2 text-muted-foreground',
                                 swr.data ? 'opacity-100' : 'opacity-50'
                             )}>
                                 {swr.data ? isDataFresh ? 'Fresh' : 'Stale' : ''}

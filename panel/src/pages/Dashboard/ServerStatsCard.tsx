@@ -1,10 +1,28 @@
-import { GaugeIcon, Loader2Icon, MemoryStickIcon, TimerIcon, TrendingUpIcon } from 'lucide-react';
 import { memo, useMemo } from 'react';
 import { useAtomValue } from 'jotai';
 import { dashPerfCursorAtom, dashServerStatsAtom, dashSvRuntimeAtom, useGetDashDataAge } from './dashboardHooks';
-import { cn } from '@/lib/utils';
 import { dateToLocaleDateString, dateToLocaleTimeString, isDateToday } from '@/lib/dateTime';
+import Section from '@/components/Section';
+import UsageBar from '@/components/UsageBar';
 import { t } from '@/lib/i18n';
+
+/**
+ * Formats a megabyte value in human units: MB below 1 GB, GB above.
+ */
+const formatMemory = (mb: number) => {
+    return mb >= 1024
+        ? `${(mb / 1024).toFixed(1)} GB`
+        : `${Math.round(mb)} MB`;
+}
+
+function Stat({ label, value }: { label: string; value: React.ReactNode }) {
+    return (
+        <div className="min-w-0">
+            <p className="truncate text-dense text-muted-foreground">{label}</p>
+            <p className="mt-1 text-lg font-semibold tabular-nums text-white">{value}</p>
+        </div>
+    );
+}
 
 //NOTE: null and undefined are semantically equal here
 type HostStatsDataProps = {
@@ -20,54 +38,29 @@ type HostStatsDataProps = {
 const HostStatsData = memo(({ uptimePct, medianPlayerCount, fxsMemory, nodeMemory }: HostStatsDataProps) => {
     const uptimePart = uptimePct ? uptimePct.toFixed(2) + '%' : '--';
     const medianPlayerPart = medianPlayerCount ? Math.ceil(medianPlayerCount) : '--';
-    const fxsPart = fxsMemory ? fxsMemory.toFixed(2) + 'MB' : '--';
+    const fxsPart = fxsMemory ? formatMemory(fxsMemory) : '--';
 
-    let nodeCustomClass = null;
-    let nodePart: React.ReactNode = '--';
+    //Node.js has a heap limit, so its memory is a usage bar that turns warning and danger as it fills.
+    let nodeValueLabel = '--';
+    let nodeMemoryUsage = 0;
     if (nodeMemory) {
-        const nodeMemoryUsage = Math.ceil(nodeMemory.used / nodeMemory.limit * 100);
-        nodePart = nodeMemory.used.toFixed(2) + 'MB' + ' (' + nodeMemoryUsage + '%)';
-        if (nodeMemoryUsage > 85) {
-            nodeCustomClass = 'text-destructive';
-        } else if (nodeMemoryUsage > 70) {
-            nodeCustomClass = 'text-warning';
-        }
+        nodeMemoryUsage = Math.ceil(nodeMemory.used / nodeMemory.limit * 100);
+        nodeValueLabel = `${formatMemory(nodeMemory.used)} / ${formatMemory(nodeMemory.limit)} (${nodeMemoryUsage}%)`;
     }
 
     return (
-        <div className="grid grid-cols-2 sm:grid-cols-1 gap-4 h-full pb-2 text-muted-foreground">
-            <div className="flex items-center">
-                <TimerIcon className="hidden sm:block sm:size-6 md:size-12 mr-2 opacity-75" />
-                <div className="flex flex-col mr-auto ml-auto sm:mr-0 sm:ml-auto">
-                    <span className="text-center sm:text-right text-xl text-primary">{uptimePart}</span>
-                    <span className="text-center sm:text-right text-sm">{t('Uptime 24h')}</span>
-                </div>
+        <div className="flex flex-col gap-6">
+            <div className="grid grid-cols-2 gap-x-6 gap-y-4 sm:grid-cols-3">
+                <Stat label={t('Uptime 24h')} value={uptimePart} />
+                <Stat label={t('Median Players 24h')} value={medianPlayerPart} />
+                <Stat label={t('FXServer Memory')} value={fxsPart} />
             </div>
-            <div className="flex items-center">
-                <TrendingUpIcon className="hidden sm:block sm:size-6 md:size-12 mr-2 opacity-75" />
-                <div className="flex flex-col mr-auto ml-auto sm:mr-0 sm:ml-auto">
-                    <span className="text-center sm:text-right text-xl text-primary">{medianPlayerPart}</span>
-                    <span className="text-center sm:text-right text-sm">{t('Median Players 24h')}</span>
-                </div>
-            </div>
-            <div className="flex items-center">
-                <MemoryStickIcon className="hidden sm:block sm:size-6 md:size-12 mr-2 opacity-75" />
-                <div className="flex flex-col mr-auto ml-auto sm:mr-0 sm:ml-auto">
-                    <span className="text-center sm:text-right text-xl text-primary">{fxsPart}</span>
-                    <span className="text-center sm:text-right text-sm">{t('FXServer Memory')}</span>
-                </div>
-            </div>
-            <div
-                className={cn("flex items-center", nodeCustomClass ?? 'text-muted-foreground')}
-                title={nodeMemory ? `${nodeMemory.used.toFixed(2)}MB / ${nodeMemory.limit}MB` : ''}
-            >
-                <MemoryStickIcon className="hidden sm:block sm:size-6 md:size-12 mr-2 opacity-75" />
-                <div className="flex flex-col mr-auto ml-auto sm:mr-0 sm:ml-auto">
-                    <span className={cn("text-center sm:text-right text-xl", nodeCustomClass ?? 'text-primary')}>
-                        {nodePart}
-                    </span>
-                    <span className="text-center sm:text-right text-sm">{t('Node.js Memory')}</span>
-                </div>
+            <div title={nodeMemory ? `${nodeMemory.used.toFixed(2)}MB / ${nodeMemory.limit}MB` : ''}>
+                <UsageBar
+                    label={t('Node.js Memory')}
+                    valueLabel={nodeValueLabel}
+                    percent={nodeMemoryUsage}
+                />
             </div>
         </div>
     );
@@ -96,7 +89,7 @@ export default function ServerStatsCard() {
                     limit: svRuntimeData.nodeMemory.limit,
                 } : null,
                 titleTimeIndicator: (<>
-                    (<span className="text-xs text-warning-inline font-mono">{titleTimeIndicator}</span>)
+                    (<span className="font-mono text-xs tabular-nums text-warning-text">{titleTimeIndicator}</span>)
                 </>)
             };
         } else {
@@ -121,21 +114,18 @@ export default function ServerStatsCard() {
         />;
     } else {
         contentNode = (
-            <div className="size-full flex flex-col items-center justify-center">
-                <Loader2Icon className="animate-spin size-16 text-muted-foreground" />
-            </div>
+            <p role="status" className="text-sm text-muted-foreground">{t('Loading…')}</p>
         )
     }
 
     return (
-        <div className="col-span-3 sm:col-span-1 3xl:col-span-2 min-w-52 p-6 flex flex-col rounded-2xl bg-white/5">
-            <div className="flex flex-row items-center justify-between space-y-0 pb-4">
-                <h3 className="text-xs uppercase tracking-widest text-neutral-500 line-clamp-1">
-                    {t('Server stats')} {titleNode}
-                </h3>
-                <div className='hidden xs:block text-neutral-500'><GaugeIcon className="size-4" /></div>
-            </div>
+        <Section
+            title={<>
+                {t('Server stats')}{' '}
+                <span className="text-dense font-normal text-muted-foreground">{titleNode}</span>
+            </>}
+        >
             {contentNode}
-        </div>
+        </Section>
     );
 }

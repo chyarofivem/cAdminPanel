@@ -8,6 +8,8 @@ export type ReactAuthDataType = {
     profilePicture?: string;
     discordIdentifier?: string;
     cfxIdentifier?: string;
+    /** Rockstar license, stored as `license:<hex>`. */
+    licenseIdentifier?: string;
     locale?: string;
     accent?: string;
     accentColor?: string;
@@ -32,6 +34,7 @@ export type ApiSelfIdentifiersResp = {
     success: true;
     cfxIdentifier?: string;
     discordIdentifier?: string;
+    licenseIdentifier?: string;
 } | {
     error: string;
 };

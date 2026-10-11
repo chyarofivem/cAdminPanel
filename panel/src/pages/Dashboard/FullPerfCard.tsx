@@ -1,4 +1,3 @@
-import { LineChartIcon, Loader2Icon } from 'lucide-react';
 import React, { ReactNode, memo, useEffect, useMemo, useRef, useState } from 'react';
 import DebouncedResizeContainer from '@/components/DebouncedResizeContainer';
 import drawFullPerfChart from './drawFullPerfChart';
@@ -10,6 +9,7 @@ import { dashServerStatsAtom, useThrottledSetCursor } from './dashboardHooks';
 import { useIsDarkMode } from '@/hooks/theme';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
+import Section from '@/components/Section';
 import { useSetAtom } from 'jotai';
 import { t } from '@/lib/i18n';
 
@@ -103,19 +103,17 @@ const FullPerfChart = memo(({ threadName, apiData, apiDataAge, width, height, is
 
     if (!width || !height) return null;
     if (renderError) {
-        return <div className="absolute inset-0 p-4 flex flex-col gap-4 items-center justify-center text-center text-lg font-mono text-destructive-inline">
-            Render Error: {renderError}
-            <br />
+        return <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 p-4 text-center text-sm text-danger-text">
+            <p>{t('Render Error: {error}', { error: renderError })}</p>
             <Button
                 size={'sm'}
-                variant={'outline'}
-                className='text-primary'
+                variant={'secondary'}
                 onClick={() => {
                     setErrorRetry(c => c + 1);
                     setRenderError('');
                 }}
             >
-                Retry{errorRetry ? ` (${errorRetry})` : ''}
+                {t('Retry')}{errorRetry ? ` (${errorRetry})` : ''}
             </Button>
         </div>
     }
@@ -150,23 +148,23 @@ function ChartErrorMessage({ error }: { error: Error | string }) {
         bad_request: t('Chart data loading failed: bad request.'),
         invalid_thread_name: t('Chart data loading failed: invalid thread name.'),
         data_unavailable: t('Chart data loading failed: data not yet available.'),
-        not_enough_data: (<p className='text-center'>
-            <strong>{t('There is not enough data to display the chart just yet.')}</strong><br />
-            <span className='text-base italic'>
+        not_enough_data: (<>
+            <p className='font-medium text-white'>{t('There is not enough data to display the chart just yet.')}</p>
+            <p className='mt-1'>
                 {t('The chart requires at least 30 minutes of server runtime data to be available.')}
-            </span>
-        </p>),
+            </p>
+        </>),
     };
 
     if (typeof error === 'string') {
         return (
-            <div className="absolute inset-0 flex flex-col items-center justify-center text-2xl text-muted-foreground">
+            <div className="absolute inset-0 flex flex-col items-center justify-center p-4 text-center text-sm text-muted-foreground">
                 {errorMessageMaps[error] ?? t('Unknown backend error')}
             </div>
         );
     } else {
         return (
-            <div className="absolute inset-0 flex flex-col items-center justify-center text-2xl text-destructive-inline">
+            <div className="absolute inset-0 flex flex-col items-center justify-center p-4 text-center text-sm text-danger-text">
                 {t('Error')}: {error.message ?? t('Unknown error')}
             </div>
         );
@@ -217,42 +215,40 @@ export default function FullPerfCard() {
             isDarkMode={isDarkMode}
         />;
     } else if (swrChartApiResp.isLoading) {
-        contentNode = <div className="absolute inset-0 flex flex-col items-center justify-center">
-            <Loader2Icon className="animate-spin size-16 text-muted-foreground" />
+        contentNode = <div role="status" className="absolute inset-0 flex items-center justify-center text-sm text-muted-foreground">
+            {t('Loading…')}
         </div>;
     } else if (apiFailReason || swrChartApiResp.error) {
         contentNode = <ChartErrorMessage error={apiFailReason || swrChartApiResp.error} />;
     }
 
     return (
-        <div className="w-full h-[28rem] pt-6 rounded-2xl bg-white/5 flex flex-col fill-primary">
-            <div className="px-6 flex flex-row items-center justify-between space-y-0 pb-2">
-                <h3 className="text-xs uppercase tracking-widest text-neutral-500 line-clamp-1">
-                    {t('Server performance')}
-                </h3>
-                <div className="flex gap-4 text-neutral-500">
-                    <Select defaultValue={selectedThread} onValueChange={setSelectedThread}>
-                        <SelectTrigger className="w-32 grow md:grow-0 h-6 px-3 py-1 text-sm" >
-                            <SelectValue placeholder={t('Select thread')} />
-                        </SelectTrigger>
-                        <SelectContent className="px-0">
-                            <SelectItem value={'svMain'} className="cursor-pointer">
-                                svMain
-                            </SelectItem>
-                            <SelectItem value={'svSync'} className="cursor-pointer">
-                                svSync
-                            </SelectItem>
-                            <SelectItem value={'svNetwork'} className="cursor-pointer">
-                                svNetwork
-                            </SelectItem>
-                        </SelectContent>
-                    </Select>
-                    <div className='hidden xs:block'><LineChartIcon className="size-4" /></div>
-                </div>
+        <Section
+            title={t('Performance history')}
+            actions={
+                <Select defaultValue={selectedThread} onValueChange={setSelectedThread}>
+                    <SelectTrigger className="w-36 text-dense sm:h-9" aria-label={t('Select thread')}>
+                        <SelectValue placeholder={t('Select thread')} />
+                    </SelectTrigger>
+                    <SelectContent className="px-0">
+                        <SelectItem value={'svMain'} className="cursor-pointer">
+                            svMain
+                        </SelectItem>
+                        <SelectItem value={'svSync'} className="cursor-pointer">
+                            svSync
+                        </SelectItem>
+                        <SelectItem value={'svNetwork'} className="cursor-pointer">
+                            svNetwork
+                        </SelectItem>
+                    </SelectContent>
+                </Select>
+            }
+        >
+            <div className="h-80 md:h-96">
+                <DebouncedResizeContainer onDebouncedResize={setChartSize}>
+                    {contentNode}
+                </DebouncedResizeContainer>
             </div>
-            <DebouncedResizeContainer onDebouncedResize={setChartSize}>
-                {contentNode}
-            </DebouncedResizeContainer>
-        </div>
+        </Section>
     );
 }

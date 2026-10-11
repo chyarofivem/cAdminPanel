@@ -1,6 +1,6 @@
 import DebouncedResizeContainer from "@/components/DebouncedResizeContainer";
+import Section from "@/components/Section";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { DoorOpenIcon } from "lucide-react";
 import { memo, useMemo, useState } from "react";
 import type { PlayerDropsSummaryHour } from "@shared/otherTypes";
 import { PlayerDropsLoadingSpinner } from "./PlayerDropsGenericSubcards";
@@ -69,68 +69,62 @@ const TimelineCard = memo(({
     }, [summaryData, displayLod]);
 
     return (
-        <section className="flex flex-col overflow-hidden rounded-2xl border border-white/[0.07] bg-white/[0.03] shadow-[0_18px_60px_rgba(0,0,0,0.12)]">
-            <div className="flex flex-row items-center justify-between border-b border-dashed border-white/[0.07] px-4 sm:px-5">
-                <div className="flex items-center py-3 space-x-2">
-                    <div className='hidden xs:block'><DoorOpenIcon className="size-4" /></div>
-                    <h2 className="text-sm font-medium">{t('Expected disconnects')}</h2>
+        <div className="flex flex-col gap-6">
+            <Section
+                title={t('Expected disconnects')}
+                actions={
+                    <Select defaultValue={displayLod} onValueChange={setDisplayLod}>
+                        <SelectTrigger className="w-32 text-dense sm:h-9">
+                            <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent className="px-0">
+                            <SelectItem value={'day'} className="cursor-pointer">
+                                {t('Days')}
+                            </SelectItem>
+                            <SelectItem value={'hour'} className="cursor-pointer">
+                                {t('Hours')}
+                            </SelectItem>
+                        </SelectContent>
+                    </Select>
+                }
+            >
+                <div className="h-36">
+                    <DebouncedResizeContainer onDebouncedResize={setExpectedDropsChartSize}>
+                        {chartsData ? (
+                            <TimelineDropsChart
+                                chartData={chartsData.expected}
+                                chartName='expected'
+                                width={expectedDropsChartSize.width}
+                                height={expectedDropsChartSize.height}
+                                rangeSelected={rangeSelected}
+                                rangeSetter={rangeSetter}
+                            />
+                        ) : (
+                            <PlayerDropsLoadingSpinner isError={isError} />
+                        )}
+                    </DebouncedResizeContainer>
                 </div>
-                <Select defaultValue={displayLod} onValueChange={setDisplayLod}>
-                    <SelectTrigger
-                        className="w-32 h-6 px-3 py-1 text-sm"
-                    >
-                        <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent className="px-0">
-                        <SelectItem value={'day'} className="cursor-pointer">
-                            {t('Days')}
-                        </SelectItem>
-                        <SelectItem value={'hour'} className="cursor-pointer">
-                            {t('Hours')}
-                        </SelectItem>
-                    </SelectContent>
-                </Select>
-            </div>
-            <div className="h-36 max-h-36 bg-black/[0.08]">
-                <DebouncedResizeContainer onDebouncedResize={setExpectedDropsChartSize}>
-                    {chartsData ? (
-                        <TimelineDropsChart
-                            chartData={chartsData.expected}
-                            chartName='expected'
-                            width={expectedDropsChartSize.width}
-                            height={expectedDropsChartSize.height}
-                            rangeSelected={rangeSelected}
-                            rangeSetter={rangeSetter}
-                        />
-                    ) : (
-                        <PlayerDropsLoadingSpinner isError={isError} />
-                    )}
-                </DebouncedResizeContainer>
-            </div>
+            </Section>
 
-            <div className="flex flex-row items-center justify-between border-b border-t border-dashed border-white/[0.07] px-4 sm:px-5">
-                <div className="flex items-center py-3 gap-2">
-                    <div className='hidden xs:block'><DoorOpenIcon className="size-4" /></div>
-                    <h2 className="text-sm font-medium">{t('Unexpected disconnects')}</h2>
+            <Section title={t('Unexpected disconnects')}>
+                <div className="h-56">
+                    <DebouncedResizeContainer onDebouncedResize={setUnexpectedDropsChartSize}>
+                        {chartsData ? (
+                            <TimelineDropsChart
+                                chartData={chartsData.unexpected}
+                                chartName='unexpected'
+                                width={unexpectedDropsChartSize.width}
+                                height={unexpectedDropsChartSize.height}
+                                rangeSelected={rangeSelected}
+                                rangeSetter={rangeSetter}
+                            />
+                        ) : (
+                            <PlayerDropsLoadingSpinner isError={isError} />
+                        )}
+                    </DebouncedResizeContainer>
                 </div>
-            </div>
-            <div className="h-56 max-h-56 bg-black/[0.08]">
-                <DebouncedResizeContainer onDebouncedResize={setUnexpectedDropsChartSize}>
-                    {chartsData ? (
-                        <TimelineDropsChart
-                            chartData={chartsData.unexpected}
-                            chartName='unexpected'
-                            width={unexpectedDropsChartSize.width}
-                            height={unexpectedDropsChartSize.height}
-                            rangeSelected={rangeSelected}
-                            rangeSetter={rangeSetter}
-                        />
-                    ) : (
-                        <PlayerDropsLoadingSpinner isError={isError} />
-                    )}
-                </DebouncedResizeContainer>
-            </div>
-        </section>
+            </Section>
+        </div>
     );
 });
 

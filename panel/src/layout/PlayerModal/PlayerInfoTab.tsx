@@ -1,15 +1,15 @@
 import DateTimeCorrected from "@/components/DateTimeCorrected";
+import { Alert } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useAdminPerms } from "@/hooks/auth";
 import { useBackendApi } from "@/hooks/fetch";
 import { PlayerModalRefType } from "@/hooks/playerModal";
-import { cn } from "@/lib/utils";
 import { msToDuration, tsToLocaleDateTimeString } from "@/lib/dateTime";
 import { GenericApiOkResp } from "@shared/genericApiTypes";
 import { PlayerModalPlayerData } from "@shared/playerApiTypes";
-import { ShieldAlertIcon } from "lucide-react";
 import { useMemo, useRef, useState } from "react";
 import { ModalTabInner } from "@/components/modal-tabs";
 import { t } from '@/lib/i18n';
@@ -17,21 +17,10 @@ import { t } from '@/lib/i18n';
 
 function LogActionCounter({ type, count }: { type: 'Ban' | 'Warn', count: number }) {
     const label = count === 1 ? t(type) : t(type === 'Ban' ? 'Bans' : 'Warnings');
-    if (count === 0) {
-        return <span className={cn(
-            'h-max rounded-sm text-xs font-semibold px-1 py-[0.125rem] tracking-widest text-center inline-block',
-            'bg-secondary text-secondary-foreground'
-        )}>
-            0 {label}
-        </span>
-    } else {
-        return <span className={cn(
-            'h-max rounded-sm text-xs font-semibold px-1 py-[0.125rem] tracking-widest text-center inline-block',
-            type === 'Ban' ? 'bg-destructive text-destructive-foreground' : 'bg-warning text-warning-foreground'
-        )}>
-            {count} {label}
-        </span>
-    }
+    const variant = count === 0 ? 'default' : type === 'Ban' ? 'danger' : 'warning';
+    return <Badge variant={variant} className="tabular-nums">
+        {count} {label}
+    </Badge>;
 }
 
 type PlayerNotesBoxProps = {
@@ -83,12 +72,12 @@ function PlayerNotesBox({ playerRef, player, refreshModalData }: PlayerNotesBoxP
 
     return <>
         <Label htmlFor="playerNotes">
-            {t('Notes')}: <span className="text-muted-foreground">{t(notesLogText)}</span>
+            {t('Notes')}: <span className="font-normal text-muted-foreground">{t(notesLogText)}</span>
         </Label>
         <Textarea
             ref={textAreaRef}
             id="playerNotes"
-            className="w-full mt-1"
+            className="mt-2 w-full"
             disabled={!player.isRegistered}
             defaultValue={player.notes}
             onChange={() => setNotesLogText(t('Press enter to save.'))}
@@ -101,7 +90,7 @@ function PlayerNotesBox({ playerRef, player, refreshModalData }: PlayerNotesBoxP
         />
         {window.txIsMobile && <div className="mt-2 w-full">
             <Button
-                variant="outline"
+                variant="secondary"
                 size='xs'
                 onClick={doSaveNotes}
                 disabled={!player.isRegistered}
@@ -133,7 +122,7 @@ export default function PlayerInfoTab({ playerRef, player, serverTime, tsFetch, 
         { units: ['h', 'm'] }
     );
     const lastConnectionText = !player.tsLastConnection ? '--' : <DateTimeCorrected
-        className="opacity-75 cursor-help"
+        className="cursor-help"
         serverTime={serverTime}
         tsObject={player.tsLastConnection}
         tsFetch={tsFetch}
@@ -144,14 +133,14 @@ export default function PlayerInfoTab({ playerRef, player, serverTime, tsFetch, 
         { units: ['d', 'h', 'm'] }
     )
     const joinDateText = !player.tsJoined ? '--' : <DateTimeCorrected
-        className="opacity-75 cursor-help"
+        className="cursor-help"
         serverTime={serverTime}
         tsObject={player.tsJoined}
         tsFetch={tsFetch}
         isDateOnly
     />;
     const whitelistedText = !player.tsWhitelisted ? t('not yet') : <DateTimeCorrected
-        className="opacity-75 cursor-help"
+        className="cursor-help"
         serverTime={serverTime}
         tsObject={player.tsWhitelisted}
         tsFetch={tsFetch}
@@ -201,40 +190,35 @@ export default function PlayerInfoTab({ playerRef, player, serverTime, tsFetch, 
     return (
         <ModalTabInner>
             {playerBannedText ? (
-                <div className="w-full p-2 pr-3 mb-1 flex items-center justify-between space-x-4 rounded-lg border shadow-lg transition-all text-black/75 dark:text-white/90 border-warning/70 bg-warning-hint">
-                    <div className="flex-shrink-0 flex flex-col gap-2 items-center">
-                        <ShieldAlertIcon className="size-5 text-warning" />
-                    </div>
-                    <div className="flex-grow text-sm font-medium">
-                        {playerBannedText}
-                    </div>
-                </div>
+                <Alert variant="warning" className="mb-3 p-3 font-medium text-white sm:p-3">
+                    {playerBannedText}
+                </Alert>
             ) : null}
-            <dl className="pb-2">
-                {player.isConnected && <div className="py-0.5 grid grid-cols-3 gap-4 px-0">
-                    <dt className="text-sm font-medium leading-6 text-muted-foreground">{t('Session Time')}</dt>
-                    <dd className="text-sm leading-6 col-span-2 mt-0">{sessionTimeText}</dd>
+            <dl className="pb-3">
+                {player.isConnected && <div className="grid grid-cols-3 items-center gap-4 py-1">
+                    <dt className="text-sm text-muted-foreground">{t('Session Time')}</dt>
+                    <dd className="col-span-2 text-sm tabular-nums text-white">{sessionTimeText}</dd>
                 </div>}
-                <div className="py-0.5 grid grid-cols-3 gap-4 px-0">
-                    <dt className="text-sm font-medium leading-6 text-muted-foreground">{t('Play Time')}</dt>
-                    <dd className="text-sm leading-6 col-span-2 mt-0">{playTimeText}</dd>
+                <div className="grid grid-cols-3 items-center gap-4 py-1">
+                    <dt className="text-sm text-muted-foreground">{t('Play Time')}</dt>
+                    <dd className="col-span-2 text-sm tabular-nums text-white">{playTimeText}</dd>
                 </div>
-                <div className="py-0.5 grid grid-cols-3 gap-4 px-0">
-                    <dt className="text-sm font-medium leading-6 text-muted-foreground">{t('Join Date')}</dt>
-                    <dd className="text-sm leading-6 col-span-2 mt-0">{joinDateText}</dd>
+                <div className="grid grid-cols-3 items-center gap-4 py-1">
+                    <dt className="text-sm text-muted-foreground">{t('Join Date')}</dt>
+                    <dd className="col-span-2 text-sm tabular-nums text-white">{joinDateText}</dd>
                 </div>
-                {!player.isConnected && <div className="py-0.5 grid grid-cols-3 gap-4 px-0">
-                    <dt className="text-sm font-medium leading-6 text-muted-foreground">{t('Last Connection')}</dt>
-                    <dd className="text-sm leading-6 col-span-2 mt-0">{lastConnectionText}</dd>
+                {!player.isConnected && <div className="grid grid-cols-3 items-center gap-4 py-1">
+                    <dt className="text-sm text-muted-foreground">{t('Last Connection')}</dt>
+                    <dd className="col-span-2 text-sm tabular-nums text-white">{lastConnectionText}</dd>
                 </div>}
 
-                <div className="py-0.5 grid grid-cols-3 gap-4 px-0">
-                    <dt className="text-sm font-medium leading-6 text-muted-foreground">{t('ID Allowlisted')}</dt>
-                    <dd className="text-sm leading-6 mt-0">{whitelistedText}</dd>
+                <div className="grid grid-cols-3 items-center gap-4 py-1">
+                    <dt className="text-sm text-muted-foreground">{t('ID Allowlisted')}</dt>
+                    <dd className="text-sm tabular-nums text-white">{whitelistedText}</dd>
                     <dd className="text-right">
                         <Button
-                            variant="outline"
-                            size='inline'
+                            variant="secondary"
+                            size='xs'
                             style={{ minWidth: '8.25ch' }}
                             onClick={handleWhitelistClick}
                             disabled={!hasPerm('players.whitelist')}
@@ -243,16 +227,16 @@ export default function PlayerInfoTab({ playerRef, player, serverTime, tsFetch, 
                         </Button>
                     </dd>
                 </div>
-                <div className="py-0.5 grid grid-cols-3 gap-4 px-0">
-                    <dt className="text-sm font-medium leading-6 text-muted-foreground">{t('Sanctions')}</dt>
-                    <dd className="text-sm leading-6 mt-0 flex flex-wrap gap-2">
+                <div className="grid grid-cols-3 items-center gap-4 py-1">
+                    <dt className="text-sm text-muted-foreground">{t('Sanctions')}</dt>
+                    <dd className="flex flex-wrap gap-2">
                         <LogActionCounter type="Ban" count={banCount} />
                         <LogActionCounter type="Warn" count={warnCount} />
                     </dd>
                     <dd className="text-right">
                         <Button
-                            variant="outline"
-                            size='inline'
+                            variant="secondary"
+                            size='xs'
                             style={{ minWidth: '8.25ch' }}
                             onClick={() => { setSelectedTab('History') }}
                         >{t('View')}</Button>

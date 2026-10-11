@@ -6,21 +6,25 @@ type StyledDivProps = JSX.IntrinsicElements["div"];
 
 export type ModalTabInfo = {
     title: string;
-    icon: JSX.Element;
+    /** Deprecated: tab triggers carry no icons. Kept optional so older call sites compile. */
+    icon?: JSX.Element;
     className?: string;
 }
 
 export function ModalContent({ children, className, ...props }: StyledDivProps & ScrollAreaProps) {
     return (
-        <div className={cn('flex flex-col md:flex-row md:px-4 h-full', className)} {...props}>
+        <div className={cn('flex h-full flex-col md:flex-row md:px-4', className)} {...props}>
             {children}
         </div>
     );
 }
 
+/**
+ * Tab list: the horizontal tab strip on phones, a plain vertical list from 768px.
+ */
 export function ModalTabsList({ children, className, ...props }: StyledDivProps & ScrollAreaProps) {
     return (
-        <div className={cn('flex flex-row md:flex-col gap-1 bg-muted md:bg-transparent p-1 md:p-0 mx-2 md:mx-0 rounded-md', className)} {...props}>
+        <div className={cn('tx-tab-strip mx-2 flex flex-row gap-1 overflow-x-auto rounded-lg p-2 md:mx-0 md:flex-col md:overflow-visible md:bg-none md:p-0', className)} {...props}>
             {children}
         </div>
     );
@@ -29,7 +33,7 @@ export function ModalTabsList({ children, className, ...props }: StyledDivProps 
 export function ModalTabWrapper({ children, className, ...props }: StyledDivProps & ScrollAreaProps) {
     //FIXME: the number below is based off mobile screen sizes, and should be h-full while the modal content controls the actual height
     return (
-        <ScrollArea className={cn('min-h-[16rem] w-full md:max-h-[50vh] px-2 md:px-4 max-md:pt-3', className)} {...props}>
+        <ScrollArea className={cn('min-h-[16rem] w-full px-2 max-md:pt-3 md:max-h-[50vh] md:px-4', className)} {...props}>
             {children}
         </ScrollArea>
     );
@@ -44,9 +48,12 @@ export function ModalTabInner({ children, className, ...props }: StyledDivProps)
     );
 }
 
+/**
+ * A tab-level message (loading, empty, permission): one line of muted text.
+ */
 export function ModalTabMessage({ children, className, ...props }: StyledDivProps) {
     return (
-        <div className={cn('min-h-[16rem] p-2 md:p-4 flex items-center justify-center text-xl text-muted-foreground', className)} {...props}>
+        <div className={cn('flex min-h-[16rem] items-center justify-center p-2 text-sm text-muted-foreground md:p-4', className)} {...props}>
             {children}
         </div>
     )

@@ -6,7 +6,7 @@ import crypto from 'node:crypto';
 import fsp from 'node:fs/promises';
 import path from 'node:path';
 import { txEnv } from '@core/globalData';
-import { accentVars, resolveAccent } from './theme';
+import { accentFillHex, resolveAccent } from './theme';
 
 export const BRANDING_KINDS = ['logo', 'favicon', 'banner'] as const;
 export type BrandingKind = typeof BRANDING_KINDS[number];
@@ -108,7 +108,7 @@ export function brandingViewLocals(basePath = '/') {
 }
 
 function defaultMark(kind: BrandingKind) {
-    const vars = accentVars(txConfig.general.accent);
+    const fill = accentFillHex(txConfig.general.accent);
     const wide = kind === 'banner';
     const width = wide ? 420 : 128;
     const label = panelDisplayName()
@@ -118,8 +118,7 @@ function defaultMark(kind: BrandingKind) {
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&apos;');
     return Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} 128" role="img" aria-label="${label}">
-<defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop stop-color="rgb(${vars['brand-500']})"/><stop offset="1" stop-color="rgb(${vars['brand-700']})"/></linearGradient></defs>
-<rect width="${width}" height="128" rx="24" fill="url(#g)"/><path d="M31 35h66v18H55v11h36v17H55v12h42v18H31z" fill="white"/>
+<rect width="${width}" height="128" rx="24" fill="${fill}"/><path d="M31 35h66v18H55v11h36v17H55v12h42v18H31z" fill="white"/>
 ${wide ? `<text x="118" y="79" fill="white" font-family="system-ui,sans-serif" font-size="31" font-weight="700">${label}</text>` : ''}</svg>`);
 }
 

@@ -3,9 +3,6 @@ import { pageErrorStatusAtom, useContentRefresh } from "@/hooks/pages";
 import { useAtomValue } from "jotai";
 import { forwardRef } from "react";
 import { Link, useRoute } from "wouter";
-import { Button, buttonVariants } from "./ui/button";
-import { cn } from "@/lib/utils";
-import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
 
 
 type MainPageLinkProps = {
@@ -14,6 +11,7 @@ type MainPageLinkProps = {
     children: React.ReactNode;
     className?: string;
     disabled?: boolean;
+    'aria-current'?: 'page' | undefined;
 };
 
 function MainPageLinkInner(
@@ -43,6 +41,7 @@ function MainPageLinkInner(
             href={props.href}
             onClick={checkOnClick}
             className={props.className}
+            aria-current={props['aria-current']}
         >
             {props.children}
         </Link>
@@ -52,46 +51,6 @@ function MainPageLinkInner(
 const MainPageLink = forwardRef(MainPageLinkInner);
 export default MainPageLink;
 
-
-type MenuNavProps = {
-    href: string;
-    children: React.ReactNode;
-    className?: string;
-    disabled?: boolean;
-};
-
-export function MenuNavLink({ href, children, className, disabled }: MenuNavProps) {
-    const [isActive] = useRoute(href);
-    if (disabled) {
-        return (
-            <Tooltip>
-                <TooltipTrigger className="cursor-help">
-                    <Button variant='ghost' className="w-full justify-start py-1" disabled>
-                        {children}
-                    </Button>
-                </TooltipTrigger>
-                <TooltipContent side="right" className="text-destructive-inline text-center">
-                    You do not have permission <br />
-                    to access this page.
-                </TooltipContent>
-            </Tooltip>
-        )
-    } else {
-        return (
-            <MainPageLink
-                href={href}
-                isActive={isActive}
-                className={cn(
-                    buttonVariants({ variant: isActive ? 'secondary' : 'ghost' }),
-                    'w-full justify-start py-1',
-                    className,
-                )}
-            >
-                {children}
-            </MainPageLink>
-        )
-    }
-}
 
 type NavLinkProps = {
     href: string;

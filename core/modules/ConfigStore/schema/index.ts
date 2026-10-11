@@ -10,6 +10,7 @@ import gameFeatures from "./gameFeatures";
 import webServer from "./webServer";
 import logger from "./logger";
 import cadmin from "./cadmin";
+import resourceMonitor from "./resourceMonitor";
 import { SYM_RESET_CONFIG } from "@lib/symbols";
 
 
@@ -38,6 +39,7 @@ export const ConfigSchemas_v2 = {
     webServer,
     logger,
     cadmin,
+    resourceMonitor,
 } satisfies ListOf<ConfigScope>;
 
 //Exporting the types

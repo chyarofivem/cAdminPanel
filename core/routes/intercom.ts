@@ -4,7 +4,7 @@ import { txEnv } from '@core/globalData';
 import consoleFactory from '@lib/console';
 import { InitializedCtx } from '@modules/WebServer/ctxTypes';
 import { brandingUrl, panelDisplayName } from '@lib/branding';
-import { ACCENTS, resolveAccent } from '@lib/theme';
+import { accentFillHex, resolveAccent } from '@lib/theme';
 import consts from '@shared/consts';
 const console = consoleFactory(modulename);
 
@@ -39,7 +39,7 @@ export default async function Intercom(ctx: InitializedCtx) {
             success: true,
             panelName: panelDisplayName(),
             accent,
-            accentColor: ACCENTS[accent].hex,
+            accentColor: accentFillHex(accent),
             logoUrl: brandingUrl('logo', false, consts.nuiWebpipePath),
             bannerUrl: brandingUrl('banner', false, consts.nuiWebpipePath),
         });

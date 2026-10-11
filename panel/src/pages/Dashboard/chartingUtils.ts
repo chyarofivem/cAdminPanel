@@ -3,6 +3,44 @@ import * as d3 from 'd3';
 
 
 /**
+ * Colours for chart chrome (gridlines, axes, labels and the cursor), read from the design
+ * tokens in globals.css. Series colours never come from here and never follow the accent.
+ * Values are concrete strings so they also work as SVG attributes and canvas styles.
+ * NOTE: PlayerDropsPage/chartingUtils.ts holds the same helper for the drops timeline.
+ */
+export const getChartChromeColors = () => {
+    const styles = getComputedStyle(document.documentElement);
+    const read = (name: string, fallback: string) => styles.getPropertyValue(name).trim() || fallback;
+    return {
+        hairline: read('--hairline', 'rgba(255, 255, 255, 0.05)'),
+        raise: read('--raise', 'rgba(255, 255, 255, 0.05)'),
+        menu: read('--menu', '#181a1e'),
+        text: read('--text', '#ffffff'),
+        body: read('--text-body', '#d1d5db'),
+        muted: read('--text-muted', '#9ca3af'),
+        faint: read('--text-faint', '#71717a'),
+    };
+};
+export type ChartChromeColors = ReturnType<typeof getChartChromeColors>;
+
+
+/**
+ * Restyles a d3 axis group: muted 11px labels in the panel font, hairline domain and ticks.
+ * d3 creates new ticks on every `.call(axis)`, so call this again after each one.
+ */
+export const styleChartAxis = <GDatum, PElement extends d3.BaseType, PDatum>(
+    axisGroup: d3.Selection<SVGGElement, GDatum, PElement, PDatum>,
+    colors: ChartChromeColors,
+) => {
+    axisGroup
+        .attr('font-family', null)
+        .attr('font-size', 11)
+        .attr('color', colors.muted);
+    axisGroup.selectAll('.domain, .tick line').attr('stroke', colors.hairline);
+};
+
+
+/**
  * Find which is the last bucket boundary that is less than or equal to the minTickInterval, excluding +Infinity.
  */
 export const getMinTickIntervalMarker = (boundaries: (string | number)[], minTickInterval: number) => {

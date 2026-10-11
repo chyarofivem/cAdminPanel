@@ -1,5 +1,4 @@
 import React, { useEffect } from "react";
-import "./App.css";
 import { useIsMenuVisibleValue } from "./state/visibility.state";
 import MenuRoot from "./components/MenuRoot";
 import { DialogProvider } from "./provider/DialogProvider";
@@ -18,10 +17,9 @@ import {
   usePlayersFilterIsTemp,
   useSetPlayerFilter,
 } from "./state/players.state";
-import { Box } from "@mui/material";
 import { fetchNui } from "./utils/fetchNui";
 import { useLocale } from "./hooks/useLocale";
-import { TooltipProvider } from "./provider/TooltipProvider";
+import { MenuHelpProvider } from "./provider/MenuHelpProvider";
 
 //Mock events for browser development
 debugData<any>(
@@ -70,7 +68,7 @@ const MenuWrapper: React.FC = () => {
       setPlayersFilterIsTemp(false);
     }
 
-    return () => clearInterval(changeTimer);
+    return () => clearTimeout(changeTimer);
   }, [visible, playersFilterIsTemp]);
 
   const localeSelected = useLocale();
@@ -92,17 +90,9 @@ const MenuWrapper: React.FC = () => {
           <IFrameProvider>
             <DialogProvider>
               <PlayerModalProvider>
-                <TooltipProvider>
-                  <Box
-                    id="menu-root"
-                    className="App"
-                    sx={{
-                      opacity: visible ? 1 : 0,
-                    }}
-                  >
-                    <MenuRoot />
-                  </Box>
-                </TooltipProvider>
+                <MenuHelpProvider>
+                  <MenuRoot visible={visible} />
+                </MenuHelpProvider>
               </PlayerModalProvider>
             </DialogProvider>
           </IFrameProvider>

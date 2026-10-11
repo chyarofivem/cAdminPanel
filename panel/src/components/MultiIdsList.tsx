@@ -1,10 +1,14 @@
 import { txToast } from "@/components/TxToaster";
 import { cn, copyToClipboard } from "@/lib/utils";
-import { CopyIcon, ListTodoIcon, Trash2Icon, UndoIcon, XIcon } from "lucide-react";
+import { CopyIcon, ListTodoIcon, Trash2Icon, UndoIcon } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useOpenPromptDialog } from "@/hooks/dialogs";
 import { shortenId } from "@shared/utils";
-import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
+import { Alert } from "./ui/alert";
+import { Button } from "./ui/button";
+import { IconButton } from "./ui/icon-button";
+import EmptyState from "./EmptyState";
+import { ListRow, ListRows } from "./ListRow";
 import { t } from '@/lib/i18n';
 
 
@@ -80,42 +84,35 @@ function IdLine({
         || (!isComparing && !highlightOnline)
         || (!isComparing && highlightOnline && isOnline);
     return (
-        <div className="relative flex justify-between items-center gap-2 group/line">
+        <ListRow className="gap-2 py-1 pl-4 pr-1 sm:pl-4 sm:pr-1">
             <span
                 className={cn(
-                    'block px-1',
-                    isBold ? 'font-semibold opacity-100' : 'opacity-50',
-                    isComparing && isMatch && 'text-success-inline',
-                    isMarkedForRemoval && 'line-through text-destructive-inline',
+                    'min-w-0 flex-1 break-all font-mono text-dense',
+                    isBold ? 'text-white' : 'text-muted-foreground',
+                    isComparing && isMatch && 'text-success-text',
+                    isMarkedForRemoval && 'line-through text-danger-text',
                 )}
                 title={displayShortenedId ? id : undefined}
             >
                 {displayShortenedId ? shortenId(id, 20) : id}<InvisibleNewLine />
             </span>
             {isRemoving ? canBeRemoved && (
-                <button
-                    className="absolute right-0 top-0 h-full flex items-center bg-background hover:bg-background group/removal"
+                <IconButton
+                    label={isMarkedForRemoval ? t('Undo mark for deletion') : t('Mark for deletion')}
+                    icon={isMarkedForRemoval ? <UndoIcon /> : <Trash2Icon />}
+                    variant={isMarkedForRemoval ? 'ghost' : 'ghost-destructive'}
                     onClick={toggleMarkRemoval}
-                    title={isMarkedForRemoval ? t('Undo mark for deletion') : t('Mark for deletion')}
                     disabled={disableButtons}
-                >
-                    {isMarkedForRemoval ? (
-                        <UndoIcon className="h-4 opacity-75 group-hover:opacity-100 group-hover/removal:text-warning" />
-                    ) : (
-                        <XIcon className="h-4 opacity-75 group-hover:opacity-100 group-hover/removal:text-destructive" />
-                    )}
-                </button>
+                />
             ) : (
-                <button
-                    className="absolute right-0 top-0 h-full flex items-center opacity-0 group-hover/line:opacity-100 bg-background hover:bg-background group/copy transition-opacity"
+                <IconButton
+                    label={t('Copy to clipboard')}
+                    icon={<CopyIcon />}
                     onClick={onCopy}
-                    title={t('Copy to clipboard')}
                     disabled={disableButtons}
-                >
-                    <CopyIcon className="h-4 opacity-75 group-hover/copy:opacity-100 group-hover/copy:text-primary" />
-                </button>
+                />
             )}
-        </div>
+        </ListRow>
     );
 }
 
@@ -141,49 +138,25 @@ function IdListControls({
     return (
         <>
             {hasRemoveIds && (
-                <Tooltip>
-                    <TooltipTrigger asChild>
-                        <button
-                            onClick={handleStartMarkRemoval}
-                            disabled={!canRemoveIds}
-                        >
-                            <Trash2Icon className={cn(
-                                'h-5 opacity-50',
-                                canRemoveIds ? 'hover:opacity-100 hover:text-primary' : 'opacity-35'
-                            )} />
-                        </button>
-                    </TooltipTrigger>
-                    <TooltipContent className={cn(!canRemoveIds && 'text-destructive-inline text-center')}>
-                        {canRemoveIds ? (
-                            <p>{t('Mark {type}s for deletion.', { type: `${typeStr}s` })}</p>
-                        ) : (
-                            <p>
-                                {t('You do not have permission to remove {type}s.', { type: `${typeStr}s` })}
-                            </p>
-                        )}
-                    </TooltipContent>
-                </Tooltip>
+                <IconButton
+                    label={canRemoveIds
+                        ? t('Mark {type}s for deletion.', { type: `${typeStr}s` })
+                        : t('You do not have permission to remove {type}s.', { type: `${typeStr}s` })}
+                    icon={<Trash2Icon />}
+                    onClick={handleStartMarkRemoval}
+                    disabled={!canRemoveIds}
+                />
             )}
-            <Tooltip>
-                <TooltipTrigger asChild>
-                    <button onClick={handleCompareIds}>
-                        <ListTodoIcon className="h-6 opacity-50 hover:opacity-100 hover:text-primary" />
-                    </button>
-                </TooltipTrigger>
-                <TooltipContent>
-                    {t('Compare {type}s', { type: typeStr })}
-                </TooltipContent>
-            </Tooltip>
-            <Tooltip>
-                <TooltipTrigger asChild>
-                    <button onClick={handleCopyAllIds}>
-                        <CopyIcon className="h-5 opacity-50 hover:opacity-100 hover:text-primary" />
-                    </button>
-                </TooltipTrigger>
-                <TooltipContent>
-                    {t('Copy all {type}s', { type: typeStr })}
-                </TooltipContent>
-            </Tooltip>
+            <IconButton
+                label={t('Compare {type}s', { type: typeStr })}
+                icon={<ListTodoIcon />}
+                onClick={handleCompareIds}
+            />
+            <IconButton
+                label={t('Copy all {type}s', { type: typeStr })}
+                icon={<CopyIcon />}
+                onClick={handleCopyAllIds}
+            />
         </>
     )
 }
@@ -211,7 +184,6 @@ type MultiIdsListProps = {
 export default function MultiIdsList({ idsOnline, idsOffline, type, src, onRemoveIds, canRemoveIds }: MultiIdsListProps) {
     const openPromptDialog = useOpenPromptDialog();
     const divRef = useRef<HTMLDivElement>(null);
-    const msgRef = useRef<any>(null);
     const [compareMatches, setCompareMatches] = useState<string[] | null>(null);
     const [markedForRemoval, setMarkedForRemoval] = useState<string[] | null>(null);
     const [actionFeedback, setActionFeedback] = useState<ActionFeedback | false>(false);
@@ -246,25 +218,13 @@ export default function MultiIdsList({ idsOnline, idsOffline, type, src, onRemov
     const isInRemovalMode = Array.isArray(markedForRemoval);
     const isMarkedForRemoval = (id: string) => isInRemovalMode && markedForRemoval.includes(id);
 
+    //The feedback message replaces the controls for a moment, without any entrance animation.
     useEffect(() => {
-        msgRef.current?.classList.remove('animate-toastbar-leave');
-        msgRef.current?.classList.add('animate-toastbar-enter');
-        if (actionFeedback) {
-            const timer1 = setTimeout(() => {
-                msgRef.current?.classList.remove('animate-toastbar-enter');
-                msgRef.current?.classList.add('animate-toastbar-leave');
-            }, 2500);
-            const timer2 = setTimeout(() => {
-                setActionFeedback(false);
-            }, 2750);
-
-            return () => {
-                clearTimeout(timer1);
-                clearTimeout(timer2);
-            };
-        } else {
-
-        }
+        if (!actionFeedback) return;
+        const timer = setTimeout(() => {
+            setActionFeedback(false);
+        }, 2750);
+        return () => clearTimeout(timer);
     }, [actionFeedback, isInCompareMode, isInRemovalMode]);
 
 
@@ -363,54 +323,42 @@ export default function MultiIdsList({ idsOnline, idsOffline, type, src, onRemov
         handleCopyString(id);
     }
 
-    return <div>
-        <div className="flex justify-between items-center pb-1" ref={divRef}>
-            <h3 className="text-xl">
+    return <div className="flex flex-col gap-3">
+        <div className="flex min-h-9 items-center justify-between gap-3" ref={divRef}>
+            <h3 className="text-base font-semibold text-white">
                 {isHwids ? t('Hardware IDs') : t('Player Identifiers')}
                 {isInCompareMode && compareMatches.length ? (
-                    <span className="ml-2 text-sm font-normal italic text-success-inline">
+                    <span className="ml-2 text-sm font-normal text-success-text">
                         ({t('{count} matches found', { count: compareMatches.length })})
                     </span>
                 ) : null}
             </h3>
             <div
                 className={cn(
-                    'w-24 min-h-6 flex justify-end gap-2.5',
+                    'flex shrink-0 items-center justify-end gap-1',
                     !hasAnyIdAvailable && 'hidden'
                 )}
             >
                 {actionFeedback ? (
                     <span
-                        ref={msgRef}
+                        role="status"
                         className={cn(
-                            "w-full text-right text-sm select-none pointer-events-none",
-                            actionFeedback.type === 'green' && "text-success-inline",
-                            actionFeedback.type === 'yellow' && "text-warning-inline",
-                            actionFeedback.type === 'red' && "text-destructive-inline",
+                            "pointer-events-none select-none text-sm",
+                            actionFeedback.type === 'green' && "text-success-text",
+                            actionFeedback.type === 'yellow' && "text-warning-text",
+                            actionFeedback.type === 'red' && "text-danger-text",
                         )}
                     >
                         {actionFeedback.msg}
                     </span>
                 ) : isInCompareMode ? (
-                    <span
-                        ref={msgRef}
-                        onClick={handleClearState}
-                        className={cn(
-                            "w-full text-right text-sm select-none cursor-pointer"
-                        )}
-                    >
-                        {t('Clear')}<XIcon className="inline h-5" />
-                    </span>
+                    <Button size="xs" variant="secondary" onClick={handleClearState}>
+                        {t('Clear')}
+                    </Button>
                 ) : isInRemovalMode ? (
-                    <span
-                        ref={msgRef}
-                        onClick={handleClearState}
-                        className={cn(
-                            "w-full text-right text-sm select-none cursor-pointer"
-                        )}
-                    >
-                        {t('Cancel')}<XIcon className="inline h-5" />
-                    </span>
+                    <Button size="xs" variant="secondary" onClick={handleClearState}>
+                        {t('Cancel')}
+                    </Button>
                 ) : (
                     <IdListControls
                         hasRemoveIds={!!onRemoveIds}
@@ -423,9 +371,13 @@ export default function MultiIdsList({ idsOnline, idsOffline, type, src, onRemov
                 )}
             </div>
         </div>
-        <div className="relative border rounded">
-            <p className='font-mono break-all whitespace-pre-wrap rounded-[inherit] overflow-hidden divide-y divide-border/50 text-muted-foreground text-xs leading-6 tracking-wider'>
-                {!hasAnyIdAvailable && <span className="block px-1 opacity-50 italic">{emptyMessage}</span>}
+        {isInCompareMode && !compareMatches.length && (
+            <p role="status" className="text-sm text-warning-text">{t('No matching {type} found.', { type: typeStr })}</p>
+        )}
+        {!hasAnyIdAvailable ? (
+            <EmptyState message={emptyMessage} />
+        ) : (
+            <ListRows className="gap-1">
                 {allIds.map((id) => (
                     <IdLine
                         key={id}
@@ -442,39 +394,27 @@ export default function MultiIdsList({ idsOnline, idsOffline, type, src, onRemov
                         disableButtons={isCommittingDeletions}
                     />
                 ))}
-                {isInRemovalMode && (
-                    <div className="px-2 py-1 flex flex-wrap justify-center xs:justify-between items-center gap-2 bg-destructive text-destructive-foreground font-sans text-xs leading-6 tracking-wider select-none">
-                        <span
-                            className={cn(
-                                'block font-semibold my-[1px]'
-                            )}
-                        >
-                            {markedForRemoval.length
-                                ? t('Permanently delete {count} {type}?', { count: markedForRemoval.length, type: getPluralizedType(markedForRemoval.length) })
-                                : t('Click above to mark IDs for deletion.')}
-                        </span>
-                        <button
-                            className={cn(
-                                'px-1 border border-transparent hover:bg-background hover:border-background rounded-lg',
-                                markedForRemoval.length ? 'block' : 'hidden',
-                                isCommittingDeletions && 'opacity-50 cursor-progress'
-                            )}
-                            onClick={handleCommitRemoval}
-                            title={t('Confirm removal of marked {type}s.', { type: typeStr })}
-                            disabled={isCommittingDeletions}
-                        >
-                            {isCommittingDeletions ? t('Saving...') : t('Confirm & Delete')}
-                        </button>
-                    </div>
-                )}
-            </p>
-            {isInCompareMode && !compareMatches.length && (
-                <>
-                    <div className="absolute inset-0 dark:bg-black/25 rounded-[inherit] backdrop-blur-sm flex items-center justify-center p-4">
-                        <span className="text-xl tracking-wider text-warning-inline">{t('No matching {type} found.', { type: typeStr })}</span>
-                    </div>
-                </>
-            )}
-        </div>
+            </ListRows>
+        )}
+        {isInRemovalMode && (
+            <Alert variant="destructive" className="flex flex-wrap items-center justify-between gap-3 p-3 sm:p-3">
+                <span className="text-sm font-medium text-white">
+                    {markedForRemoval.length
+                        ? t('Permanently delete {count} {type}?', { count: markedForRemoval.length, type: getPluralizedType(markedForRemoval.length) })
+                        : t('Click above to mark IDs for deletion.')}
+                </span>
+                {markedForRemoval.length ? (
+                    <Button
+                        size="xs"
+                        variant="outline-destructive"
+                        onClick={handleCommitRemoval}
+                        title={t('Confirm removal of marked {type}s.', { type: typeStr })}
+                        disabled={isCommittingDeletions}
+                    >
+                        {isCommittingDeletions ? t('Saving...') : t('Confirm & Delete')}
+                    </Button>
+                ) : null}
+            </Alert>
+        )}
     </div>
 }

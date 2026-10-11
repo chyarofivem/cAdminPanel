@@ -9,12 +9,16 @@ import type { Terminal, ITerminalAddon, IDisposable } from '@xterm/xterm';
  * http://xtermjs.org/docs/api/terminal/interfaces/ibuffer/#basey
  */
 export default class ScrollDownAddon implements ITerminalAddon {
-    private btnRef: HTMLButtonElement;
+    private btnRef: HTMLElement;
     private containerElement: HTMLDivElement;
     private _disposables: IDisposable[] = [];
 
+    /**
+     * @param btnRef the element toggled with the `hidden` class, usually a wrapper around
+     * the "scroll down" button so the button keeps its own display utilities.
+     */
     constructor(
-        btnRef: HTMLButtonElement,
+        btnRef: HTMLElement,
         containerElement: HTMLDivElement
     ) {
         this.btnRef = btnRef;

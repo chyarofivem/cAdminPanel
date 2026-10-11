@@ -45,7 +45,7 @@ export default function PromptDialog() {
     return (
         <Dialog open={dialogState.isOpen} onOpenChange={handleOpenClose}>
             <DialogContent className={cn(dialogState.isWide && "md:max-w-2xl")}>
-                <form onSubmit={handleForm} className="grid gap-4">
+                <form onSubmit={handleForm} className="grid gap-6">
                     <DialogHeader>
                         <DialogTitle>{dialogState.title}</DialogTitle>
                         <DialogDescription>
@@ -77,40 +77,28 @@ export default function PromptDialog() {
                             required={dialogState.required}
                         />
                     )}
-                    <DialogFooter className="gap-2 flex-col">
-                        <div className="flex flex-col sm:flex-row sm:justify-start gap-2 w-full flex-wrap">
-                            {dialogState.suggestions && dialogState.suggestions.map((suggestion, index) => (
+                    {dialogState.suggestions?.length ? (
+                        <div className="flex flex-wrap gap-2" aria-label={t('Suggestions')}>
+                            {dialogState.suggestions.map((suggestion, index) => (
                                 <Button
                                     key={index}
                                     type="button"
+                                    size="xs"
+                                    variant="secondary"
                                     onClick={() => {
                                         inputRef.current!.value = suggestion;
                                         handleSubmit();
                                     }}
-                                    variant="outline"
                                 >
-                                    <span className="sm:hidden mr-auto text-muted-foreground">{t('Suggestion')}:</span>
                                     {suggestion}
                                 </Button>
                             ))}
                         </div>
-                        {/* TODO: mock for kick as punishment - consider the alternative of making a "timeout" */}
-                        {/* <div className="flex flex-col sm:flex-row sm:justify-start gap-2 w-full flex-wrap">
-                            <div className="items-top flex space-x-2">
-                                <Checkbox id="terms1" />
-                                <div className="grid gap-1.5 leading-none">
-                                    <label
-                                        htmlFor="terms1"
-                                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                                    >
-                                        This kick is a punishment.
-                                    </label>
-                                    <p className="text-sm text-muted-foreground">
-                                        Show in the player history as a sanction.
-                                    </p>
-                                </div>
-                            </div>
-                        </div> */}
+                    ) : null}
+                    <DialogFooter>
+                        <Button type="button" variant="secondary" onClick={() => handleOpenClose(false)}>
+                            {t('Cancel')}
+                        </Button>
                         <Button
                             type="submit"
                             variant={dialogState.submitBtnVariant ?? 'default'}

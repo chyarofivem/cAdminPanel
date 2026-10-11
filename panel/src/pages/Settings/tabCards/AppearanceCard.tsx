@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useReducer, useRef } from 'react';
-import { ImageIcon, PaletteIcon, RotateCcwIcon, Trash2Icon, UploadIcon, XIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { SettingItem, SettingItemDesc } from '../settingsItems';
+import AccentPicker from '@/components/AccentPicker';
+import { SettingGroupHeading, SettingItem, SettingItemDesc } from '../settingsItems';
 import SettingsCardShell from '../SettingsCardShell';
 import {
     configsReducer,
@@ -61,7 +61,7 @@ export default function AppearanceCard({ cardCtx, pageCtx }: SettingsCardProps) 
         () => getConfigAccessors(cardCtx.cardId, pageConfigs, pageCtx.apiData, dispatch),
         [pageCtx.apiData, dispatch],
     );
-    const { accents, setAccent } = useAccent();
+    const { setAccent } = useAccent();
     const { authData } = useAuth();
     const personalAccentRef = useRef(authData ? authData.accent : undefined);
 
@@ -116,46 +116,36 @@ export default function AppearanceCard({ cardCtx, pageCtx }: SettingsCardProps) 
 
     return (
         <SettingsCardShell cardCtx={cardCtx} pageCtx={pageCtx} onClickSave={handleSave}>
-            <SettingItem label={t('Accent colour')}>
-                <div className="grid grid-cols-4 sm:grid-cols-6 gap-2 max-w-xl">
-                    {accents.map(option => (
-                        <button
-                            key={option.id}
-                            type="button"
-                            disabled={pageCtx.isReadOnly}
-                            onClick={() => dispatch({ configName: 'accent', configValue: option.id })}
-                            className={cn(
-                                'rounded-md border p-2 text-xs flex flex-col items-center gap-1.5 transition-colors',
-                                states.accent === option.id ? 'border-brand-500 ring-2 ring-brand-500/35' : 'hover:bg-muted',
-                            )}
-                            title={t(option.label)}
-                        >
-                            <span
-                                className="size-7 rounded-full border border-white/20 shadow-sm"
-                                style={{ backgroundColor: `rgb(${option.vars['brand-600']})` }}
-                            />
-                            {t(option.label)}
-                        </button>
-                    ))}
-                </div>
+            <SettingItem label={t('Accent colour')} htmlFor={cfg.accent.eid}>
+                <AccentPicker
+                    id={cfg.accent.eid}
+                    value={states.accent ?? ''}
+                    onChange={(value) => dispatch({ configName: 'accent', configValue: value })}
+                    disabled={pageCtx.isReadOnly}
+                />
                 <SettingItemDesc>
-                    <PaletteIcon className="inline size-4 mr-1" /> {t('The preview applies immediately and is saved for web and in-game surfaces.')}
+                    {t('The preview applies immediately and is saved for web and in-game surfaces.')}
                 </SettingItemDesc>
             </SettingItem>
 
             {(Object.keys(assetLabels) as AssetKey[]).map(key => (
                 <SettingItem key={key} label={assetLabels[key]}>
-                    <div className="flex flex-wrap items-center gap-3">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
                         <div className={cn(
-                            'h-20 min-w-20 max-w-sm rounded-md border bg-muted/40 p-2 flex items-center justify-center overflow-hidden',
+                            'flex h-20 w-fit min-w-20 max-w-full items-center justify-center overflow-hidden rounded-md bg-sunken p-2 sm:max-w-sm',
                             key === 'bannerUrl' && 'w-64',
                         )}>
                             <img src={previewUrl(key)} alt={t('{asset} preview', { asset: assetLabels[key] })} className="max-h-full max-w-full object-contain" />
                         </div>
-                        <div className="flex flex-col gap-2">
-                            <Button asChild size="xs" variant="muted" disabled={pageCtx.isReadOnly}>
-                                <label className="cursor-pointer">
-                                    <UploadIcon className="size-4 mr-1.5" /> {t('Upload image')}
+                        <div className="flex flex-wrap gap-2">
+                            <Button
+                                asChild
+                                variant="secondary"
+                                className={cn(pageCtx.isReadOnly && 'pointer-events-none opacity-50')}
+                                aria-disabled={pageCtx.isReadOnly}
+                            >
+                                <label className="cursor-pointer focus-within:ring-2 focus-within:ring-accent-text">
+                                    {t('Upload image')}
                                     <input
                                         className="sr-only"
                                         type="file"
@@ -166,26 +156,25 @@ export default function AppearanceCard({ cardCtx, pageCtx }: SettingsCardProps) 
                                 </label>
                             </Button>
                             <Button
-                                size="xs"
-                                variant="outline"
+                                variant="secondary"
                                 disabled={pageCtx.isReadOnly || states[key] === ''}
                                 onClick={() => dispatch({ configName: key, configValue: '' })}
                             >
-                                <Trash2Icon className="size-4 mr-1.5" /> {t('Use default')}
+                                {t('Use default')}
                             </Button>
                         </div>
                     </div>
                     <SettingItemDesc>
-                        <ImageIcon className="inline size-4 mr-1" /> {t('PNG, JPEG, GIF, WebP or ICO; maximum 128 KB. SVG uploads are rejected.')}
-                        <span className="mt-1 block text-xs text-zinc-500">{assetRecommendations[key]}</span>
+                        {t('PNG, JPEG, GIF, WebP or ICO; maximum 128 KB. SVG uploads are rejected.')}
+                        <span className="mt-1 block">{assetRecommendations[key]}</span>
                     </SettingItemDesc>
                 </SettingItem>
             ))}
 
-            <div className="border-t border-dashed border-white/10 pt-6">
-                <h3 className="text-sm font-semibold text-zinc-200">{t('Discord status embed')}</h3>
-                <p className="mt-1 text-sm text-muted-foreground">{t('Customize the public server status message shown by the Discord bot.')}</p>
-            </div>
+            <SettingGroupHeading
+                title={t('Discord status embed')}
+                description={t('Customize the public server status message shown by the Discord bot.')}
+            />
 
             <EmbedJsonSetting
                 label={t('Status Embed JSON')}
@@ -228,16 +217,16 @@ function EmbedJsonSetting({ label, id, value, disabled, onChange, onDiscard, onD
             disabled={disabled}
             spellCheck={false}
         />
-        <div className="flex flex-wrap gap-2">
-            <Button size="xs" variant="outline" onClick={onDiscard} disabled={disabled}>
-                <XIcon className="mr-1.5 size-3.5" />{t('Discard changes')}
-            </Button>
-            <Button size="xs" variant="outline" onClick={onDefault} disabled={disabled}>
-                <RotateCcwIcon className="mr-1.5 size-3.5" />{t('Reset to default')}
-            </Button>
-        </div>
         <SettingItemDesc>
             <TransText k="Use `/status add` in Discord to create or refresh the status embed." />
         </SettingItemDesc>
+        <div className="flex flex-wrap gap-2">
+            <Button variant="secondary" onClick={onDiscard} disabled={disabled}>
+                {t('Discard changes')}
+            </Button>
+            <Button variant="secondary" onClick={onDefault} disabled={disabled}>
+                {t('Reset to default')}
+            </Button>
+        </div>
     </SettingItem>;
 }

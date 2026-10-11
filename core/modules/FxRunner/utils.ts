@@ -63,11 +63,14 @@ export const getMutableConvars = (isCmdLine = false) => {
             ? txConfig.whitelist.rejectionMessage.replaceAll('\n', '\\n')
             : txConfig.whitelist.rejectionMessage;
         convars.push(['sets', 'sv_allowlistInstructions', instructions]);
-    } else {
-        convars.push(['sets', 'sv_allowlistInstructions', '']);
     }
 
-    return convars.map((c) => polishConvarSetTuple(c, isCmdLine));
+    //FXServer drops an empty argument, so `sets name ""` reaches it as one argument and fails
+    //with "Argument count mismatch (passed 1, wanted 2)" without changing anything.
+    //Sending nothing has the same effect without the console error.
+    return convars
+        .filter(([, , value]) => value.toString() !== '')
+        .map((c) => polishConvarSetTuple(c, isCmdLine));
 };
 
 type RawConvarSetTuple = [setter: string, name: string, value: any];
@@ -91,44 +94,66 @@ export const mutableConvarConfigDependencies = [
 
 
 /**
+ * Builds the binary and loader arguments for an FXServer build, from its `fxsPath`
+ * (the folder with FXServer.exe on Windows, alpine/opt/cfx-server/ on Linux).
+ * The host build and the builds managed by FxBuilds use the same layout.
+ * NOTE: path.posix is what path.resolve is on Linux; it only makes the result
+ * independent of the platform the tests run on.
+ */
+export const buildOsSpawnVars = (isWindows: boolean, fxsPath: string): OsSpawnVars => {
+    if (isWindows) {
+        return {
+            bin: `${fxsPath}/FXServer.exe`,
+            args: [],
+        };
+    } else {
+        const alpinePath = path.posix.resolve(fxsPath, '../../');
+        return {
+            bin: `${alpinePath}/opt/cfx-server/ld-musl-x86_64.so.1`,
+            args: [
+                '--library-path', `${alpinePath}/usr/lib/v8/:${alpinePath}/lib/:${alpinePath}/usr/lib/`,
+                '--',
+                `${alpinePath}/opt/cfx-server/FXServer`,
+                '+set', 'citizen_dir', `${alpinePath}/opt/cfx-server/citizen/`,
+            ],
+        };
+    }
+}
+
+
+/**
  * Pre calculating HOST dependent spawn variables
  */
 const txCoreEndpoint = txHostConfig.netInterface
     ? `${txHostConfig.netInterface}:${txHostConfig.txaPort}`
     : `127.0.0.1:${txHostConfig.txaPort}`;
-let osSpawnVars: OsSpawnVars;
-if (txEnv.isWindows) {
-    osSpawnVars = {
-        bin: `${txEnv.fxsPath}/FXServer.exe`,
-        args: [],
-    };
-} else {
-    const alpinePath = path.resolve(txEnv.fxsPath, '../../');
-    osSpawnVars = {
-        bin: `${alpinePath}/opt/cfx-server/ld-musl-x86_64.so.1`,
-        args: [
-            '--library-path', `${alpinePath}/usr/lib/v8/:${alpinePath}/lib/:${alpinePath}/usr/lib/`,
-            '--',
-            `${alpinePath}/opt/cfx-server/FXServer`,
-            '+set', 'citizen_dir', `${alpinePath}/opt/cfx-server/citizen/`,
-        ],
-    };
-}
+const osSpawnVars = buildOsSpawnVars(txEnv.isWindows, txEnv.fxsPath);
 
 type OsSpawnVars = {
     bin: string;
     args: string[];
 }
 
+/**
+ * A managed FXServer build to start the server from, as returned by FxBuilds.
+ */
+type FxBuildTarget = {
+    fxsPath: string;
+};
+
 
 /**
- * Returns the variables needed to spawn the server
+ * Returns the variables needed to spawn the server.
+ * Without a build target the server starts on the panel's own (host) build.
  */
-export const getFxSpawnVariables = (): FxSpawnVariables => {
+export const getFxSpawnVariables = (buildTarget: FxBuildTarget | null = null): FxSpawnVariables => {
     if (!txConfig.server.dataPath) throw new Error('Missing server data path');
 
+    const buildSpawnVars = buildTarget
+        ? buildOsSpawnVars(txEnv.isWindows, buildTarget.fxsPath)
+        : osSpawnVars;
     const cmdArgs = [
-        ...osSpawnVars.args,
+        ...buildSpawnVars.args,
         getMutableConvars(true), //those are the ones that can change without restart
         txConfig.server.startupArgs,
         '+set', 'onesync', txConfig.server.onesync,
@@ -141,7 +166,7 @@ export const getFxSpawnVariables = (): FxSpawnVariables => {
     ].flat(2).map(String);
 
     return {
-        bin: osSpawnVars.bin,
+        bin: buildSpawnVars.bin,
         args: cmdArgs,
         serverName: txConfig.general.serverName,
         dataPath: txConfig.server.dataPath,
@@ -253,12 +278,18 @@ export const stringifyConsoleArgs = (args: (string | number | object)[]) => {
 export const setupCustomLocaleFile = async () => {
     if (txConfig.general.language !== 'custom') return;
     const srcPath = txCore.translator.customLocalePath;
-    const destRuntimePath = path.resolve(txEnv.txaPath, '.runtime');
-    const destFilePath = path.resolve(destRuntimePath, 'locale.json');
-    try {
-        await fsp.mkdir(destRuntimePath, { recursive: true });
-        await fsp.copyFile(srcPath, destFilePath);
-    } catch (error) {
-        console.tag('FXRunner').error(`Failed to copy custom locale file: ${(error as any).message}`);
+    //A server on a managed FXServer build reads it from that build's copy of the resource
+    const monitorPaths = [txEnv.txaPath];
+    const childMonitorPath = txCore.fxBuilds?.childMonitorPath;
+    if (childMonitorPath) monitorPaths.push(childMonitorPath);
+    for (const monitorPath of monitorPaths) {
+        const destRuntimePath = path.resolve(monitorPath, '.runtime');
+        const destFilePath = path.resolve(destRuntimePath, 'locale.json');
+        try {
+            await fsp.mkdir(destRuntimePath, { recursive: true });
+            await fsp.copyFile(srcPath, destFilePath);
+        } catch (error) {
+            console.tag('FXRunner').error(`Failed to copy custom locale file: ${(error as any).message}`);
+        }
     }
 }

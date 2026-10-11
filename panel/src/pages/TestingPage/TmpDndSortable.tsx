@@ -1,5 +1,6 @@
-import { cn } from "@/lib/utils";
 import { Settings2Icon, XIcon } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { IconButton } from "@/components/ui/icon-button";
 import { useState } from "react";
 import type { DragEndEvent } from '@dnd-kit/core';
 import { arrayMove } from '@dnd-kit/sortable';
@@ -20,27 +21,9 @@ function BanTemplateLine({ text, disabled, onEdit, onRemove }: BanTemplateLinePr
                 {text}
             </span>
         </div>
-        <div className="flex gap-2">
-            <button
-                className={cn(
-                    "text-muted-foreground",
-                    disabled ? "opacity-50 cursor-not-allowed" : "hover:text-primary hover:scale-110"
-                )}
-                onClick={onEdit}
-                disabled={disabled}
-            >
-                <Settings2Icon className="size-6" />
-            </button>
-            <button
-                className={cn(
-                    "text-muted-foreground",
-                    disabled ? "opacity-50 cursor-not-allowed" : "hover:text-destructive hover:scale-110"
-                )}
-                onClick={onRemove}
-                disabled={disabled}
-            >
-                <XIcon className="size-6" />
-            </button>
+        <div className="flex gap-1">
+            <IconButton label="Edit" icon={<Settings2Icon />} onClick={onEdit} disabled={disabled} />
+            <IconButton label="Remove" icon={<XIcon />} onClick={onRemove} disabled={disabled} />
         </div>
     </>);
 }
@@ -99,13 +82,13 @@ export default function TmpDndSortable() {
     }
 
     return (
-        <div className='w-[500px] mx-auto space-y-4'>
-            <div className='w-full flex gap-2 justify-center'>
-                <button className='px-2 py-1 rounded bg-green-800' onClick={handleAdd}>ADD BOTTOM</button>
-                <button className='px-2 py-1 rounded bg-green-800' onClick={handleAddRandom}>ADD RND</button>
-                <button className='px-2 py-1 rounded bg-rose-800' onClick={handleRemoveRandom}>REMOVE RND</button>
-                <button className='px-2 py-1 rounded bg-rose-800' onClick={handleReset}>RESET</button>
-                <button className='px-2 py-1 rounded bg-blue-800' onClick={handlePrintState}>PRINT</button>
+        <div className='mx-auto w-full max-w-[500px] space-y-4'>
+            <div className='flex w-full flex-wrap justify-center gap-2'>
+                <Button size="sm" variant="secondary" onClick={handleAdd}>Add bottom</Button>
+                <Button size="sm" variant="secondary" onClick={handleAddRandom}>Add random</Button>
+                <Button size="sm" variant="outline-destructive" onClick={handleRemoveRandom}>Remove random</Button>
+                <Button size="sm" variant="secondary" onClick={handleReset}>Reset</Button>
+                <Button size="sm" variant="secondary" onClick={handlePrintState}>Print</Button>
             </div>
 
             <DndSortableGroup

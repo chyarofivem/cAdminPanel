@@ -65,11 +65,11 @@ export default function SettingsCardBlank({ cardCtx, pageCtx }: SettingsCardProp
             advancedVisible={showAdvanced}
             advancedSetter={setShowAdvanced}
         >
-            <h1>FIXME: add components</h1>
+            <p className="text-sm text-muted-foreground">FIXME: add components</p>
 
             {showAdvanced && <AdvancedDivider />}
 
-            <h1>FIXME: add components</h1>
+            <p className="text-sm text-muted-foreground">FIXME: add components</p>
         </SettingsCardShell>
     )
 }

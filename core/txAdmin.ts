@@ -17,6 +17,8 @@ import FxPlayerlist from '@modules/FxPlayerlist';
 import Database from '@modules/Database';
 import CacheStore from '@modules/CacheStore';
 import UpdateChecker from '@modules/UpdateChecker';
+import ResourceMonitor from '@modules/ResourceMonitor';
+import FxBuilds from '@modules/FxBuilds';
 const console = consoleFactory();
 
 
@@ -30,11 +32,13 @@ export type TxCoreType = {
     metrics: Metrics;
 
     //FXServer
+    fxBuilds: FxBuilds;
     fxMonitor: FxMonitor;
     fxPlayerlist: FxPlayerlist;
     fxResources: FxResources;
     fxRunner: FxRunner;
     fxScheduler: FxScheduler;
+    resourceMonitor: ResourceMonitor;
 
     //Other
     discordBot: DiscordBot;
@@ -96,6 +100,8 @@ export default function bootTxAdmin() {
     _txCore.fxMonitor = startModule(FxMonitor);
     _txCore.discordBot = startModule(DiscordBot);
     _txCore.logger = startModule(Logger);
+    //Before FxRunner: the spawn variables ask it which FXServer build to run
+    _txCore.fxBuilds = startModule(FxBuilds);
     _txCore.fxRunner = startModule(FxRunner);
 
     //Low Priority
@@ -103,6 +109,7 @@ export default function bootTxAdmin() {
     _txCore.fxScheduler = startModule(FxScheduler);
     _txCore.metrics = startModule(Metrics);
     _txCore.fxResources = startModule(FxResources);
+    _txCore.resourceMonitor = startModule(ResourceMonitor);
     _txCore.fxPlayerlist = startModule(FxPlayerlist);
     _txCore.cacheStore = startModule(CacheStore);
     _txCore.updateChecker = startModule(UpdateChecker);

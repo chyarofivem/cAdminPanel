@@ -5,6 +5,7 @@ import consoleFactory from '@lib/console';
 import { AuthedCtx } from '@modules/WebServer/ctxTypes';
 import { checkRateLimit } from '@lib/rateLimiters/actionLimiter';
 import { nanoid } from 'nanoid';
+import { normalizeLicenseIdentifier } from '@shared/licenseIdentifier';
 const console = consoleFactory(modulename);
 
 //Helpers
@@ -14,6 +15,22 @@ const cfxHttpReqOptions = {
     timeout: { request: 6000 },
 };
 type ProviderDataType = { id: string, identifier: string };
+
+/**
+ * Parses the optional Rockstar license field. A missing field is `undefined` (leave it
+ * untouched), an empty one is `false` (remove it), anything else must be a license.
+ */
+const parseLicenseField = (raw: unknown): ProviderDataType | false | undefined | { error: string } => {
+    if (raw === undefined) return undefined;
+    if (typeof raw !== 'string') return { error: 'Invalid Rockstar license.' };
+    if (!raw.trim().length) return false;
+    const identifier = normalizeLicenseIdentifier(raw);
+    if (!identifier) return { error: 'Enter the Rockstar license as `license:` followed by 40 letters and digits.' };
+    return { id: identifier.slice('license:'.length), identifier };
+};
+const isFieldError = (value: unknown): value is { error: string } => (
+    typeof value === 'object' && value !== null && 'error' in value
+);
 
 /**
  * Returns the output page containing the admins.
@@ -131,6 +148,13 @@ async function handleAdd(ctx: AuthedCtx) {
         };
     }
 
+    //Validate Rockstar license
+    const parsedLicense = parseLicenseField(ctx.request.body.licenseID);
+    if (isFieldError(parsedLicense)) {
+        return ctx.send({ type: 'danger', message: parsedLicense.error });
+    }
+    const licenseData = parsedLicense || false;
+
     //Check for privilege escalation
     if (!ctx.admin.isMaster && !ctx.admin.permissions.includes('all_permissions')) {
         const deniedPerms = permissions.filter((x: string) => !ctx.admin.permissions.includes(x));
@@ -146,13 +170,14 @@ async function handleAdd(ctx: AuthedCtx) {
     const changes = {
         cfxId: citizenfxData ? citizenfxData.identifier : undefined,
         discordId: discordData ? discordData.identifier : undefined,
+        license: licenseData ? licenseData.identifier : undefined,
         localPassword: 'temporary password set',
         permissions: permissions,
     };
 
     //Add admin and give output
     try {
-        await txCore.adminStore.addAdmin(name, citizenfxData, discordData, permissions, password);
+        await txCore.adminStore.addAdmin(name, citizenfxData, discordData, permissions, password, licenseData);
         ctx.admin.logAction(`Adding user '${name}' with ${JSON.stringify(changes)}`);
         return ctx.send({
             type: 'success',
@@ -262,6 +287,12 @@ async function handleEdit(ctx: AuthedCtx) {
         };
     }
 
+    //Validate Rockstar license
+    const licenseData = parseLicenseField(ctx.request.body.licenseID);
+    if (isFieldError(licenseData)) {
+        return ctx.send({ type: 'danger', message: licenseData.error });
+    }
+
     //Check if admin exists
     const admin = txCore.adminStore.getAdminByName(name);
     if (!admin) return ctx.send({ type: 'danger', message: 'Admin not found.' });
@@ -314,6 +345,16 @@ async function handleEdit(ctx: AuthedCtx) {
             changes.push(`Changed Discord ID from ${prevDiscordId} to ${discordData.identifier}.`);
         }
     }
+    const prevLicense = admin.providers?.license?.identifier;
+    if (licenseData !== undefined) {
+        if (!prevLicense && licenseData) {
+            changes.push(`Added Rockstar license: ${licenseData.identifier}.`);
+        } else if (prevLicense && !licenseData) {
+            changes.push(`Removed Rockstar license: ${prevLicense}.`);
+        } else if (prevLicense && licenseData && prevLicense !== licenseData.identifier) {
+            changes.push(`Changed Rockstar license from ${prevLicense} to ${licenseData.identifier}.`);
+        }
+    }
     //Add admin and give output
     try {
         let logMessage = `Editing user '${name}'`;
@@ -322,7 +363,7 @@ async function handleEdit(ctx: AuthedCtx) {
         } else {
             logMessage += '. No changes were made.';
         }
-        await txCore.adminStore.editAdmin(name, citizenfxData, discordData, permissions);
+        await txCore.adminStore.editAdmin(name, citizenfxData, discordData, permissions, licenseData);
         ctx.admin.logAction(logMessage);
         return ctx.send({ type: 'success', refresh: true });
     } catch (error) {

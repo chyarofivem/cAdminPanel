@@ -132,7 +132,7 @@ export default function ConfigCardGameMenu({ cardCtx, pageCtx }: SettingsCardPro
                 />
                 <SettingItemDesc>
                     {t('Play a particle effect and sound when an admin uses NoClip, God Mode, etc.')} <br />
-                    <strong className="text-warning-inline">{t('Warning:')}</strong> {t('This option helps prevent admin abuse during PvP by making it visible and audible to all players that an admin is using a special mode. We recommend keeping it enabled.')}
+                    <strong className="text-warning-text">{t('Warning:')}</strong> {t('This option helps prevent admin abuse during PvP by making it visible and audible to all players that an admin is using a special mode. We recommend keeping it enabled.')}
                 </SettingItemDesc>
             </SettingItem>
         </SettingsCardShell>

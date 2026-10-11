@@ -31,7 +31,8 @@ export default function DateTimeCorrected({ tsFetch, tsObject, serverTime, class
         {displayTime}
         {Math.abs(serverClockDrift) > clockSkewTolerance && (
             <button
-                className="ml-1 text-warning-inline"
+                type="button"
+                className="ml-1 text-warning-text underline-offset-4 hover:underline"
                 onClick={clockDriftBtnHandler}
             >(clock drift)</button>
         )}

@@ -79,9 +79,7 @@ export const useHudListenersService = () => {
     ...options,
   });
 
-  const snackFormat = (m: string) => (
-    <span style={{ whiteSpace: "pre-wrap" }}>{m}</span>
-  );
+  const snackFormat = (m: string) => <span>{m}</span>;
 
   useNuiEvent<SnackbarAlert>(
     "setSnackbarAlert",
@@ -188,7 +186,6 @@ export const useHudListenersService = () => {
     announcementSound.play();
     enqueueSnackbar(
       <CommunicationNotification
-        kind="announcement"
         message={message}
         title={t("nui_menu.misc.announcement_title", { author })}
       />,
@@ -209,7 +206,6 @@ export const useHudListenersService = () => {
     announcementSound.play();
     enqueueSnackbar(
       <CommunicationNotification
-        kind="restart"
         message={message}
         title={t("nui_menu.misc.restart_title")}
       />,
@@ -230,7 +226,6 @@ export const useHudListenersService = () => {
     messageSound.play();
     enqueueSnackbar(
       <CommunicationNotification
-        kind="direct-message"
         message={message}
         title={t("nui_menu.misc.directmessage_title", { author })}
       />,

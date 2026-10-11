@@ -129,11 +129,42 @@ describe('AdminStore first-run account selection', () => {
             undefined,
             undefined,
             [],
+            undefined,
             'replacement-password',
         );
 
         expect(store.admins[0].password_hash).toBe(originalHash);
         expect(store.admins[0].password_temporary).toBeUndefined();
+    });
+
+    it('matches a linked Rockstar license in game through either license prefix', async () => {
+        hostConfig.defaults.account = {
+            username: 'hostadmin',
+            password: '$2b$11$K3HwDzkoUfhU6.W.tScfhOLEtR5uNc9qpQ685emtERx3dZ7fmgXCy',
+        };
+        const store = new AdminStore();
+        if (store.refreshRoutine) clearInterval(store.refreshRoutine);
+        const hex = 'abcdef0123456789abcdef0123456789abcdef01';
+
+        await store.editAdmin('hostadmin', undefined, undefined, undefined, {
+            id: hex,
+            identifier: `license:${hex}`,
+        });
+
+        const saved = JSON.parse(await fs.readFile(path.join(hostConfig.root, 'admins.json'), 'utf8'));
+        expect(saved[0].providers.license).toEqual({ id: hex, identifier: `license:${hex}`, data: {} });
+        expect(store.getAdminByIdentifiers(['steam:110000100000001', `license:${hex}`])).toMatchObject({ name: 'hostadmin' });
+        expect(store.getAdminByIdentifiers([`license2:${hex.toUpperCase()}`])).toMatchObject({ name: 'hostadmin' });
+        expect(store.getAdminByIdentifiers(['license:'.concat('0'.repeat(40))])).toBe(false);
+        expect(store.getAdminsIdentifiers()).toEqual(expect.arrayContaining([`license:${hex}`, `license2:${hex}`]));
+
+        //The stored record must pass the admins file integrity check on the next boot
+        await store.loadAdminsFile();
+        expect(store.getAdminByIdentifiers([`license:${hex}`])).toMatchObject({ name: 'hostadmin' });
+
+        //Unlinking removes it
+        await store.editAdmin('hostadmin', undefined, undefined, undefined, false);
+        expect(store.getAdminByIdentifiers([`license:${hex}`])).toBe(false);
     });
 
     it('persists administrator preferences used by web and game sessions', async () => {
@@ -152,7 +183,7 @@ describe('AdminStore first-run account selection', () => {
             username: 'hostadmin',
             locale: 'hr',
             accent: 'rose',
-            accentColor: '#e11d48',
+            accentColor: '#be123c',
         });
         expect(txCore.webServer.webSocket.reCheckAdminAuths).not.toHaveBeenCalled();
     });

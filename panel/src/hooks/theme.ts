@@ -1,4 +1,5 @@
 import consts from '@shared/consts';
+import { accentCssVars, isValidAccent, normalizeAccent } from '@shared/accent';
 import { atom, useAtom, useAtomValue, useSetAtom } from 'jotai';
 
 
@@ -12,11 +13,10 @@ const defaultThemes = ['dark', 'light'];
 const initialAtomValue = availableCustomThemes.find((name) => root.classList.contains(`theme-${name}`))
     ?? defaultThemes.find((name) => root.classList.contains(name))
     ?? window.txConsts.defaultTheme;
-const accentIds = window.txConsts.accents.map(accent => accent.id);
 const accountAccent = window.txConsts.preAuth && window.txConsts.preAuth.accent;
-const initialAccent = accountAccent && accentIds.includes(accountAccent)
-    ? accountAccent
-    : accentIds.includes(window.txConsts.accent) ? window.txConsts.accent : 'blue';
+const initialAccent = isValidAccent(accountAccent)
+    ? normalizeAccent(accountAccent)
+    : normalizeAccent(window.txConsts.accent);
 
 
 /**
@@ -64,7 +64,7 @@ const parseTheme = (themeName: string) => {
  * Atom
  */
 const themeAtom = atom(initialAtomValue);
-for (const [name, value] of Object.entries(window.txConsts.accents.find(option => option.id === initialAccent)?.vars ?? {})) {
+for (const [name, value] of Object.entries(accentCssVars(initialAccent))) {
     root.style.setProperty(`--${name}`, value);
 }
 const accentAtom = atom(initialAccent);
@@ -143,10 +143,13 @@ export const useThemedImage = (baseImageUrl?: string) => {
     return baseImageUrl.replace(/{theme}/g, isDarkMode ? 'dark' : 'light');
 }
 
-const applyAccent = (accentId: string) => {
-    const accent = window.txConsts.accents.find(option => option.id === accentId);
-    if (!accent) throw new Error(`invalid accent ${accentId}`);
-    for (const [name, value] of Object.entries(accent.vars)) {
+/**
+ * Applies a preset id or a custom `#rrggbb` accent. Only the seven accent
+ * tokens change; surfaces, text and status colours never follow it.
+ */
+const applyAccent = (accentValue: string) => {
+    if (!isValidAccent(accentValue)) throw new Error(`invalid accent ${accentValue}`);
+    for (const [name, value] of Object.entries(accentCssVars(accentValue))) {
         root.style.setProperty(`--${name}`, value);
     }
 };
@@ -157,8 +160,9 @@ export const useAccent = () => {
         accent,
         accents: window.txConsts.accents,
         setAccent: (newAccent: string) => {
-            applyAccent(newAccent);
-            setAccentAtom(newAccent);
+            const normalized = normalizeAccent(newAccent);
+            applyAccent(normalized);
+            setAccentAtom(normalized);
         },
     };
 };

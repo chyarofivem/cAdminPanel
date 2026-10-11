@@ -29,6 +29,8 @@ import { t } from '@/lib/i18n';
 import UserSettingsPage from '@/pages/UserSettingsPage';
 import MasterActionsPage from '@/pages/MasterActions/MasterActionsPage';
 import DeployerPage from '@/pages/Deployer/DeployerPage';
+import ResourceMonitorPage from '@/pages/ResourceMonitor/ResourceMonitorPage';
+import FxBuildsPage from '@/pages/FxBuilds/FxBuildsPage';
 
 
 type RouteType = {
@@ -113,6 +115,17 @@ const allRoutes: RouteType[] = [
         Page: <ResourcesPage />,
     },
     {
+        path: '/server/resource-monitor',
+        title: 'Resource monitor',
+        Page: <ResourceMonitorPage />,
+    },
+    {
+        path: '/system/fxserver-builds',
+        title: 'FXServer builds',
+        permission: 'master',
+        Page: <FxBuildsPage />,
+    },
+    {
         path: '/system/cfg-editor',
         title: 'CFG Editor',
         permission: 'master',
@@ -173,7 +186,7 @@ function Route(route: RouteType) {
 export function MainRouterInner() {
     const [location] = useLocation();
     return (
-        <div key={location} className="tx-route-enter min-w-0">
+        <div key={location} className="min-w-0">
             <Switch>
                 {allRoutes.map((route) => <Route key={route.path} {...route} />)}
 

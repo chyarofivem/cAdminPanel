@@ -2,9 +2,8 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation } from 'wouter';
 import { useAtomValue } from 'jotai';
 import {
-    Activity, ChevronDown, CircleGauge, ClipboardCheck, FileEdit,
-    History, LayoutDashboard, ScrollText, Server, Settings, ShieldCheck,
-    TerminalSquare, UserRoundCog, Users, Wrench, Zap,
+    Activity, ChevronDown, ClipboardCheck, Ellipsis, FileEdit, FlaskConical, Gauge, History, LayoutDashboard,
+    Package, ScrollText, Settings, TerminalSquare, UserRoundCog, Users, Wrench, Zap, type LucideIcon,
 } from 'lucide-react';
 import { TxConfigState } from '@shared/enums';
 import MainPageLink from '@/components/MainPageLink';
@@ -16,7 +15,7 @@ import { t } from '@/lib/i18n';
 type LinkSpec = {
     label: string;
     href: string;
-    icon?: React.ReactNode;
+    icon: LucideIcon;
     permission?: string;
     master?: boolean;
     /**
@@ -48,26 +47,48 @@ function useLinkVisibilityFilter() {
     }, [hasPerm, isConfigured, isOnline, location]);
 }
 
-function SidebarLink({ link, nested = false }: { link: LinkSpec; nested?: boolean }) {
+const isLinkActive = (location: string, href: string) => (
+    href === '/' ? location === '/' : location === href || location.startsWith(`${href}/`)
+);
+
+/**
+ * Nav row: 44px, 8px x 14px, radius-md, body text with a 16px icon before the label.
+ * Hover is raise with white text, active is accent-soft with the accent text colour;
+ * the icon is muted at rest and follows the label on hover and when active.
+ * NOTE: the design system bans icons beside nav labels; the sidebar keeps them at the
+ * user's request (2026-10).
+ */
+const navRowClass = 'group flex min-h-11 w-full items-center gap-3 rounded-md px-3.5 py-2 text-sm text-body transition-colors duration-150 hover:bg-raise hover:text-white';
+const navRowActiveClass = 'bg-accent-soft text-accent-text hover:bg-accent-soft hover:text-accent-text';
+const navIconClass = 'size-4 shrink-0 text-muted-foreground transition-colors duration-150 group-hover:text-white';
+const navIconActiveClass = 'text-accent-text group-hover:text-accent-text';
+
+function SidebarLink({ link }: { link: LinkSpec }) {
     const [location] = useLocation();
     const isVisible = useLinkVisibilityFilter();
-    const active = link.href === '/' ? location === '/' : location === link.href || location.startsWith(`${link.href}/`);
+    const active = isLinkActive(location, link.href);
     if (!isVisible(link)) return null;
-    return <MainPageLink href={link.href} isActive={active} className={cn(
-        'flex items-center rounded-lg text-sm transition-colors duration-200',
-        nested ? 'mx-2 px-3 py-1.5 text-zinc-400 hover:bg-white/5 hover:text-white' : 'px-3 py-2 text-gray-300 hover:bg-white/5 hover:text-white',
-        active && (nested ? 'bg-white/5 text-white shadow-sm' : 'border-2 border-dashed border-brand-600/20 bg-brand-600/10 text-brand-500 shadow-sm'),
-    )}>
-        {link.icon && <span className={cn('mr-2 text-zinc-500', active && 'text-brand-500/60')}>{link.icon}</span>}
-        {link.label}
+    const Icon = link.icon;
+    return <MainPageLink
+        href={link.href}
+        isActive={active}
+        aria-current={active ? 'page' : undefined}
+        className={cn(navRowClass, active && navRowActiveClass)}
+    >
+        <Icon aria-hidden="true" className={cn(navIconClass, active && navIconActiveClass)} />
+        <span className="min-w-0 truncate">{link.label}</span>
     </MainPageLink>;
 }
 
-function NavGroup({ label, icon, links }: { label: string; icon: React.ReactNode; links: LinkSpec[] }) {
+/**
+ * The collapsed group for pages used rarely. It opens itself while one of its
+ * pages is active, and keeps its links mounted while collapsed.
+ */
+function NavGroup({ label, links }: { label: string; links: LinkSpec[] }) {
     const [location] = useLocation();
     const isVisible = useLinkVisibilityFilter();
     const visible = links.filter(isVisible);
-    const groupActive = visible.some(link => location === link.href || location.startsWith(`${link.href}/`));
+    const groupActive = visible.some(link => isLinkActive(location, link.href));
     const [open, setOpen] = useState(groupActive);
     const contentRef = useRef<HTMLDivElement>(null);
     useEffect(() => {
@@ -77,42 +98,60 @@ function NavGroup({ label, icon, links }: { label: string; icon: React.ReactNode
         if (contentRef.current) contentRef.current.inert = !open;
     }, [open]);
     if (!visible.length) return null;
-    return <div className="mt-1">
-        <button type="button" aria-expanded={open} onClick={() => setOpen(value => !value)} className={cn(
-            'flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm text-gray-300 transition-colors hover:bg-white/5 hover:text-white',
-            groupActive && 'border-2 border-dashed border-brand-600/20 bg-brand-600/10 text-brand-500',
-        )}>
-            <span className="flex items-center"><span className={cn('mr-2 text-zinc-500', groupActive && 'text-brand-500/60')}>{icon}</span>{label}</span>
-            <ChevronDown className={cn('size-4 transition-transform', open && 'rotate-180')} />
+    return <div>
+        <button
+            type="button"
+            aria-expanded={open}
+            onClick={() => setOpen(value => !value)}
+            className={cn(navRowClass, 'text-muted-foreground')}
+        >
+            <Ellipsis aria-hidden="true" className={navIconClass} />
+            <span className="min-w-0 flex-1 truncate text-left">{label}</span>
+            <ChevronDown aria-hidden="true" className={cn('size-4 shrink-0 transition-transform duration-150', open && 'rotate-180')} />
         </button>
-        <div ref={contentRef} aria-hidden={!open} className={cn('grid transition-[grid-template-rows,opacity] duration-200 motion-reduce:transition-none', open ? 'grid-rows-[1fr] opacity-100' : 'pointer-events-none grid-rows-[0fr] opacity-0')}>
-            <div className="overflow-hidden"><div className="mt-1 space-y-1">{visible.map(link => <SidebarLink key={link.href} link={link} nested />)}</div></div>
+        <div
+            ref={contentRef}
+            aria-hidden={!open}
+            className={cn(
+                'grid transition-[grid-template-rows,opacity] duration-150 motion-reduce:transition-none',
+                open ? 'grid-rows-[1fr] opacity-100' : 'pointer-events-none grid-rows-[0fr] opacity-0',
+            )}
+        >
+            <div className="overflow-hidden">
+                <div className="flex flex-col gap-1 pt-1">
+                    {visible.map(link => <SidebarLink key={link.href} link={link} />)}
+                </div>
+            </div>
         </div>
     </div>;
 }
 
-const iconClass = 'size-5';
-
 export default function ServerMenu() {
-    return <nav className="font-medium">
-        <SidebarLink link={{ label: t('Home'), href: '/', icon: <LayoutDashboard className={iconClass} /> }} />
-        <NavGroup label={t('Administration')} icon={<ShieldCheck className={iconClass} />} links={[
-            { label: t('Player Management'), href: '/administration/players', icon: <UserRoundCog className="size-4" />, requires: 'configured' },
-            { label: t('History'), href: '/administration/history', icon: <History className="size-4" />, requires: 'configured' },
-            { label: t('Staff & Permissions'), href: '/admins', icon: <Users className="size-4" />, permission: 'manage.admins' },
-        ]} />
-        <NavGroup label={t('Server')} icon={<Server className={iconClass} />} links={[
-            { label: t('Console Log'), href: '/server/console-log', icon: <TerminalSquare className="size-4" />, permission: 'console.view', requires: 'configured' },
-            { label: t('Resources'), href: '/server/resources', icon: <Wrench className="size-4" />, requires: 'online' },
-            { label: t('Allowlist'), href: '/server/allowlist', icon: <ClipboardCheck className="size-4" />, requires: 'configured' },
-            { label: t('Player Drops'), href: '/insights/player-drops', icon: <Activity className="size-4" />, requires: 'configured' },
-        ]} />
-        <NavGroup label={t('System')} icon={<CircleGauge className={iconClass} />} links={[
-            { label: t('CFG Editor'), href: '/system/cfg-editor', icon: <FileEdit className="size-4" />, master: true, requires: 'configured' },
-            { label: t('Settings'), href: '/settings', icon: <Settings className="size-4" />, permission: 'settings.view' },
-            { label: t('Master Actions'), href: '/system/master-actions', icon: <Zap className="size-4" />, master: true },
-            { label: t('Panel Log'), href: '/system/panel-log', icon: <ScrollText className="size-4" />, permission: 'panel.log.view' },
-        ]} />
-        {window.txConsts.showAdvanced && <SidebarLink link={{ label: t('Advanced'), href: '/advanced', icon: <Zap className={iconClass} />, permission: 'all_permissions' }} />}
+    //Everyday pages on top, rarely used ones in the collapsed group.
+    const everyday: LinkSpec[] = [
+        { label: t('Home'), href: '/', icon: LayoutDashboard },
+        { label: t('Players'), href: '/administration/players', icon: UserRoundCog, requires: 'configured' },
+        { label: t('Console'), href: '/server/console-log', icon: TerminalSquare, permission: 'console.view', requires: 'configured' },
+        { label: t('Resources'), href: '/server/resources', icon: Wrench, requires: 'online' },
+        { label: t('Resource monitor'), href: '/server/resource-monitor', icon: Gauge, requires: 'configured' },
+        { label: t('History'), href: '/administration/history', icon: History, requires: 'configured' },
+        { label: t('Allowlist'), href: '/server/allowlist', icon: ClipboardCheck, requires: 'configured' },
+        { label: t('Settings'), href: '/settings', icon: Settings, permission: 'settings.view' },
+    ];
+    const more: LinkSpec[] = [
+        { label: t('Staff & Permissions'), href: '/admins', icon: Users, permission: 'manage.admins' },
+        { label: t('Player Drops'), href: '/insights/player-drops', icon: Activity, requires: 'configured' },
+        { label: t('CFG Editor'), href: '/system/cfg-editor', icon: FileEdit, master: true, requires: 'configured' },
+        { label: t('FXServer builds'), href: '/system/fxserver-builds', icon: Package, master: true, requires: 'configured' },
+        { label: t('Master Actions'), href: '/system/master-actions', icon: Zap, master: true },
+        { label: t('Panel Log'), href: '/system/panel-log', icon: ScrollText, permission: 'panel.log.view' },
+    ];
+    if (window.txConsts.showAdvanced) {
+        more.push({ label: t('Advanced'), href: '/advanced', icon: FlaskConical, permission: 'all_permissions' });
+    }
+
+    return <nav aria-label={t('Main')} className="flex flex-col gap-1">
+        {everyday.map(link => <SidebarLink key={link.href} link={link} />)}
+        <NavGroup label={t('More')} links={more} />
     </nav>;
 }

@@ -24,6 +24,7 @@ export default async function AdminManagerData(ctx: AuthedCtx) {
             citizenfxId: admin.providers.citizenfx?.id ?? '',
             citizenfxIdentifier: admin.providers.citizenfx?.identifier ?? '',
             discordId: admin.providers.discord?.id ?? '',
+            licenseIdentifier: admin.providers.license?.identifier ?? '',
             permissions: admin.permissions,
         };
     });

@@ -14,6 +14,7 @@ import ProcessManager, { ChildProcessStateInfo } from './ProcessManager';
 import handleFd3Messages from './handleFd3Messages';
 import ConsoleLineEnum from '@modules/Logger/FXServerLogger/ConsoleLineEnum';
 import { txHostConfig } from '@core/globalData';
+import type { FxBuildSpawnTarget } from '@modules/FxBuilds';
 import path from 'node:path';
 const console = consoleFactory('FxRunner');
 const genMutex = customAlphabet(dict49, 5);
@@ -34,6 +35,7 @@ export default class FxRunner {
     private proc: ProcessManager | null = null;
     private isAwaitingShutdownNoticeDelay = false;
     private isAwaitingRestartSpawnDelay = false;
+    private isPreparingBuild = false;
     private restartSpawnBackoffDelay = 0;
 
 
@@ -124,12 +126,35 @@ export default class FxRunner {
             return msg;
         }
 
+        //Ask the build manager which FXServer build to run (null = the panel's own build).
+        //This can copy files, so concurrent spawn requests are refused meanwhile.
+        if (this.isPreparingBuild) {
+            const msg = `The server is already starting.`;
+            console.error(msg);
+            return msg;
+        }
+        let buildTarget: FxBuildSpawnTarget | null = null;
+        this.isPreparingBuild = true;
+        try {
+            buildTarget = await txCore.fxBuilds.prepareForSpawn();
+        } catch (error) {
+            console.warn(`Could not prepare the selected FXServer build, starting on the panel build: ${(error as any).message}`);
+            buildTarget = null;
+        } finally {
+            this.isPreparingBuild = false;
+        }
+        if (this.proc !== null) {
+            const msg = `The server has already started.`;
+            console.error(msg);
+            return msg;
+        }
+
         //Setup spawn variables & locale file
         let fxSpawnVars;
         const newServerMutex = genMutex();
         try {
             txCore.webServer.resetToken();
-            fxSpawnVars = getFxSpawnVariables();
+            fxSpawnVars = getFxSpawnVariables(buildTarget);
             // debugPrintSpawnVars(fxSpawnVars); //DEBUG
         } catch (error) {
             const errMsg = `Error setting up spawn variables: ${(error as any).message}`;
@@ -219,6 +244,7 @@ export default class FxRunner {
                 txCore.webServer.webSocket.pushRefresh('status');
             }
         });
+        txCore.fxBuilds.handleSpawned(newServerMutex, buildTarget);
         await txCore.logger.fxserver.logFxserverSpawn(this.proc.pid.toString());
 
         //Setting up StdIO

@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { getSocket } from "@/lib/utils";
 import { useEffect, useRef, useState } from "react";
 import { Socket } from "socket.io-client";
@@ -55,12 +56,12 @@ export default function TmpSocket() {
     }, []);
 
     return <>
-        <div className="space-x-4">
+        <div className="flex flex-wrap items-center gap-3">
             <Button onClick={sendPing}>Send Ping</Button>
-            <Button onClick={clearTerminal}>Clear</Button>
-            <span>Status: {isOffline ? 'Offline' : 'Online'}</span>
+            <Button variant="secondary" onClick={clearTerminal}>Clear</Button>
+            <Badge variant={isOffline ? 'danger' : 'success'}>{isOffline ? 'Offline' : 'Online'}</Badge>
         </div>
-        <pre className="bg-muted p-2">
+        <pre className="rounded-sm bg-sunken p-3 font-mono text-xs text-body">
             {consoleData}
         </pre>
     </>;
