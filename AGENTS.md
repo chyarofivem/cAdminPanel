@@ -28,7 +28,7 @@
 • This repository contains a customized txAdmin distribution and the cAdminPanel bridge for FiveM and RedM server administration.
 • The project is an npm workspace monorepo. The workspaces are `core`, `nui`, `panel`, and `shared`.
 • Local development and production builds require Node.js 22.9 or newer. The documented local build environment is Windows. End to end runtime validation requires FXServer.
-• The root package version and the `cadminpanel` resource version are currently `1.0.0`.
+• The root package version and the `cadminpanel` resource version are currently `1.1.0`. A version bump changes all five `package.json` files, their six entries in `package-lock.json`, `version` in `resource/cadminpanel/fxmanifest.lua`, `CAdminConfig.version` in `resource/cadminpanel/config.lua`, and the `-dev` fallback in `getPublishVersion()` (`scripts/build/utils.ts`). The released panel takes its version from the `GITHUB_REF` tag at build time.
 
 ## Agent memory
 • Durable notes for agents live in `.agents/memory/`, indexed by `.agents/memory/MEMORY.md`. Read the index at the start of a session. Add a note there (one fact per file, with `name`, `description` and `metadata.type` frontmatter, plus one index line) when you learn something non-obvious that the next session would otherwise rediscover; update or delete notes that turn out to be wrong. Never keep project memory in a user-level directory.
@@ -174,7 +174,7 @@ npm.cmd run dev -w nui       # rebuilds the in-game menu into that FXServer's mo
 The full production build requires a semantic version in `GITHUB_REF` and writes to `dist/`.
 
 ```powershell
-$env:GITHUB_REF='refs/tags/v1.0.0'
+$env:GITHUB_REF='refs/tags/v1.1.0'
 npm.cmd run build
 ```
 

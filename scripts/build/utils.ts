@@ -71,7 +71,7 @@ export const getPublishVersion = (isOptional: boolean) => {
         if (!workflowRef) {
             if (isOptional) {
                 return {
-                    txVersion: '1.0.0-dev',
+                    txVersion: '1.1.0-dev',
                     isPreRelease: false,
                     preReleaseExpiration: '0',
                 };

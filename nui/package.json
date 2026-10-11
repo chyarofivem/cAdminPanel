@@ -1,6 +1,6 @@
 {
     "name": "cadminpanel-nui",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "description": "The NUI package contains all the in-game interface (menu and warn page) of cAdminPanel.",
     "main": "index.js",
     "type": "module",

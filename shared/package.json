@@ -1,6 +1,6 @@
 {
     "name": "cadminpanel-shared",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "description": "The shared package contains stuff used in more than one package, no build step required.",
     "main": "index.js",
     "scripts": {

@@ -1,6 +1,6 @@
 {
   "name": "cadminpanel-core",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "The core package is the backend of cAdminPanel and handles running fxserver and the web server and every other internal backend stuff.",
   "type": "module",
   "scripts": {

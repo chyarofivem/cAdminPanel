@@ -5,7 +5,7 @@ lua54 'yes'
 name 'cadminpanel'
 author 'chyarogroup'
 description 'chyarogroup FiveM Admin Panel bridge (cAdminPanel)'
-version '1.0.0'
+version '1.1.0'
 repository 'https://github.com/chyarofivem/cAdminPanel'
 
 shared_script 'config.lua'

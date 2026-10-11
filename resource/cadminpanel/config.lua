@@ -62,5 +62,5 @@ CAdminConfig.tables = {
     pendingItems = 'cadmin_pending_items'
 }
 
-CAdminConfig.version = '1.0.0'
+CAdminConfig.version = '1.1.0'
 
