@@ -1,8 +1,6 @@
 import { DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { PlayerModalRefType, useClosePlayerModal } from "@/hooks/playerModal";
-import { AlertTriangleIcon, MailIcon, ShieldCheckIcon } from "lucide-react";
-import { KickOneIcon } from '@/components/KickIcons';
 import { useBackendApi } from "@/hooks/fetch";
 import { useAdminPerms } from "@/hooks/auth";
 import { t } from '@/lib/i18n';
@@ -129,47 +127,39 @@ export default function PlayerModalFooter({ playerRef, player }: PlayerModalFoot
     }
 
     return (
-        <DialogFooter className="max-w-2xl gap-2 p-2 md:p-4 border-t grid grid-cols-2 sm:flex">
+        <DialogFooter className="grid grid-cols-2 gap-2 border-t p-4 sm:flex sm:flex-row sm:justify-start">
             <Button
-                variant='outline'
+                variant='secondary'
                 size='sm'
                 disabled={!hasPerm('manage.admins') || !player || !player.isRegistered}
                 onClick={handleGiveAdmin}
-                className="pl-2 sm:mr-auto"
+                className="sm:mr-auto"
             >
-                <ShieldCheckIcon className="h-5 mr-1" /> {t('Give Admin')}
+                {t('Give Admin')}
             </Button>
             <Button
-                variant='outline'
+                variant='secondary'
                 size='sm'
                 disabled={!hasPerm('players.direct_message') || !player || !player.isConnected}
                 onClick={handleDm}
-                className="pl-2"
             >
-                <MailIcon className="h-5 mr-1" /> {t('Message')}
+                {t('Message')}
             </Button>
             <Button
-                variant='outline'
-                size='sm'
-                disabled={!hasPerm('players.kick') || !player || !player.isConnected}
-                onClick={handleKick}
-                className="pl-2"
-            >
-                <KickOneIcon style={{
-                    height: '1.25rem',
-                    width: '1.75rem',
-                    marginRight: '0.25rem',
-                    fill: 'currentcolor'
-                }} /> {t('Kick')}
-            </Button>
-            <Button
-                variant='outline'
+                variant='secondary'
                 size='sm'
                 disabled={!hasPerm('players.warn') || !player}
                 onClick={handleWarn}
-                className="pl-2"
             >
-                <AlertTriangleIcon className="h-5 mr-1" /> {t('Warn')}
+                {t('Warn')}
+            </Button>
+            <Button
+                variant='outline-destructive'
+                size='sm'
+                disabled={!hasPerm('players.kick') || !player || !player.isConnected}
+                onClick={handleKick}
+            >
+                {t('Kick')}
             </Button>
         </DialogFooter>
     )

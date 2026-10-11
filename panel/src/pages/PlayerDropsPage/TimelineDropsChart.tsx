@@ -21,18 +21,16 @@ const ChartLabels = memo(({ categories }: { categories: string[] }) => {
     const categoriesReversed = categories.slice().reverse();
     return categoriesReversed.map((catName) => {
         return (
-            <div key={catName} className="flex items-center text-sm">
-                <div
-                    className="size-4 mr-1 rounded-full border dark:border-0"
-                    style={{
-                        backgroundColor: playerDropCategories[catName].color,
-                        borderColor: playerDropCategories[catName].border,
-                    }}
+            <div key={catName} className="flex items-center gap-2 text-xs">
+                <span
+                    aria-hidden="true"
+                    className="size-2.5 shrink-0 rounded-full"
+                    style={{ backgroundColor: playerDropCategories[catName].color }}
                 />
-                <span className="tracking-wider">
+                <span className="text-body">
                     {t(playerDropCategories[catName].label)}:
                 </span>
-                <div className="flex-grow text-right font-semibold min-w-[3ch] text-muted-foreground">
+                <div className="ml-auto min-w-[3ch] pl-3 text-right font-semibold tabular-nums text-white">
                     <span data-category={catName} />
                 </div>
             </div>
@@ -108,13 +106,11 @@ function TimelineDropsChart({ chartData, chartName, width, height, rangeSelected
 
     if (!width || !height) return null;
     if (renderError) {
-        return <div className="absolute inset-0 p-4 flex flex-col gap-4 items-center justify-center text-center text-lg font-mono text-destructive-inline">
-            {t('Render Error: {error}', { error: renderError })}
-            <br />
+        return <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 p-4 text-center text-sm text-danger-text">
+            <p>{t('Render Error: {error}', { error: renderError })}</p>
             <Button
                 size={'sm'}
-                variant={'outline'}
-                className='text-primary'
+                variant={'secondary'}
                 onClick={() => {
                     setErrorRetry(c => c + 1);
                     setRenderError('');
@@ -135,10 +131,10 @@ function TimelineDropsChart({ chartData, chartName, width, height, rangeSelected
                 top: `12px`,
                 opacity: 0,
             }}
-            className="p-2 rounded-md border shadow-lg dark:bg-zinc-800/90 bg-zinc-200/90 pointer-events-none transition-all"
+            className="pointer-events-none flex flex-col gap-1 rounded-xs bg-menu px-2.5 py-1.5 shadow-menu transition-opacity duration-150"
         >
             <ChartLabels categories={chartData.categoriesSorted} />
-            <div className="change-flag w-full mt-1 bg-card/75 rounded-md border text-center text-xs tracking-wider" />
+            <div className="change-flag mt-0.5 w-full rounded-xs bg-raise-2 px-1.5 py-0.5 text-center text-xs font-medium text-white" />
         </div>
         <svg
             ref={svgRef}

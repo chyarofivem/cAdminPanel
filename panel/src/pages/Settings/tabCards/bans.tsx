@@ -1,7 +1,6 @@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Button } from '@/components/ui/button'
 import { Link } from 'wouter'
-import { PencilIcon } from 'lucide-react'
 import SwitchText from '@/components/SwitchText'
 import { AdvancedDivider, SettingItem, SettingItemDesc } from '../settingsItems'
 import { AutosizeTextarea, AutosizeTextAreaRef } from "@/components/ui/autosize-textarea"
@@ -103,11 +102,11 @@ export default function ConfigCardBans({ cardCtx, pageCtx }: SettingsCardProps) 
             <SettingItem label={t('Ban Templates')}>
                 <Link asChild href="/settings/ban-templates">
                     <Button
-                        size={'sm'}
                         variant="secondary"
+                        className="w-fit"
                         disabled={pageCtx.isReadOnly}
                     >
-                        <PencilIcon className='size-4 mr-1.5 inline-block' /> {t('Edit Ban Templates')}
+                        {t('Edit Ban Templates')}
                     </Button>
                 </Link>
                 <SettingItemDesc>

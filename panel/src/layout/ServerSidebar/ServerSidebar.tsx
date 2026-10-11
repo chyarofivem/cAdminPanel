@@ -1,34 +1,45 @@
 import { cn } from '@/lib/utils';
-import { serverNameAtom } from '@/hooks/status';
-import { useAtomValue } from 'jotai';
 import { NavLink } from '@/components/MainPageLink';
-import { UsersRound } from 'lucide-react';
 import PanelBrand from '@/components/PanelBrand';
 import ServerMenu from './ServerMenu';
 import ServerControls from './ServerControls';
 import { t } from '@/lib/i18n';
 
+/**
+ * The sidebar: 256px on the sidebar surface from 1024px up; below that it is
+ * rendered inside the slide-in drawer (MainSheets).
+ */
 export function ServerSidebar({ isSheet }: { isSheet?: boolean }) {
-    const serverName = useAtomValue(serverNameAtom);
     return <aside className={cn(
-        'flex h-full w-64 shrink-0 flex-col overflow-y-auto border-r border-white/5 bg-[#1c1e23] text-white',
-        isSheet ? 'w-full' : 'hidden lg:flex',
+        'flex shrink-0 flex-col bg-sidebar text-body',
+        isSheet ? 'min-h-full w-full' : 'hidden h-full w-64 overflow-y-auto lg:flex',
     )}>
-        <div className="mt-8 flex items-center justify-center px-4">
-            <NavLink href="/"><PanelBrand /></NavLink>
+        <div className="flex min-h-14 items-center px-4 pt-4">
+            <NavLink href="/" className="rounded-sm">
+                <PanelBrand />
+            </NavLink>
         </div>
-        <form action="/administration/players" method="get" className="mt-7 px-2">
-            <div className="relative">
-                <input name="q" placeholder={t('Search players…')} className="w-full rounded-l-md rounded-r-2xl border border-white/5 bg-[#0f1116]/50 py-1.5 pl-3 pr-10 text-sm text-white outline-none placeholder:text-zinc-500 focus:ring-2 focus:ring-brand-600" />
-                <button className="absolute right-3 top-2 text-zinc-500 transition-colors hover:text-white" aria-label={t('Search players…')}><UsersRound className="size-4" /></button>
-            </div>
+        <form action="/administration/players" method="get" className="px-3 pt-4" role="search">
+            <label htmlFor={isSheet ? 'sidebar-player-search-sheet' : 'sidebar-player-search'} className="sr-only">{t('Search players')}</label>
+            <input
+                id={isSheet ? 'sidebar-player-search-sheet' : 'sidebar-player-search'}
+                name="q"
+                type="search"
+                placeholder={t('Search players…')}
+                className="h-11 w-full rounded-sm bg-sunken px-3 text-dense text-white ring-1 ring-inset ring-hairline transition-shadow duration-150 placeholder:text-faint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-text sm:h-9"
+            />
         </form>
-        <div className="mt-4 grow px-2"><ServerMenu /></div>
-        <div className="mx-3 mb-3 rounded-2xl border border-white/5 bg-white/5 p-3"><ServerControls /></div>
-        <div className="border-t border-dashed border-white/5 px-4 py-3 text-xs text-neutral-500">
-            <div className="truncate" title={serverName}>{serverName || t('Game server')}</div>
-            <div className="mt-2 leading-5">Powered by cAdminPanel</div>
-            <div className="mt-0.5 uppercase tracking-widest">PANEL V{window.txConsts.txaVersion} · FX B{window.txConsts.fxsVersion}</div>
+        <div className="grow px-3 pt-4"><ServerMenu /></div>
+        <div className="px-3 pb-3 pt-6">
+            <div className="rounded-lg bg-raise p-4">
+                <ServerControls />
+            </div>
         </div>
+        <footer className="px-4 pb-4 pt-1 text-micro text-faint">
+            <div>Powered by cAdminPanel</div>
+            <div className="mt-0.5 uppercase tracking-widest">
+                Panel v{window.txConsts.txaVersion} · FX b{window.txConsts.fxsVersion}
+            </div>
+        </footer>
     </aside>;
 }

@@ -34,11 +34,28 @@ const softBreaksOutsideCode = (src: string) => {
 
 
 //MARK: Custom components
-const preBaseClass = 'not-prose p-2 whitespace-pre-wrap [overflow-wrap:_anywhere] break-all rounded bg-muted [.prose-toast_&]:bg-muted/65 [.prose-toast_&>code]:bg-transparent';
-const jsonBlockClass = 'not-prose p-2 rounded bg-muted [.prose-toast_&]:bg-muted/65';
+//Code blocks sit on the sunken surface, or on raise-2 inside a toast (which is already on --menu).
+const preBaseClass = 'not-prose whitespace-pre-wrap break-all rounded-sm bg-sunken p-3 font-mono text-dense text-body [overflow-wrap:_anywhere] [.prose-toast_&]:bg-raise-2 [.prose-toast_&>code]:bg-transparent';
+const jsonBlockClass = 'not-prose rounded-sm bg-sunken p-3 [.prose-toast_&]:bg-raise-2';
+
+//Maps the typography plugin's dark palette onto the text and surface tokens.
+const proseTokenClass = [
+    '[--tw-prose-invert-body:var(--text-body)]',
+    '[--tw-prose-invert-headings:var(--text)]',
+    '[--tw-prose-invert-lead:var(--text-muted)]',
+    '[--tw-prose-invert-bold:var(--text)]',
+    '[--tw-prose-invert-counters:var(--text-muted)]',
+    '[--tw-prose-invert-bullets:var(--text-faint)]',
+    '[--tw-prose-invert-hr:var(--hairline)]',
+    '[--tw-prose-invert-quotes:var(--text-body)]',
+    '[--tw-prose-invert-quote-borders:var(--hairline)]',
+    '[--tw-prose-invert-captions:var(--text-muted)]',
+    '[--tw-prose-invert-code:var(--text)]',
+    '[--tw-prose-invert-th-borders:var(--hairline)]',
+    '[--tw-prose-invert-td-borders:var(--hairline)]',
+].join(' ');
 
 const customComponents: Components = {
-    // blockquote: ({ children }) => <blockquote className="border-l-4 border-pink-600 pl-2">{children}</blockquote>,
     code: ({ className, children }) => {
         //Fenced code blocks (with or without a language) must NOT use InlineCode,
         //because its horizontal padding ends up as left padding on the first line
@@ -47,7 +64,7 @@ const customComponents: Components = {
         if (isBlock) {
             return <code className={className}>{children}</code>;
         }
-        return <InlineCode className="not-prose [.prose-toast_&:not(pre_*)]:bg-muted/65">{children}</InlineCode>;
+        return <InlineCode className="not-prose">{children}</InlineCode>;
     },
     pre: ({ children }) => {
         //For fenced blocks react-markdown passes a single <code> child.
@@ -73,11 +90,12 @@ const customComponents: Components = {
 type MarkdownProseProps = {
     md: string;
     isSmall?: boolean;
+    /** Kept for callers; titles no longer get extra letter-spacing. */
     isTitle?: boolean;
     isToast?: boolean;
     className?: string;
 };
-export default function MarkdownProse({ md, isSmall, isTitle, isToast, className }: MarkdownProseProps) {
+export default function MarkdownProse({ md, isSmall, isToast, className }: MarkdownProseProps) {
     // md = '```\naaa\nbbb\nccc\n```';
     // md = '```json\n{"aaa": "bbb", "ccc": true}\n```';
     // md = '```json\n{\n\t"aaa": "bbb",\n\t"ccc": true\n}\n```';
@@ -88,9 +106,9 @@ export default function MarkdownProse({ md, isSmall, isTitle, isToast, className
             remarkPlugins={remarkPlugins}
             components={customComponents}
             className={cn(
-                'prose dark:prose-invert prose-zinc',
+                'prose dark:prose-invert',
+                proseTokenClass,
                 isSmall && 'prose-sm',
-                isTitle && 'tracking-wide',
                 isToast && 'prose-toast',
                 className,
             )}

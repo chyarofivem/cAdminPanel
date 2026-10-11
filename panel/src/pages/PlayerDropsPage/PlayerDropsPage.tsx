@@ -5,7 +5,6 @@ import DrilldownCard, { DrilldownCardLoading } from "./DrilldownCard";
 import TimelineCard from "./TimelineCard";
 import { useState } from "react";
 import { PageHeader } from '@/components/page-header';
-import { ActivityIcon } from 'lucide-react';
 import { t } from '@/lib/i18n';
 
 export type DrilldownRangeSelectionType = {
@@ -70,34 +69,34 @@ export default function PlayerDropsPage() {
     }
 
     return (
-        <div className="w-full space-y-6 pb-10">
-            <div className="border-b border-dashed border-white/5 pb-5">
-                <PageHeader title={t('Player Drops')} icon={<ActivityIcon className="size-6" />} />
-                <p className="-mt-3 max-w-3xl text-sm leading-6 text-zinc-400">
-                    {t('See when players leave, what caused unexpected disconnects, and which server changes line up with them.')}
-                </p>
-            </div>
-            <TimelineCard
-                isError={!!swrDataApiResp.error}
-                dataTs={swrDataApiResp.data?.ts}
-                summaryData={swrDataApiResp.data?.summary}
-                rangeSelected={drilldownRange}
-                rangeSetter={setDrilldownRange}
-                displayLod={displayLod}
-                setDisplayLod={displayLodSetter}
+        <div className="w-full min-w-0 pb-10">
+            <PageHeader
+                title={t('Player Drops')}
+                subtitle={t('See when players leave, what caused unexpected disconnects, and which server changes line up with them.')}
             />
-
-            {swrDataApiResp.data && !swrDataApiResp.isValidating ? (
-                <DrilldownCard
-                    windowStart={swrDataApiResp.data.detailed.windowStart}
-                    windowEnd={swrDataApiResp.data.detailed.windowEnd}
-                    windowData={swrDataApiResp.data.detailed.windowData}
+            <div className="flex flex-col gap-6">
+                <TimelineCard
+                    isError={!!swrDataApiResp.error}
+                    dataTs={swrDataApiResp.data?.ts}
+                    summaryData={swrDataApiResp.data?.summary}
                     rangeSelected={drilldownRange}
+                    rangeSetter={setDrilldownRange}
                     displayLod={displayLod}
+                    setDisplayLod={displayLodSetter}
                 />
-            ) : (
-                <DrilldownCardLoading isError={!!swrDataApiResp.error} />
-            )}
+
+                {swrDataApiResp.data && !swrDataApiResp.isValidating ? (
+                    <DrilldownCard
+                        windowStart={swrDataApiResp.data.detailed.windowStart}
+                        windowEnd={swrDataApiResp.data.detailed.windowEnd}
+                        windowData={swrDataApiResp.data.detailed.windowData}
+                        rangeSelected={drilldownRange}
+                        displayLod={displayLod}
+                    />
+                ) : (
+                    <DrilldownCardLoading isError={!!swrDataApiResp.error} />
+                )}
+            </div>
         </div>
     );
 }

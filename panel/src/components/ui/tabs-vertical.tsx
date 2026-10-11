@@ -29,8 +29,7 @@ const TabsVerticalList = React.forwardRef<
   <TabsPrimitive.List
     ref={ref}
     className={cn(
-      "inline-flex items-center justify-center rounded-md bg-muted p-1 text-muted-foreground",
-      'flex-col h-max', //TX CUSTOM: removed h-10
+      "inline-flex flex-col items-stretch gap-1 h-max",
       className
     )}
     {...props}
@@ -45,8 +44,7 @@ const TabsVerticalTrigger = React.forwardRef<
   <TabsPrimitive.Trigger
     ref={ref}
     className={cn(
-      "inline-flex items-center justify-center whitespace-nowrap rounded-sm px-3 py-1.5 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm",
-      'w-full', //TX CUSTOM
+      "flex min-h-11 w-full items-center justify-start whitespace-nowrap rounded-md px-3.5 py-2 text-sm text-body transition-colors duration-150 hover:bg-raise hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-text disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-accent-soft data-[state=active]:text-accent-text",
       className
     )}
     {...props}

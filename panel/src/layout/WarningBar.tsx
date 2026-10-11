@@ -2,46 +2,39 @@ import useWarningBar from "@/hooks/useWarningBar";
 import { cn } from "@/lib/utils";
 import { t } from "@/lib/i18n";
 import TxAnchor from "@/components/TxAnchor";
-import { CloudOffIcon, DownloadCloudIcon } from "lucide-react";
 import type { UpdateAvailableEventType } from "@shared/socketioTypes";
 
 type InnerWarningBarProps = {
-    titleIcon: React.ReactNode;
     title: React.ReactNode;
     description: React.ReactNode;
     isImportant: boolean;
 };
 
-export function InnerWarningBar({ titleIcon, title, description, isImportant }: InnerWarningBarProps) {
+/**
+ * A floating notice at the top of the viewport. It is a menu surface with a 4px
+ * status bar, so the words carry the status and the colour only reinforces it.
+ */
+export function InnerWarningBar({ title, description, isImportant }: InnerWarningBarProps) {
     return (
-        <div className='fixed top-navbarvh w-full flex justify-center z-40'>
-            <div className={cn(
-                "w-full sm:w-[28rem] min-h-9 hover:min-h-32 overflow-hidden sm:rounded-b-md",
-                "flex flex-col justify-center items-center p-1",
-                "group cursor-default transition-[height] shadow-xl",
-                isImportant ? 'bg-destructive text-destructive-foreground' : 'bg-info text-info-foreground'
-            )}>
-                <h2 className="text-md text-center group-hover:font-medium">
-                    {titleIcon}
-                    {title}
-                </h2>
-
-                <span className='hidden group-hover:block text-center text-sm'>
-                    {description}
-                </span>
+        <div className="pointer-events-none fixed inset-x-0 top-3 z-40 flex justify-center px-4">
+            <div
+                role={isImportant ? 'alert' : 'status'}
+                className="pointer-events-auto relative w-full max-w-md overflow-hidden rounded-xs bg-menu py-3 pl-5 pr-4 shadow-menu"
+            >
+                <div aria-hidden className={cn('absolute inset-y-0 left-0 w-1', isImportant ? 'bg-danger' : 'bg-info')} />
+                <h2 className="text-sm font-medium text-white">{title}</h2>
+                <div className="mt-0.5 text-dense text-muted-foreground">{description}</div>
             </div>
         </div>
     );
 }
 
 
-//The anchor sits on a solid accent background, so the default link colour is dropped
-const linkClasses = "text-inherit underline font-semibold";
+const linkClasses = "text-dense";
 
 function UpdateWarningBar({ panel, fxserver }: UpdateAvailableEventType) {
     return (
         <InnerWarningBar
-            titleIcon={<DownloadCloudIcon className="inline h-[1.2rem] -mt-1 mr-1" />}
             title={panel
                 ? t('cAdminPanel v{version} is available.', { version: panel.version })
                 : t('FXServer build {version} is available.', { version: fxserver!.version })}
@@ -77,10 +70,9 @@ export default function WarningBar() {
 
     if (offlineWarning) {
         return <InnerWarningBar
-            titleIcon={<CloudOffIcon className="inline h-[1.2rem] -mt-1 mr-1" />}
             title={t('Socket connection lost.')}
             description={<>
-                {t('The connection to the cAdminPanel server has been lost.')} <br />
+                {t('The connection to the cAdminPanel server has been lost.')}{' '}
                 {t('If you closed FXServer, please restart it.')}
             </>}
             isImportant={true}

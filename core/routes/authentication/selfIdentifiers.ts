@@ -5,6 +5,7 @@ import consts from '@shared/consts';
 import consoleFactory from '@lib/console';
 import { AuthedCtx } from '@modules/WebServer/ctxTypes';
 import type { ApiSelfIdentifiersResp } from '@shared/authApiTypes';
+import { normalizeLicenseIdentifier } from '@shared/licenseIdentifier';
 const console = consoleFactory(modulename);
 
 const cfxHttpReqOptions = { timeout: { request: 6000 } };
@@ -13,6 +14,8 @@ const bodySchema = z.object({
     //Omitting this field means "leave Discord untouched", so a client that only
     //edits the cfx.re identifier does not have to send the Discord one back.
     discordIdentifier: z.string().optional(),
+    //Same rule: omitted leaves the Rockstar license untouched, empty unlinks it.
+    licenseIdentifier: z.string().optional(),
 });
 type ProviderData = { id: string, identifier: string };
 
@@ -73,9 +76,24 @@ export default async function AuthSelfIdentifiers(ctx: AuthedCtx) {
         }
     }
 
+    let licenseData: ProviderData | false | undefined;
+    if (parsed.data.licenseIdentifier !== undefined) {
+        const rawLicense = parsed.data.licenseIdentifier.trim();
+        const normalizedLicense = normalizeLicenseIdentifier(rawLicense);
+        if (!rawLicense.length) {
+            licenseData = false;
+        } else if (!normalizedLicense) {
+            return ctx.send<ApiSelfIdentifiersResp>({
+                error: 'Enter the Rockstar license as `license:` followed by 40 letters and digits.',
+            });
+        } else {
+            licenseData = { id: normalizedLicense.slice('license:'.length), identifier: normalizedLicense };
+        }
+    }
+
     //Do not let an administrator claim an identifier already attached to a
     //different local account.
-    for (const providerData of [citizenfxData, discordData]) {
+    for (const providerData of [citizenfxData, discordData, licenseData]) {
         if (!providerData || typeof providerData !== 'object') continue;
         const existing = txCore.adminStore.getAdminByIdentifiers([providerData.identifier]);
         if (existing && existing.name.toLowerCase() !== ctx.admin.name.toLowerCase()) {
@@ -86,16 +104,18 @@ export default async function AuthSelfIdentifiers(ctx: AuthedCtx) {
     }
 
     try {
-        await txCore.adminStore.editAdmin(ctx.admin.name, citizenfxData, discordData);
+        await txCore.adminStore.editAdmin(ctx.admin.name, citizenfxData, discordData, undefined, licenseData);
         const savedAdmin = txCore.adminStore.getAdminByName(ctx.admin.name);
         const savedCfx = savedAdmin?.providers?.citizenfx?.identifier;
         const savedDiscordId = savedAdmin?.providers?.discord?.id;
         const savedDiscord = savedDiscordId ? `discord:${savedDiscordId}` : undefined;
-        ctx.admin.logAction(`Changing own identifiers to ${savedCfx || 'no cfx.re ID'}, ${savedDiscord || 'no Discord ID'}`);
+        const savedLicense = savedAdmin?.providers?.license?.identifier;
+        ctx.admin.logAction(`Changing own identifiers to ${savedCfx || 'no cfx.re ID'}, ${savedDiscord || 'no Discord ID'}, ${savedLicense || 'no Rockstar license'}`);
         return ctx.send<ApiSelfIdentifiersResp>({
             success: true,
             cfxIdentifier: savedCfx,
             discordIdentifier: savedDiscord,
+            licenseIdentifier: savedLicense,
         });
     } catch (error) {
         return ctx.send<ApiSelfIdentifiersResp>({ error: (error as Error).message });

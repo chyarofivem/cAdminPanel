@@ -31,8 +31,11 @@ const ansi16ColorsDark = {
     brightWhite: '#FFFFFF',
 };
 
+//NOTE: the ANSI palette above is console content and stays as is.
+//The background matches `editorThemeColors` (`--sunken` over the page), so the console
+//and both monaco editors read as the same surface.
 const baseColorsDark = {
-    background: '#08090b', //match the CFG editor surface
+    background: '#0d0f13',
     foreground: '#F8F8F8', //primary
 }
 

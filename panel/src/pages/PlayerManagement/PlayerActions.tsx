@@ -1,9 +1,9 @@
 import { useRef, useState } from 'react';
 import useSWR from 'swr';
-import { Gavel, Mail, ShieldCheck, TriangleAlert, UserMinus } from 'lucide-react';
 import { useLocation } from 'wouter';
 import BanForm, { type BanFormType } from '@/components/BanForm';
 import { txToast } from '@/components/TxToaster';
+import { Alert } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -174,51 +174,51 @@ export default function PlayerActions({ target, extended = false, onChanged, cla
     const busy = working !== null;
     return <>
         <div className={className ?? 'flex flex-wrap gap-2'} onClick={event => event.stopPropagation()}>
+            {extended && <>
+                <Button size="sm" variant="secondary" disabled={busy || !target.isOnline || !hasPerm('players.direct_message')} onClick={message}>
+                    {t('Message')}
+                </Button>
+                <Button size="sm" variant="secondary" disabled={busy || !hasPerm('players.warn')} onClick={warn}>
+                    {t('Warn')}
+                </Button>
+            </>}
             <Button
                 size="sm"
-                variant="outline"
-                disabled={busy || !target.isOnline || !hasPerm('players.kick')}
-                onClick={kick}
-            >
-                <UserMinus className="mr-1.5 size-4" />{t('Kick')}
-            </Button>
-            <Button
-                size="sm"
-                variant="destructive"
-                disabled={busy || !hasPerm('players.ban')}
-                onClick={() => setBanOpen(true)}
-            >
-                <Gavel className="mr-1.5 size-4" />{t('Ban')}
-            </Button>
-            <Button
-                size="sm"
-                variant="outline"
+                variant="secondary"
                 disabled={busy || !hasPerm('manage.admins')}
                 onClick={() => setLocation(buildGiveAdminHref(target))}
             >
-                <ShieldCheck className="mr-1.5 size-4" />{t('Give Admin')}
+                {t('Give Admin')}
             </Button>
-            {extended && <>
-                <Button size="sm" variant="outline" disabled={busy || !hasPerm('players.warn')} onClick={warn}>
-                    <TriangleAlert className="mr-1.5 size-4" />{t('Warn')}
-                </Button>
-                <Button size="sm" variant="outline" disabled={busy || !target.isOnline || !hasPerm('players.direct_message')} onClick={message}>
-                    <Mail className="mr-1.5 size-4" />{t('Message')}
-                </Button>
-            </>}
+            <Button
+                size="sm"
+                variant="outline-destructive"
+                disabled={busy || !target.isOnline || !hasPerm('players.kick')}
+                onClick={kick}
+            >
+                {t('Kick')}
+            </Button>
+            <Button
+                size="sm"
+                variant="outline-destructive"
+                disabled={busy || !hasPerm('players.ban')}
+                onClick={() => setBanOpen(true)}
+            >
+                {t('Ban')}
+            </Button>
         </div>
 
         <Dialog open={banOpen} onOpenChange={open => !busy && setBanOpen(open)}>
-            <DialogContent className="max-w-2xl border-white/10 bg-[#17191e]">
+            <DialogContent className="max-w-2xl">
                 <DialogHeader>
                     <DialogTitle>{t('Ban {name}', { name: target.name })}</DialogTitle>
                     <DialogDescription>{t('Choose a reason and duration. Active identifiers and hardware tokens are included when available.')}</DialogDescription>
                 </DialogHeader>
                 {banTemplates.error
-                    ? <div className="rounded-xl border border-red-500/20 bg-red-500/10 p-4 text-sm text-red-300">{t('Unable to load ban templates.')}</div>
+                    ? <Alert variant="destructive">{t('Unable to load ban templates.')}</Alert>
                     : <BanForm ref={banFormRef} banTemplates={banTemplates.data} disabled={busy} />}
                 <DialogFooter>
-                    <Button variant="outline" disabled={busy} onClick={() => setBanOpen(false)}>{t('Cancel')}</Button>
+                    <Button variant="secondary" disabled={busy} onClick={() => setBanOpen(false)}>{t('Cancel')}</Button>
                     <Button variant="destructive" disabled={busy || Boolean(banTemplates.error)} onClick={applyBan}>
                         {working === 'ban' ? t('Banning...') : t('Apply Ban')}
                     </Button>

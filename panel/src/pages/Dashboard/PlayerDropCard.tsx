@@ -1,9 +1,9 @@
 import { memo, useCallback, useMemo, useState } from 'react';
 import { Pie, DatumId, PieCustomLayerProps, ComputedDatum } from '@nivo/pie';
 import { numberToLocaleString } from '@/lib/utils';
-import { DoorOpenIcon, Loader2Icon } from 'lucide-react';
 import { useIsDarkMode } from '@/hooks/theme';
 import DebouncedResizeContainer from "@/components/DebouncedResizeContainer";
+import Section from '@/components/Section';
 import { useAtomValue } from 'jotai';
 import { dashPlayerDropAtom, useGetDashDataAge } from './dashboardHooks';
 import { playerDropCategories, playerDropCategoryDefaultColor } from '@/lib/playerDropCategories';
@@ -33,20 +33,20 @@ const PieCenterText = ({ centerX, centerY, dataWithArc, innerRadius, active }: P
             />
             <text
                 x={centerX}
-                y={centerY - 15}
+                y={centerY - 12}
                 textAnchor="middle"
                 dominantBaseline="central"
-                className='text-xl font-bold'
+                className='text-dense font-semibold'
                 opacity={0.75}
             >
                 {active.label}:
             </text>
             <text
                 x={centerX}
-                y={centerY + 15}
+                y={centerY + 10}
                 textAnchor="middle"
                 dominantBaseline="central"
-                className='text-xl font-bold'
+                className='text-lg font-semibold tabular-nums'
                 opacity={0.75}
             >
                 {numberToLocaleString(active.data.count)}
@@ -58,19 +58,19 @@ const PieCenterText = ({ centerX, centerY, dataWithArc, innerRadius, active }: P
         return (<>
             <text
                 x={centerX}
-                y={centerY - 15}
+                y={centerY - 12}
                 textAnchor="middle"
                 dominantBaseline="central"
-                className='text-2xl font-bold fill-muted-foreground'
+                className='text-dense fill-muted-foreground'
             >
                 {t('Total')}:
             </text>
             <text
                 x={centerX}
-                y={centerY + 15}
+                y={centerY + 10}
                 textAnchor="middle"
                 dominantBaseline="central"
-                className='text-2xl font-bold fill-muted-foreground'
+                className='text-lg font-semibold tabular-nums fill-white'
             >
                 {numberToLocaleString(totalDrops)}
             </text>
@@ -104,6 +104,7 @@ const PlayerDropChart = memo(({ data, activeId, setActiveId, width, height }: Pl
             width={width}
             theme={{
                 text: {
+                    fontFamily: 'inherit',
                     fontSize: '13px',
                     fontWeight: 600,
                 },
@@ -157,7 +158,7 @@ export default function PlayerDropCard() {
         const totalDrops = playerDropData.summaryLast6h.reduce((acc, d) => acc + d[1], 0);
         return playerDropData.summaryLast6h.map(([reason, count]) => ({
             id: reason,
-            label: playerDropCategories[reason]?.label ?? reason,
+            label: playerDropCategories[reason] ? t(playerDropCategories[reason].label) : reason,
             count,
             value: count / totalDrops,
             color: playerDropCategories[reason]?.color ?? playerDropCategoryDefaultColor,
@@ -174,7 +175,7 @@ export default function PlayerDropCard() {
 
         return playerDropData.summaryLast6h.map(([reason, count]) => ({
             id: reason,
-            label: playerDropCategories[reason]?.label ?? reason,
+            label: playerDropCategories[reason] ? t(playerDropCategories[reason].label) : reason,
             color: playerDropCategories[reason]?.color ?? playerDropCategoryDefaultColor,
             border: playerDropCategories[reason]?.border ?? playerDropCategoryDefaultColor,
         }));
@@ -192,54 +193,45 @@ export default function PlayerDropCard() {
             height={chartSize.height}
         />;
     } else if (typeof chartData === 'string') {
-        contentNode = <div className="absolute inset-0 flex flex-col items-center justify-center text-muted-foreground text-center">
+        contentNode = <div className="absolute inset-0 flex flex-col items-center justify-center p-4 text-center text-sm text-muted-foreground">
             <p className='max-w-80'>
                 {t('No players have disconnected from the server in the last 6 hours.')}
             </p>
         </div>;
     } else {
-        contentNode = <div className="absolute inset-0 flex flex-col items-center justify-center">
-            <Loader2Icon className="animate-spin size-16 text-muted-foreground" />
+        contentNode = <div role="status" className="absolute inset-0 flex items-center justify-center text-sm text-muted-foreground">
+            {t('Loading…')}
         </div>;
     }
 
     return (
-        <div className="col-span-3 sm:col-span-2 3xl:col-span-3 pt-6 pb-4 rounded-2xl bg-white/5 flex flex-col min-w-64 h-[20rem] max-h-[20rem]">
-            <div className="px-6 flex flex-row items-center justify-between space-y-0 pb-4">
-                <h3 className="text-xs uppercase tracking-widest text-neutral-500 line-clamp-1">{t('Player drop cause (last 6h)')}</h3>
-                <div className='hidden sm:block text-neutral-500'><DoorOpenIcon className="size-4" /></div>
+        <Section className="min-w-0" title={t('Player drop cause (last 6h)')}>
+            <div className="h-56">
+                <DebouncedResizeContainer onDebouncedResize={setChartSize}>
+                    {contentNode}
+                </DebouncedResizeContainer>
             </div>
-            {/* <div className='font-mono'>
-                {Object.entries(playerDropCategories).map(([reason, { label, color }]) => {
-                    return (
-                        <div key={reason} className='w-full pl-8 text-black' style={{ backgroundColor: color }}>{color} - {label}</div>
-                    )
-                })}
-            </div> */}
-            <DebouncedResizeContainer onDebouncedResize={setChartSize}>
-                {contentNode}
-            </DebouncedResizeContainer>
-            {displayLegends && <div className='px-6 pt-3 mx-auto flex flex-wrap justify-center gap-2'>
+            {displayLegends && <div className='mt-4 flex flex-wrap justify-center gap-1'>
                 {displayLegends.map(legend => {
                     return (
-                        <div
+                        <button
+                            type="button"
                             key={legend.id}
                             data-active={activeId === legend.id}
-                            className="flex items-center cursor-pointer hover:underline data-[active=true]:underline"
+                            aria-pressed={activeId === legend.id}
+                            className="inline-flex min-h-11 items-center gap-2 rounded-xs px-2 text-dense text-body transition-colors duration-150 hover:bg-raise hover:text-white data-[active=true]:bg-raise-2 data-[active=true]:text-white sm:min-h-8"
                             onClick={() => setActiveId(activeId === legend.id ? null : legend.id)}
                         >
-                            <div
-                                className="size-4 mr-1 rounded-full border dark:border-0"
-                                style={{
-                                    backgroundColor: legend.color,
-                                    borderColor: legend.border,
-                                }}
+                            <span
+                                aria-hidden="true"
+                                className="size-2.5 shrink-0 rounded-full"
+                                style={{ backgroundColor: legend.color }}
                             />
-                            <span className="text-sm">{legend.label}</span>
-                        </div>
+                            {legend.label}
+                        </button>
                     )
                 })}
             </div>}
-        </div>
+        </Section>
     );
 }

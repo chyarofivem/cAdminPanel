@@ -1,14 +1,15 @@
 import { useEffect, useMemo, useReducer, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
+import Section from '@/components/Section';
 import { SettingItem, SettingItemDesc } from '../settingsItems';
 import SettingsCardShell from '../SettingsCardShell';
 import { configsReducer, getConfigAccessors, getConfigDiff, getConfigEmptyState, getPageConfig, type SettingsCardProps } from '../utils';
 import { useAdminPerms } from '@/hooks/auth';
 import { useBackendApi } from '@/hooks/fetch';
 import { txToast } from '@/components/TxToaster';
-import { PlugZap, ServerCog } from 'lucide-react';
 import { t } from '@/lib/i18n';
 import { reloadPanel } from '@/lib/navigation';
 
@@ -36,7 +37,9 @@ export default function CadminCard({ cardCtx, pageCtx }: SettingsCardProps) {
     };
     useEffect(() => { updatePageState(); }, [states]);
 
-    if (!isMaster) return <div className="rounded-2xl border border-white/5 bg-white/5 p-6 text-zinc-400">{t('Only the master can configure Character Management.')}</div>;
+    if (!isMaster) return <Section title={cardCtx.cardTitle}>
+        <p className="text-sm text-muted-foreground">{t('Only the master can configure Character Management.')}</p>
+    </Section>;
 
     const runAction = async (action: 'install' | 'test') => {
         setWorking(true);
@@ -58,11 +61,39 @@ export default function CadminCard({ cardCtx, pageCtx }: SettingsCardProps) {
     };
 
     return <SettingsCardShell cardCtx={cardCtx} pageCtx={{ ...pageCtx, isReadOnly: pageCtx.isReadOnly || working }} onClickSave={handleSave}>
-        <SettingItem label={t('Enabled')}><Switch checked={states.enabled ?? false} onCheckedChange={value => dispatch({ configName: 'enabled', configValue: value })} /><SettingItemDesc>{t('Enables Character Management pages and the bridge API. Staff access still comes only from local panel permissions.')}</SettingItemDesc></SettingItem>
-        <SettingItem label={t('Framework')}><select className="h-10 w-full max-w-sm rounded-lg border border-white/10 bg-[#0f1116] px-3 text-sm text-white outline-none focus:border-brand-600 focus:ring-2 focus:ring-brand-600/20" value={states.framework ?? 'auto'} onChange={event => dispatch({ configName: 'framework', configValue: event.target.value })}><option value="auto">{t('Auto-detect')}</option><option value="esx">ESX</option><option value="qbox">Qbox</option></select><SettingItemDesc>{t('Only ESX and Qbox have a bridge adapter, and both are FiveM frameworks. There is nothing to connect to on a RedM server.')}</SettingItemDesc></SettingItem>
-        <SettingItem label={t('Bridge URL')}><Input value={states.apiUrl ?? ''} onChange={event => dispatch({ configName: 'apiUrl', configValue: event.target.value })} placeholder="http://127.0.0.1:30120/cadminpanel" /></SettingItem>
-        <SettingItem label={t('Shared secret')}><Input type="password" autoComplete="off" value={states.apiSecret ?? ''} onChange={event => dispatch({ configName: 'apiSecret', configValue: event.target.value })} /></SettingItem>
-        <SettingItem label={t('Dirty money item')}><Input value={states.dirtyMoneyItem ?? ''} onChange={event => dispatch({ configName: 'dirtyMoneyItem', configValue: event.target.value })} /></SettingItem>
-        <div className="flex flex-wrap gap-2"><Button type="button" variant="outline" disabled={working || !pageCtx.apiData} onClick={() => runAction('install')}><ServerCog className="mr-2 size-4" />{t('Install & configure now')}</Button><Button type="button" variant="outline" disabled={working || !states.enabled} onClick={() => runAction('test')}><PlugZap className="mr-2 size-4" />{t('Test connection')}</Button></div>
+        <SettingItem label={t('Enabled')} htmlFor={cfg.enabled.eid}>
+            <Switch
+                id={cfg.enabled.eid}
+                checked={states.enabled ?? false}
+                onCheckedChange={value => dispatch({ configName: 'enabled', configValue: value })}
+            />
+            <SettingItemDesc>{t('Enables Character Management pages and the bridge API. Staff access still comes only from local panel permissions.')}</SettingItemDesc>
+        </SettingItem>
+        <SettingItem label={t('Framework')} htmlFor={cfg.framework.eid}>
+            <Select value={states.framework ?? 'auto'} onValueChange={value => dispatch({ configName: 'framework', configValue: value })}>
+                <SelectTrigger id={cfg.framework.eid}>
+                    <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                    <SelectItem value="auto">{t('Auto-detect')}</SelectItem>
+                    <SelectItem value="esx">ESX</SelectItem>
+                    <SelectItem value="qbox">Qbox</SelectItem>
+                </SelectContent>
+            </Select>
+            <SettingItemDesc>{t('Only ESX and Qbox have a bridge adapter, and both are FiveM frameworks. There is nothing to connect to on a RedM server.')}</SettingItemDesc>
+        </SettingItem>
+        <SettingItem label={t('Bridge URL')} htmlFor={cfg.apiUrl.eid}>
+            <Input id={cfg.apiUrl.eid} value={states.apiUrl ?? ''} onChange={event => dispatch({ configName: 'apiUrl', configValue: event.target.value })} placeholder="http://127.0.0.1:30120/cadminpanel" />
+        </SettingItem>
+        <SettingItem label={t('Shared secret')} htmlFor={cfg.apiSecret.eid}>
+            <Input id={cfg.apiSecret.eid} type="password" autoComplete="off" value={states.apiSecret ?? ''} onChange={event => dispatch({ configName: 'apiSecret', configValue: event.target.value })} />
+        </SettingItem>
+        <SettingItem label={t('Dirty money item')} htmlFor={cfg.dirtyMoneyItem.eid}>
+            <Input id={cfg.dirtyMoneyItem.eid} value={states.dirtyMoneyItem ?? ''} onChange={event => dispatch({ configName: 'dirtyMoneyItem', configValue: event.target.value })} />
+        </SettingItem>
+        <div className="flex flex-wrap gap-2">
+            <Button type="button" variant="secondary" disabled={working || !pageCtx.apiData} onClick={() => runAction('install')}>{t('Install & configure now')}</Button>
+            <Button type="button" variant="secondary" disabled={working || !states.enabled} onClick={() => runAction('test')}>{t('Test connection')}</Button>
+        </div>
     </SettingsCardShell>;
 }

@@ -69,10 +69,10 @@ export default function TmpToasts() {
     }
 
     return <>
-        <div className="mx-auto mt-auto flex gap-4 group">
+        <div className="mx-auto mt-auto flex flex-wrap gap-3">
             <Button
                 size={'lg'}
-                variant="outline"
+                variant="secondary"
                 onClick={() => { txToast.dismiss() }}
             >
                 Wipe
@@ -86,41 +86,39 @@ export default function TmpToasts() {
             </Button>
             <Button
                 size={'lg'}
-                variant="default"
+                variant="secondary"
                 onClick={openMarkdownColors}
             >
                 Markdown
             </Button>
             <Button
                 size={'lg'}
-                variant="default"
+                variant="secondary"
                 onClick={openSpecial}
             >
                 Special
             </Button>
             <Button
                 size={'lg'}
-                variant="default"
+                variant="secondary"
                 onClick={openUpdatable}
             >
                 Updatable
             </Button>
             <Button
                 size={'lg'}
-                variant="default"
+                variant="secondary"
                 onClick={openApiResp}
             >
                 API Resp
             </Button>
             <Button
                 size={'lg'}
-                variant="default"
+                variant="secondary"
                 onClick={testPendingBug}
+                title="Click twice"
             >
-                <p>
-                    Pending Bug <br />
-                    <small>(click twice)</small>
-                </p>
+                Pending Bug
             </Button>
         </div>
     </>;

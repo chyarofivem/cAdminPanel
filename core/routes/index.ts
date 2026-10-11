@@ -1,5 +1,10 @@
 export { default as intercom } from './intercom.js';
 export { default as resources_data } from './resources/data';
+export { default as resources_updates } from './resources/updates';
+export { default as resourceMonitor_data } from './resourceMonitor/data';
+export { default as resourceMonitor_actions } from './resourceMonitor/actions';
+export { default as fxBuilds_data } from './fxBuilds/data';
+export { default as fxBuilds_actions } from './fxBuilds/actions';
 export { default as perfChart } from './perfChart';
 export { default as playerDrops } from './playerDrops';
 export { default as panelLog } from './txAdminLog';

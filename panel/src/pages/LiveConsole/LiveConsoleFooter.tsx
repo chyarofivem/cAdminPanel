@@ -3,35 +3,32 @@ import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { useAuthedFileDownload } from '@/hooks/fetch';
 import { txToast } from '@/components/TxToaster';
-import { BookMarkedIcon, FileDownIcon, SearchIcon, Trash2Icon } from "lucide-react";
+import { BookMarkedIcon, DownloadIcon, EraserIcon, SearchIcon } from "lucide-react";
 import { useAdminPerms } from '@/hooks/auth';
 import { useLiveConsoleHistory } from '@/pages/LiveConsole/liveConsoleHooks';
 import { useAtomValue } from 'jotai';
 import { fxRunnerStateAtom } from '@/hooks/status';
 import { t } from '@/lib/i18n';
+import { IconButton } from '@/components/ui/icon-button';
 
 
 type ConsoleFooterButtonProps = {
-    icon: React.ElementType;
+    icon: React.ReactNode;
     title: string;
     disabled?: boolean;
     onClick: () => void;
 }
 
-function ConsoleFooterButton({ icon: Icon, title, disabled, onClick }: ConsoleFooterButtonProps) {
+//Toolbar actions: 44px targets on phones, 36px from the sm breakpoint.
+function ConsoleFooterButton({ icon, title, disabled, onClick }: ConsoleFooterButtonProps) {
     return (
-        <button
-            type="button"
-            aria-label={title}
-            title={title}
+        <IconButton
+            label={title}
+            icon={icon}
             disabled={disabled}
-            className={cn(
-                'group grid size-10 shrink-0 place-items-center rounded-lg border border-white/10 bg-white/5 text-zinc-500 transition-colors hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-600 disabled:pointer-events-none disabled:opacity-40',
-            )}
             onClick={onClick}
-        >
-            <Icon className="size-4 transition-transform group-hover:scale-110" />
-        </button>
+            className="size-11 sm:size-9"
+        />
     )
 }
 
@@ -136,14 +133,15 @@ export default function LiveConsoleFooter(props: LiveConsoleFooterProps) {
     }
 
     return (
-        <footer className="flex flex-col gap-3 border-t border-white/10 bg-black/20 px-3 py-3 sm:flex-row sm:items-center sm:px-4">
-            <div className="flex min-w-0 grow items-center rounded-xl border border-white/10 bg-black/25 px-3 focus-within:border-brand-500/40 focus-within:ring-1 focus-within:ring-brand-500/20">
-                <span className="mr-2 select-none font-mono text-sm text-brand-400">$</span>
+        <footer className="flex flex-col gap-2 border-t border-hairline p-2 sm:flex-row sm:items-center sm:px-3">
+            <div className="flex min-w-0 grow items-center rounded-sm px-3 ring-1 ring-inset ring-hairline transition-shadow duration-150 focus-within:ring-2 focus-within:ring-accent-text">
+                <span className="mr-2 select-none font-mono text-sm text-muted-foreground" aria-hidden="true">$</span>
                 <Input
                     ref={termInputRef}
+                    aria-label={t('Type a command...')}
                     className={cn(
-                        'h-10 w-full border-0 bg-transparent px-0 font-mono text-sm shadow-none focus-visible:ring-0 focus-visible:ring-offset-0',
-                        !!inputError && 'placeholder:text-destructive placeholder:opacity-100'
+                        'w-full bg-transparent px-0 font-mono ring-0 focus-visible:ring-0',
+                        !!inputError && 'placeholder:text-danger-text placeholder:opacity-100'
                     )}
                     placeholder={inputError ?? t('Type a command...')}
                     type="text"
@@ -154,26 +152,26 @@ export default function LiveConsoleFooter(props: LiveConsoleFooterProps) {
                     autoCorrect='off'
                 />
             </div>
-            <div className="flex flex-row justify-end gap-2 select-none">
+            <div className="flex flex-row flex-wrap justify-end gap-1 select-none">
                 <ConsoleFooterButton
-                    icon={BookMarkedIcon}
+                    icon={<BookMarkedIcon />}
                     title={t('Saved commands')}
                     onClick={props.toggleSaveSheet}
                 />
                 <ConsoleFooterButton
-                    icon={SearchIcon}
+                    icon={<SearchIcon />}
                     title={t('Search console')}
                     disabled={!props.isConnected}
                     onClick={props.toggleSearchBar}
                 />
                 <ConsoleFooterButton
-                    icon={Trash2Icon}
+                    icon={<EraserIcon />}
                     title={t('Clear console')}
                     disabled={!props.isConnected}
                     onClick={props.consoleClear}
                 />
                 <ConsoleFooterButton
-                    icon={FileDownIcon}
+                    icon={<DownloadIcon />}
                     title={t('Download console log')}
                     disabled={!props.isConnected || isDownloading}
                     onClick={downloadLog} />

@@ -92,6 +92,11 @@ export default () => {
 
     //Data routes
     router.get('/resources/data', apiAuthMw, routes.resources_data);
+    router.post('/resources/updates/:action', apiAuthMw, routes.resources_updates);
+    router.get('/resourceMonitor/data', apiAuthMw, routes.resourceMonitor_data);
+    router.post('/resourceMonitor/:action', apiAuthMw, routes.resourceMonitor_actions);
+    router.get('/fxBuilds/data', apiAuthMw, routes.fxBuilds_data);
+    router.post('/fxBuilds/:action', apiAuthMw, routes.fxBuilds_actions);
     router.get('/api/logs/panel', apiAuthMw, routes.panelLog);
     router.get('/perfChartData/:thread', apiAuthMw, routes.perfChart);
     router.get('/playerDropsData', apiAuthMw, routes.playerDrops);

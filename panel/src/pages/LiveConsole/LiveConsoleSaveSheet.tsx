@@ -1,9 +1,13 @@
 import { txToast } from "@/components/TxToaster";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Button } from "@/components/ui/button";
+import { IconButton } from "@/components/ui/icon-button";
+import { ListRow, ListRows } from "@/components/ListRow";
+import EmptyState from "@/components/EmptyState";
 import { useOpenPromptDialog } from "@/hooks/dialogs";
 import { useLiveConsoleBookmarks, useLiveConsoleHistory } from "@/pages/LiveConsole/liveConsoleHooks";
 import { cn } from "@/lib/utils";
-import { PlusIcon, StarIcon, StarOffIcon, XIcon } from "lucide-react";
+import { StarIcon, StarOffIcon, XIcon } from "lucide-react";
 import { t } from '@/lib/i18n';
 
 
@@ -13,34 +17,17 @@ type SheetProps = {
     toTermInput: (_cmd: string) => void;
 }
 
+//Black 60% backdrop, no blur. Shown and hidden without motion.
 function SheetBackdrop({ isOpen, closeSheet }: Omit<SheetProps, 'toTermInput'>) {
     return (
         <div
             className={cn(
-                'absolute inset-0 z-20',
-                'bg-black/60 duration-300',
-                'data-[state=open]:pointer-events-auto data-[state=closed]:pointer-events-none',
-                'data-[state=open]:opacity-100',
-                'data-[state=closed]:opacity-0',
+                'absolute inset-0 z-20 bg-black/60',
+                isOpen ? 'block' : 'hidden',
             )}
             data-state={isOpen ? 'open' : 'closed'}
             onClick={closeSheet}
         />
-    )
-}
-
-
-function SheetCloseButton({ closeSheet }: Pick<SheetProps, 'closeSheet'>) {
-    return (
-        <button
-            type="button"
-            className="absolute right-4 top-4 rounded-sm opacity-70 ring-0 transition-opacity hover:opacity-100 focus:outline-none cursor-pointer"
-            onClick={closeSheet}
-            title={t('Close')}
-            aria-label={t('Close')}
-        >
-            <XIcon className="h-8 w-8" />
-        </button>
     )
 }
 
@@ -53,36 +40,31 @@ type SheetCommandProps = {
 }
 
 function SheetCommand({ cmd, type, onClick, onFavAction }: SheetCommandProps) {
-    const handleFavAction = (event: React.MouseEvent) => {
-        event.stopPropagation();
-        onFavAction();
-    };
-
     return (
-        <div
-            onClick={onClick}
-            className="px-2 py-1 flex justify-between items-center rounded-lg bg-card hover:bg-muted cursor-pointer group"
-        >
-            <span className="py-1 line-clamp-4 font-mono group-hover:text-primary">
-                {cmd}
-            </span>
-            <div className="min-w-max">
-                <button
-                    type="button"
-                    className="size-7 rounded-lg flex items-center justify-center hover:bg-primary hover:text-primary-foreground invisible group-hover:visible"
-                    onClick={handleFavAction}
-                    aria-label={type === 'history' ? t('Save command') : t('Remove saved command')}
-                >
-                    {type === 'history' ? (<>
-                        <StarIcon className="size-5" />
-                        <span className="sr-only">{t('Save')}</span>
-                    </>) : (<>
-                        <StarOffIcon className="size-5" />
-                        <span className="sr-only">{t('Remove')}</span>
-                    </>)}
-                </button>
-            </div>
-        </div >
+        <ListRow interactive className="gap-1 py-1 pr-1 sm:pr-1">
+            <button
+                type="button"
+                onClick={onClick}
+                className="min-h-9 min-w-0 flex-1 rounded-xs py-1 text-left font-mono text-dense text-body transition-colors duration-150 [overflow-wrap:anywhere] hover:text-white"
+            >
+                <span className="line-clamp-4">{cmd}</span>
+            </button>
+            {type === 'history' ? (
+                <IconButton
+                    label={t('Save command')}
+                    icon={<StarIcon />}
+                    tooltipSide="left"
+                    onClick={onFavAction}
+                />
+            ) : (
+                <IconButton
+                    label={t('Remove saved command')}
+                    icon={<StarOffIcon />}
+                    tooltipSide="left"
+                    onClick={onFavAction}
+                />
+            )}
+        </ListRow>
     )
 }
 
@@ -107,70 +89,59 @@ function SheetContent({ toTermInput }: Pick<SheetProps, 'toTermInput'>) {
         })
     }
     return (
-        <div className="flex flex-row gap-4 max-h-full">
-            <div className="flex flex-col flex-grow gap-2 w-1/2">
-                <h2 className="text-xl font-bold">{t('Command history')}</h2>
-                <ScrollArea className="max-h-full w-full pr-3 text-sm text-muted-foreground" style={{ wordBreak: 'break-word' }}>
-                    <button
-                        type="button"
-                        onClick={handleWipeHistory}
-                        className="w-full py-2 rounded-lg bg-secondary hover:bg-primary hover:text-primary-foreground font-sans tracking-wider mb-2"
-                    >
-                        <div className="flex items-center justify-center gap-2">
-                            <XIcon className="w-4 h-4 inline" />
-                            {t('Clear history')}
-                        </div>
-                    </button>
-                    <div className="space-y-2 line-clamp-1 text-sm font-mono tracking-wide  pb-4">
-                        {history.map((cmd, index) => (
-                            <SheetCommand
-                                key={index}
-                                cmd={cmd}
-                                type='history'
-                                onClick={() => toTermInput(cmd)}
-                                onFavAction={() => addBookmark(cmd)}
-                            />
-                        ))}
-                    </div>
-                    {history.length === 0 && (
-                        <div className="w-full h-auto text-center italic tracking-wider">
-                            {t('The command history is empty.')}
-                        </div>
+        <div className="grid min-h-0 flex-1 grid-rows-2 gap-6 md:grid-cols-2 md:grid-rows-1">
+            <section className="flex min-h-0 flex-col gap-3">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                    <h2 className="text-base font-semibold text-white">{t('Command history')}</h2>
+                    <Button type="button" size="sm" variant="secondary" onClick={handleWipeHistory}>
+                        {t('Clear history')}
+                    </Button>
+                </div>
+                <ScrollArea className="min-h-0 flex-1">
+                    {history.length === 0 ? (
+                        <EmptyState message={t('The command history is empty.')} />
+                    ) : (
+                        <ListRows className="pb-4">
+                            {history.map((cmd, index) => (
+                                <SheetCommand
+                                    key={index}
+                                    cmd={cmd}
+                                    type='history'
+                                    onClick={() => toTermInput(cmd)}
+                                    onFavAction={() => addBookmark(cmd)}
+                                />
+                            ))}
+                        </ListRows>
                     )}
                 </ScrollArea>
-            </div>
-            <div className="flex flex-col flex-grow gap-2 w-1/2">
-                <h2 className="text-xl font-bold">{t('Saved commands')}</h2>
-                <ScrollArea className="max-h-full w-full pr-3 text-sm text-muted-foreground" style={{ wordBreak: 'break-word' }}>
-                    <button
-                        type="button"
-                        onClick={handleSaveCommand}
-                        className="w-full py-2 rounded-lg bg-secondary hover:bg-primary hover:text-primary-foreground font-sans tracking-wider mb-2"
-                    >
-                        <div className="flex items-center justify-center gap-2">
-                            <PlusIcon className="w-4 h-4 inline" />
-                            {t('Add command')}
-                        </div>
-                    </button>
-                    <div className="space-y-2 line-clamp-1 text-sm font-mono tracking-wide  pb-4">
-                        {bookmarks.map((cmd, index) => (
-                            <SheetCommand
-                                key={index}
-                                cmd={cmd}
-                                type='saved'
-                                onClick={() => toTermInput(cmd)}
-                                onFavAction={() => removeBookmark(cmd)}
-                            />
-                        ))}
-                    </div>
-                    {bookmarks.length === 0 && (
-                        <div className="w-full h-auto text-center italic tracking-wider">
-                            {t('There are no saved commands.')} <br />
-                            {t('Use the star beside a history entry to save it.')}
-                        </div>
+            </section>
+            <section className="flex min-h-0 flex-col gap-3">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                    <h2 className="text-base font-semibold text-white">{t('Saved commands')}</h2>
+                    <Button type="button" size="sm" variant="secondary" onClick={handleSaveCommand}>
+                        {t('Add command')}
+                    </Button>
+                </div>
+                <ScrollArea className="min-h-0 flex-1">
+                    {bookmarks.length === 0 ? (
+                        <EmptyState
+                            message={`${t('There are no saved commands.')} ${t('Use the star beside a history entry to save it.')}`}
+                        />
+                    ) : (
+                        <ListRows className="pb-4">
+                            {bookmarks.map((cmd, index) => (
+                                <SheetCommand
+                                    key={index}
+                                    cmd={cmd}
+                                    type='saved'
+                                    onClick={() => toTermInput(cmd)}
+                                    onFavAction={() => removeBookmark(cmd)}
+                                />
+                            ))}
+                        </ListRows>
                     )}
                 </ScrollArea>
-            </div>
+            </section>
         </div>
     )
 }
@@ -181,15 +152,20 @@ export default function LiveConsoleSaveSheet({ isOpen, closeSheet, toTermInput }
         <SheetBackdrop isOpen={isOpen} closeSheet={closeSheet} />
         <div
             data-state={isOpen ? 'open' : 'closed'}
+            aria-hidden={!isOpen}
             className={cn(
-                'absolute z-20 inset-y-0 w-full md:max-w-2xl',
-                'border-l border-white/10 bg-zinc-950/95 px-4 pt-6 shadow-2xl backdrop-blur',
-                'data-[state=open]:pointer-events-auto data-[state=closed]:pointer-events-none',
-                'transition-all duration-300 ease-in-out',
-                isOpen ? 'right-0 opacity-100' : '-right-full opacity-0',
+                'absolute inset-y-0 right-0 z-20 w-full flex-col gap-4 bg-modal p-4 font-sans sm:p-6 md:max-w-2xl',
+                isOpen ? 'flex' : 'hidden',
             )}
         >
-            <SheetCloseButton closeSheet={closeSheet} />
+            <div className="flex justify-end">
+                <IconButton
+                    label={t('Close')}
+                    icon={<XIcon />}
+                    className="size-11 sm:size-9"
+                    onClick={closeSheet}
+                />
+            </div>
             <SheetContent toTermInput={toTermInput} />
         </div>
     </>;

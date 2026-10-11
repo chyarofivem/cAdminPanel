@@ -1,9 +1,10 @@
 import { txToast } from '@/components/TxToaster';
 import { fxRunnerStateAtom, txConfigStateAtom, useGlobalStatus } from '@/hooks/status';
-import { cn } from '@/lib/utils';
+import { playerCountAtom } from '@/hooks/playerlist';
 import { useAtomValue } from 'jotai';
-import { Clock3Icon, MegaphoneIcon, PlayCircleIcon, PowerIcon, PowerOffIcon, RotateCcwIcon, XCircleIcon } from 'lucide-react';
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { Badge } from '@/components/ui/badge';
+import { msToShortDuration } from '@/lib/dateTime';
+import { FxMonitorHealth } from '@shared/enums';
 import { useOpenConfirmDialog, useOpenPromptDialog } from '@/hooks/dialogs';
 import { ApiTimeout, useBackendApi } from '@/hooks/fetch';
 import { useCloseAllSheets } from '@/hooks/sheets';
@@ -16,10 +17,48 @@ import { validateRestartSchedule } from './restartScheduleValidation';
 
 
 //NOTE: the sidebar grid cell is ~100px wide, and the button base class is `whitespace-nowrap`.
-//Longer translations (eg. 'Restart' -> 'Ponovno pokreni') painted outside the rounded background,
+//Longer translations (eg. 'Restart' -> 'Ponovno pokreni') would paint outside the pill,
 //so the label wraps onto a second line and the button grows instead of overflowing.
-const controlButtonClass = 'h-auto min-h-9 w-full min-w-0 gap-2 px-2 py-1.5 text-xs shadow-none';
-const controlLabelClass = 'min-w-0 whitespace-normal break-words text-center leading-tight';
+const controlButtonClass = 'h-auto w-full min-w-0 whitespace-normal break-words px-3 text-center leading-tight';
+
+
+/**
+ * One line of live server state. Status is always a word, never colour alone.
+ */
+function ServerStatusLine() {
+    const globalStatus = useGlobalStatus();
+    const playerCount = useAtomValue(playerCountAtom);
+    if (!globalStatus) {
+        return <p className="text-dense text-muted-foreground">{t('loading...')}</p>;
+    }
+    const { health, uptime } = globalStatus.server;
+    const badge = health === FxMonitorHealth.ONLINE
+        ? <Badge variant="success">{t('Online')}</Badge>
+        : health === FxMonitorHealth.PARTIAL
+            ? <Badge variant="warning">{t('Partial')}</Badge>
+            : <Badge variant="danger">{t('Offline')}</Badge>;
+    const scheduler = globalStatus.scheduler;
+    const nextRestart = typeof scheduler.nextRelativeMs === 'number' && !scheduler.nextSkip
+        ? msToShortDuration(scheduler.nextRelativeMs, { units: ['h', 'm'], delimiter: ' ' })
+        : null;
+
+    return <div className="flex flex-col gap-2">
+        <div className="flex items-center justify-between gap-2">
+            <span title={t(globalStatus.server.healthReason)}>{badge}</span>
+            {uptime > 0 && <span className="text-dense tabular-nums text-muted-foreground" title={t('Uptime')}>
+                {msToShortDuration(uptime, { units: ['d', 'h', 'm'], delimiter: ' ' })}
+            </span>}
+        </div>
+        <div className="flex items-center justify-between gap-2 text-dense">
+            <span className="text-muted-foreground">{t('Players')}</span>
+            <span className="tabular-nums text-white">{playerCount}</span>
+        </div>
+        {nextRestart && <div className="flex items-center justify-between gap-2 text-dense">
+            <span className="text-muted-foreground">{t('Next restart')}</span>
+            <span className="tabular-nums text-warning-text">{nextRestart}</span>
+        </div>}
+    </div>;
+}
 
 export default function ServerControls() {
     const txConfigState = useAtomValue(txConfigStateAtom);
@@ -156,121 +195,60 @@ export default function ServerControls() {
     const hasAnnouncementPerm = hasPerm('announcement');
 
     if (txConfigState !== TxConfigState.Ready) {
-        return (
-            <div className='w-full h-8 text-center tracking-wider font-light opacity-75'>
-                {t('Server not configured.')}
-            </div>
-        )
+        return <p className="text-dense text-muted-foreground">{t('Server not configured.')}</p>;
     }
+
+    const noControlTitle = hasControlPerms ? undefined : t('You do not have permission to control the server.');
+    const noAnnounceTitle = hasAnnouncementPerm ? undefined : t('You do not have permission to send an announcement.');
     return (
-        <div className="grid grid-cols-2 gap-2" aria-label={t('Server controls')}>
-            <Tooltip>
-                <TooltipTrigger asChild>
-                    {fxRunnerState.isIdle ? (
-                        <div className="relative">
-                            <div className='absolute inset-0 bg-success/50 animate-pulse rounded-lg blur-md'></div>
-                            <Button
-                                onClick={handleStartStop}
-                                variant="success"
-                                className={cn(controlButtonClass, 'relative h-full')}
-                                disabled={!hasControlPerms}
-                            >
-                                <PowerIcon className='size-4 shrink-0' />
-                                <span className={controlLabelClass}>{t('Start')}</span>
-                            </Button>
-                        </div>
-                    ) : (
-                        <Button
-                            onClick={handleStartStop}
-                            variant="destructive"
-                            className={controlButtonClass}
-                            disabled={!hasControlPerms}
-                        >
-                            <PowerOffIcon className='size-4 shrink-0' />
-                            <span className={controlLabelClass}>{t('Stop')}</span>
-                        </Button>
-                    )}
-                </TooltipTrigger>
-                <TooltipContent className={cn(!hasControlPerms && 'text-destructive-inline text-center')}>
-                    {hasControlPerms ? (
-                        <p>{fxRunnerState.isIdle ? t('Start the server! 🚀') : t('Stop the server')}</p>
-                    ) : (
-                        <p>{t('You do not have permission to control the server.')}</p>
-                    )}
-                </TooltipContent>
-            </Tooltip>
-            <Tooltip>
-                <TooltipTrigger asChild>
-                    <Button
-                        onClick={handleRestart}
-                        variant="outline"
-                        className={controlButtonClass}
-                        disabled={!hasControlPerms || !fxRunnerState.isChildAlive}
-                    >
-                        <RotateCcwIcon className='size-4 shrink-0' />
-                        <span className={controlLabelClass}>{t('Restart')}</span>
-                    </Button>
-                </TooltipTrigger>
-                <TooltipContent className={cn(!hasControlPerms && 'text-destructive-inline text-center')}>
-                    {hasControlPerms ? (
-                        <p>{t('Restart Server')}</p>
-                    ) : (
-                        <p>{t('You do not have permission to control the server.')}</p>
-                    )}
-                </TooltipContent>
-            </Tooltip>
-            <Tooltip>
-                <TooltipTrigger asChild>
-                    <Button
-                        onClick={handleRestartSchedule}
-                        variant={hasScheduledRestart && !scheduledRestartIsSkipped ? 'outline-destructive' : 'outline'}
-                        className={controlButtonClass}
-                        disabled={!hasControlPerms}
-                    >
-                        {scheduledRestartIsSkipped
-                            ? <PlayCircleIcon className='size-4 shrink-0' />
-                            : hasScheduledRestart
-                                ? <XCircleIcon className='size-4 shrink-0' />
-                                : <Clock3Icon className='size-4 shrink-0' />}
-                        <span className={controlLabelClass}>{scheduledRestartIsSkipped
-                            ? t('Enable')
-                            : hasScheduledRestart
-                                ? t('Cancel')
-                                : t('Schedule')}</span>
-                    </Button>
-                </TooltipTrigger>
-                <TooltipContent className={cn(!hasControlPerms && 'text-destructive-inline text-center')}>
-                    {hasControlPerms ? (
-                        <p>{scheduledRestartIsSkipped
-                            ? t('Enable the next scheduled restart')
-                            : hasScheduledRestart
-                                ? t('Cancel the next scheduled restart')
-                                : t('Schedule the next server restart')}</p>
-                    ) : (
-                        <p>{t('You do not have permission to control the server.')}</p>
-                    )}
-                </TooltipContent>
-            </Tooltip>
-            <Tooltip>
-                <TooltipTrigger asChild>
-                    <Button
-                        onClick={handleAnnounce}
-                        variant="outline"
-                        className={controlButtonClass}
-                        disabled={!hasAnnouncementPerm || !fxRunnerState.isChildAlive}
-                    >
-                        <MegaphoneIcon className='size-4 shrink-0' />
-                        <span className={controlLabelClass}>{t('Announce')}</span>
-                    </Button>
-                </TooltipTrigger>
-                <TooltipContent className={cn(!hasAnnouncementPerm && 'text-destructive-inline text-center')}>
-                    {hasAnnouncementPerm ? (
-                        <p>{t('Send Announcement')}</p>
-                    ) : (
-                        <p>{t('You do not have permission to send an announcement.')}</p>
-                    )}
-                </TooltipContent>
-            </Tooltip>
+        <div className="flex flex-col gap-4">
+            <ServerStatusLine />
+            <div className="grid grid-cols-2 gap-2" aria-label={t('Server controls')}>
+                <Button
+                    onClick={handleStartStop}
+                    variant={fxRunnerState.isIdle ? 'secondary' : 'outline-destructive'}
+                    className={controlButtonClass}
+                    disabled={!hasControlPerms}
+                    title={noControlTitle}
+                >
+                    {fxRunnerState.isIdle ? t('Start') : t('Stop')}
+                </Button>
+                <Button
+                    onClick={handleRestart}
+                    variant="secondary"
+                    className={controlButtonClass}
+                    disabled={!hasControlPerms || !fxRunnerState.isChildAlive}
+                    title={noControlTitle}
+                >
+                    {t('Restart')}
+                </Button>
+                <Button
+                    onClick={handleRestartSchedule}
+                    variant={hasScheduledRestart && !scheduledRestartIsSkipped ? 'outline-destructive' : 'secondary'}
+                    className={controlButtonClass}
+                    disabled={!hasControlPerms}
+                    title={noControlTitle ?? (scheduledRestartIsSkipped
+                        ? t('Enable the next scheduled restart')
+                        : hasScheduledRestart
+                            ? t('Cancel the next scheduled restart')
+                            : t('Schedule the next server restart'))}
+                >
+                    {scheduledRestartIsSkipped
+                        ? t('Enable')
+                        : hasScheduledRestart
+                            ? t('Cancel')
+                            : t('Schedule')}
+                </Button>
+                <Button
+                    onClick={handleAnnounce}
+                    variant="secondary"
+                    className={controlButtonClass}
+                    disabled={!hasAnnouncementPerm || !fxRunnerState.isChildAlive}
+                    title={noAnnounceTitle}
+                >
+                    {t('Announce')}
+                </Button>
+            </div>
         </div>
     );
 }

@@ -2,12 +2,12 @@ import { useState, useEffect } from "react"
 import { Editor, loader } from "@monaco-editor/react"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { ArrowLeft, Save, RotateCcw, X, ChevronRight, ChevronLeft, XIcon, Settings2Icon } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { cn } from "@/lib/utils"
 import TxAnchor from "@/components/TxAnchor"
 import InlineCode from "@/components/InlineCode"
 import { PageHeader } from "@/components/page-header"
+import { editorThemeColors } from "@/lib/monacoTheme"
 
 const beautifyJson = (json: string) => JSON.stringify(JSON.parse(json), null, 4)
 
@@ -20,11 +20,8 @@ function SheetBackdrop({ isOpen, closeSheet }: SheetBackdropProps) {
     return (
         <div
             className={cn(
-                'absolute inset-0 z-20',
-                'bg-black/60 duration-300',
-                'data-[state=open]:pointer-events-auto data-[state=closed]:pointer-events-none',
-                'data-[state=open]:opacity-100',
-                'data-[state=closed]:opacity-0',
+                'absolute inset-0 z-20 bg-black/60',
+                isOpen ? 'block' : 'hidden',
             )}
             data-state={isOpen ? 'open' : 'closed'}
             onClick={closeSheet}
@@ -47,7 +44,7 @@ loader.init().then(monaco => {
         base: 'vs-dark',
         inherit: true,
         rules: [],
-        colors: {}
+        colors: editorThemeColors,
     });
 });
 
@@ -89,47 +86,41 @@ function DiscordJsonEditor({
                 </span>
             </div> */}
             <div className="flex-none space-y-2 mb-4">
-                <div className="flex items-start justify-between">
-                    <p className="text-muted-foreground">{description}</p>
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                    <p className="text-sm text-muted-foreground">{description}</p>
                     <Button
-                        variant="outline"
+                        variant="secondary"
                         size="sm"
                         onClick={() => setIsPanelOpen(!isPanelOpen)}
-                        className="flex-none ml-4"
+                        className="flex-none"
                     >
-                        {isPanelOpen ? "Hide Placeholders" : "Show Placeholders"}
-                        {isPanelOpen
-                            ? <ChevronRight className="ml-2 h-4 w-4" />
-                            : <ChevronLeft className="ml-2 h-4 w-4" />}
+                        {isPanelOpen ? "Hide placeholders" : "Show placeholders"}
                     </Button>
                 </div>
             </div>
 
             {/* Main Content */}
-            <div className="flex-1 relative rounded-xl overflow-hidden border bg-[#1E1E1E]">
+            <div className="relative flex-1 overflow-hidden rounded-lg bg-sunken">
                 {/* Overlay Panel */}
                 <div className="absolute inset-0 rounded-[inherit]">
                     <SheetBackdrop isOpen={isPanelOpen} closeSheet={() => setIsPanelOpen(false)} />
                     <div
                         className={cn(
-                            'z-20',
-                            "absolute top-0 right-0 h-full w-80 bg-card border-l shadow-xl",
-                            "transition-transform duration-300 ease-in-out",
-                            isPanelOpen ? "translate-x-0" : "translate-x-full",
+                            "absolute right-0 top-0 z-20 h-full w-full max-w-80 bg-modal",
+                            isPanelOpen ? "block" : "hidden",
                         )}
                     >
                         <ScrollArea className="h-full">
                             <div className="p-4 mr-4 space-y-2">
-                                <h3 className="text-lg font-semibold">Available Placeholders</h3>
+                                <h3 className="text-base font-semibold text-white">Available placeholders</h3>
                                 <ul className="space-y-4">
                                     {Object.entries(placeholders).map(([pString, pDesc]) => (
                                         <li key={pString}>
                                             <InlineCode
-                                                className="text-secondary-foreground bg-secondary/50 block mb-1 py-1 border rounded-md"
+                                                className="mb-1 block py-1"
                                             >
                                                 {`{{${pString}}}`}
                                             </InlineCode>
-                                            {/* <div className="font-mono text-lg bg-secondary/35 border rounded-lg px-2 py-1">{`{{${pString}}}`}</div> */}
                                             <span className="text-sm text-muted-foreground">{pDesc}</span>
                                         </li>
                                     ))}
@@ -166,21 +157,11 @@ function DiscordJsonEditor({
                     </Alert>
                 )}
 
-                <div className="flex justify-between">
-                    <Button variant="outline" onClick={onBack}>
-                        <ArrowLeft className="mr-2 h-4 w-4" /> Back
-                    </Button>
-                    <div className="space-x-2">
-                        <Button variant="outline" onClick={() => setConfig(initialConfig)}>
-                            <XIcon className="mr-2 h-4 w-4" /> Discard Changes
-                        </Button>
-                        <Button variant="outline" onClick={() => setConfig(defaultConfig)}>
-                            <RotateCcw className="mr-2 h-4 w-4" /> Reset to Default
-                        </Button>
-                        <Button onClick={handleSave} disabled={!!error}>
-                            <Save className="mr-2 h-4 w-4" /> Save Changes
-                        </Button>
-                    </div>
+                <div className="flex flex-wrap items-center gap-3">
+                    <Button onClick={handleSave} disabled={!!error}>Save changes</Button>
+                    <Button variant="secondary" onClick={() => setConfig(initialConfig)}>Discard changes</Button>
+                    <Button variant="secondary" onClick={() => setConfig(defaultConfig)}>Reset to default</Button>
+                    <Button variant="secondary" onClick={onBack}>Back</Button>
                 </div>
             </div>
         </div>
@@ -205,7 +186,6 @@ export default function TmpJsonEditor() {
     return (
         <div className="w-full h-full flex flex-col max-h-contentvh">
             <PageHeader
-                    icon={<Settings2Icon />}
                     title="Embed Editor"
                     parentName="Settings"
                     parentLink="/settings"

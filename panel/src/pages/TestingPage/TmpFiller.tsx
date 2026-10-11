@@ -6,7 +6,7 @@ export default function TmpFiller({ count = 96, maxWidth = 48 }: { count?: numbe
         fillerLines.push(<div key={i} style={{ backgroundColor: `hsl(${hue}deg 75% 65%)`, height: '1.5rem' }}>{text}</div>);
     }
     return (
-        <div className="mx-auto text-center break-all text-black bg-emerald-300/75">
+        <div className="mx-auto break-all rounded-lg bg-raise text-center font-mono text-bg-bottom">
             {fillerLines}
         </div>
     );

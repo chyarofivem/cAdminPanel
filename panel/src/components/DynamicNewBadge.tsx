@@ -1,26 +1,7 @@
 import { LocalStorageKey } from "@/lib/localStorage";
-import { cn } from "@/lib/utils";
-import { cva, VariantProps } from "class-variance-authority";
+import { Badge } from "@/components/ui/badge";
+import { t } from "@/lib/i18n";
 import React from "react";
-
-
-/**
- * Variants
- */
-const badgeVariants = cva(
-    'rounded bg-accent text-accent-foreground font-semibold self-center',
-    {
-        variants: {
-            size: {
-                xs: 'px-1 ml-1 text-[0.5rem] tracking-[0.2em] leading-loose',
-                md: 'px-1 ml-1.5 text-2xs tracking-wider',
-            },
-        },
-        defaultVariants: {
-            size: 'md',
-        },
-    }
-);
 
 
 /**
@@ -47,14 +28,14 @@ export const DynamicNewItem = React.memo(DynamicNewItemInner);
 
 
 /**
- * A dynamic badge that shows "NEW" for the first X days.
+ * A plain accent badge that reads "New" for the first X days.
  */
-function DynamicNewBadgeInner({ badgeText, featName, durationDays, className, size }: DynamicNewBadgeProps) {
+function DynamicNewBadgeInner({ badgeText, featName, durationDays, className }: DynamicNewBadgeProps) {
     return (
         <DynamicNewItemInner featName={featName} durationDays={durationDays}>
-            <span className={cn(className, badgeVariants({ size }))}>
-                {badgeText ?? 'NEW'}
-            </span>
+            <Badge variant="accent" className={className}>
+                {badgeText ?? t('New')}
+            </Badge>
         </DynamicNewItemInner>
     );
 }
@@ -76,5 +57,6 @@ type DynamicNewBadgeProps = {
     durationDays?: number; //3d default
     badgeText?: string;
     className?: string;
-    size?: VariantProps<typeof badgeVariants>['size'];
+    /** Kept for older call sites; every badge now uses the one badge size. */
+    size?: 'xs' | 'md' | null;
 };

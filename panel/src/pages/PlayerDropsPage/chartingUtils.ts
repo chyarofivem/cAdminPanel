@@ -1,9 +1,45 @@
 import { PlayerDropsSummaryHour } from "@shared/otherTypes";
+import type * as d3 from 'd3';
 import { playerDropExpectedCategories, playerDropUnexpectedCategories } from "@/lib/playerDropCategories";
 import { TimelineDropsDatum } from "./drawDropsTimeline";
 import { DisplayLodType } from "./PlayerDropsPage";
 
 export type PlayerDropsCategoryCount = [category: string, count: number];
+
+
+/**
+ * Colours for chart chrome (gridlines, axes, labels and markers), read from the design
+ * tokens in globals.css. Series colours come from playerDropCategories and never follow
+ * the accent. Values are concrete strings so they also work as SVG attributes and canvas styles.
+ * NOTE: Dashboard/chartingUtils.ts holds the same helper for the performance charts.
+ */
+export const getChartChromeColors = () => {
+    const styles = getComputedStyle(document.documentElement);
+    const read = (name: string, fallback: string) => styles.getPropertyValue(name).trim() || fallback;
+    return {
+        hairline: read('--hairline', 'rgba(255, 255, 255, 0.05)'),
+        text: read('--text', '#ffffff'),
+        body: read('--text-body', '#d1d5db'),
+        muted: read('--text-muted', '#9ca3af'),
+    };
+};
+export type ChartChromeColors = ReturnType<typeof getChartChromeColors>;
+
+
+/**
+ * Restyles a d3 axis group: muted 11px labels in the panel font, hairline domain and ticks.
+ * d3 creates new ticks on every `.call(axis)`, so call this again after each one.
+ */
+export const styleChartAxis = <GDatum, PElement extends d3.BaseType, PDatum>(
+    axisGroup: d3.Selection<SVGGElement, GDatum, PElement, PDatum>,
+    colors: ChartChromeColors,
+) => {
+    axisGroup
+        .attr('font-family', null)
+        .attr('font-size', 11)
+        .attr('color', colors.muted);
+    axisGroup.selectAll('.domain, .tick line').attr('stroke', colors.hairline);
+};
 
 // Helper function to floor a date to the start of the day
 const floorToStartOfDay = (dateString: string) => {

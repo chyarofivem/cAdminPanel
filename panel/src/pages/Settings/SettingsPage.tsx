@@ -1,8 +1,8 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import useSWR from "swr";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsContent } from "@/components/ui/tabs";
+import { TabsVerticalList, TabsVerticalTrigger } from "@/components/ui/tabs-vertical";
 import { reloadPanel, setUrlHash as setUrlHashOriginal } from "@/lib/navigation";
-import { Settings2Icon } from "lucide-react";
 
 import { ApiTimeout, useBackendApi } from "@/hooks/fetch";
 import { useOpenConfirmDialog } from "@/hooks/dialogs";
@@ -49,6 +49,22 @@ const settingsTabsBase = [
     // { name: 'Template', Component: SettingsCardTemplate },
     // { name: 'Blank', Component: SettingsCardBlank },
 ]
+
+
+//The settings navigation is a horizontal strip on phones and tablets and vertical nav rows
+//from this width, so arrow keys follow the visible orientation.
+const desktopNavQuery = '(min-width: 1280px)';
+function useIsDesktopNav() {
+    const [isDesktop, setIsDesktop] = useState(() => window.matchMedia(desktopNavQuery).matches);
+    useEffect(() => {
+        const mediaQuery = window.matchMedia(desktopNavQuery);
+        const handleChange = () => setIsDesktop(mediaQuery.matches);
+        handleChange();
+        mediaQuery.addEventListener('change', handleChange);
+        return () => mediaQuery.removeEventListener('change', handleChange);
+    }, []);
+    return isDesktop;
+}
 
 
 //Types
@@ -105,6 +121,7 @@ export default function SettingsPage({ embeddedAllowlist = false }: { embeddedAl
     const [cardPendingSave, setCardPendingSave] = useState<SettingsCardContext | null>(null);
     const [isSaving, setIsSaving] = useState(false);
     const openConfirmDialog = useOpenConfirmDialog();
+    const isDesktopNav = useIsDesktopNav();
 
     // FIXME:NEXT:UPDATE remove
     const setUrlHash = (hash: string) => {
@@ -238,51 +255,48 @@ export default function SettingsPage({ embeddedAllowlist = false }: { embeddedAl
 
 
     return (
-        <div className="w-full mb-10">
-            {!embeddedAllowlist && <PageHeader title={t('Settings')} icon={<Settings2Icon />}>
+        <div className="mb-10 w-full">
+            {!embeddedAllowlist && <PageHeader title={t('Settings')}>
                 <PageHeaderChangelog changelogData={swr?.data?.changelog} />
             </PageHeader>}
-            <div className="px-0 xs:px-3 md:px-0 flex flex-row gap-2 w-full">
-                <Tabs
-                    value={tab}
-                    onValueChange={handleTabChange}
-                    className="w-full"
+            <Tabs
+                value={tab}
+                onValueChange={handleTabChange}
+                orientation={isDesktopNav ? 'vertical' : 'horizontal'}
+                className="flex w-full flex-col gap-6 xl:flex-row xl:items-start"
+            >
+                {!embeddedAllowlist && <TabsVerticalList
+                    aria-label={t('Settings sections')}
+                    className="flex w-full min-w-0 flex-row overflow-x-auto p-0.5 xl:w-52 xl:shrink-0 xl:flex-col xl:overflow-visible xl:p-0"
                 >
-                    {!embeddedAllowlist && <TabsList
-                        className="max-xs:sticky max-xs:top-navbarvh z-10 flex-wrap h-[unset] max-xs:w-full max-xs:rounded-none"
-                    >
-                        {displayedTabs.map((tab) => (
-                            <TabsTrigger
-                                key={tab.ctx.tabId}
-                                value={tab.ctx.tabId}
-                                className="hover:text-primary"
-                            >
-                                {tab.ctx.tabName}
-
-                                {/* <TriangleAlertIcon className="inline-block size-4 mt-0.5 ml-1 text-destructive self-center" /> */}
-                                {/* <DynamicNewBadge size='xs' featName="ignore" /> */}
-                            </TabsTrigger>
-                        ))}
-                    </TabsList>}
                     {displayedTabs.map((tab) => (
-                        <TabsContent value={tab.ctx.tabId} key={tab.ctx.tabId} className="mt-6">
-                            <SettingsTab
-                                tab={tab}
-                                pageCtx={{
-                                    apiData: swr.data,
-                                    isReadOnly: swr.isLoading || isSaving || !swr.data || !hasPerm(tab.ctx.tabId === 'appearance' ? 'settings.appearance' : 'settings.write'),
-                                    isLoading: swr.isLoading,
-                                    isSaving,
-                                    swrError: swr.error ? swr.error.message : undefined,
-                                    cardPendingSave,
-                                    setCardPendingSave,
-                                    saveChanges,
-                                }}
-                            />
-                        </TabsContent>
+                        <TabsVerticalTrigger
+                            key={tab.ctx.tabId}
+                            value={tab.ctx.tabId}
+                            className="w-auto shrink-0 xl:w-full"
+                        >
+                            {tab.ctx.tabName}
+                        </TabsVerticalTrigger>
                     ))}
-                </Tabs>
-            </div>
+                </TabsVerticalList>}
+                {displayedTabs.map((tab) => (
+                    <TabsContent value={tab.ctx.tabId} key={tab.ctx.tabId} className="mt-0 min-w-0 flex-1">
+                        <SettingsTab
+                            tab={tab}
+                            pageCtx={{
+                                apiData: swr.data,
+                                isReadOnly: swr.isLoading || isSaving || !swr.data || !hasPerm(tab.ctx.tabId === 'appearance' ? 'settings.appearance' : 'settings.write'),
+                                isLoading: swr.isLoading,
+                                isSaving,
+                                swrError: swr.error ? swr.error.message : undefined,
+                                cardPendingSave,
+                                setCardPendingSave,
+                                saveChanges,
+                            }}
+                        />
+                    </TabsContent>
+                ))}
+            </Tabs>
         </div>
     )
 }

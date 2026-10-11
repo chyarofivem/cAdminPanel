@@ -34,21 +34,21 @@ export default function TmpAuthState() {
                 <CardTitle>Update State</CardTitle>
             </CardHeader>
             <CardContent>
-                <pre className="bg-muted p-2">
+                <pre className="rounded-sm bg-sunken p-3 font-mono text-xs text-body">
                     {JSON.stringify(authData, null, 2)}
                 </pre>
             </CardContent>
-            <CardFooter className="flex justify-center gap-3">
+            <CardFooter className="gap-3">
                 <Button size="sm" onClick={() => toggleIsMaster()}>
                     Toggle isMaster
                 </Button>
-                <Button size="sm" onClick={() => toggleIsTmpPassword()}>
+                <Button size="sm" variant="secondary" onClick={() => toggleIsTmpPassword()}>
                     Toggle isTempPassword
                 </Button>
-                <Button size="sm" onClick={() => changeCsrfToken()}>
+                <Button size="sm" variant="secondary" onClick={() => changeCsrfToken()}>
                     Change CSRF Token
                 </Button>
-                <Button size="sm" onClick={() => setAuthData(false)}>
+                <Button size="sm" variant="outline-destructive" onClick={() => setAuthData(false)}>
                     Erase Auth
                 </Button>
             </CardFooter>

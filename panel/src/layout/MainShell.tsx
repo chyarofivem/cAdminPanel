@@ -20,6 +20,7 @@ import { hotkeyEventListener } from '@/lib/hotkeyEventListener';
 import ActionModal from './ActionModal/ActionModal';
 import { actionModalUrlParam, useOpenActionModal } from '@/hooks/actionModal';
 import { t } from '@/lib/i18n';
+import TopLoadingBar from '@/components/TopLoadingBar';
 
 export default function MainShell() {
     const expireSession = useExpireAuthData();
@@ -64,13 +65,14 @@ export default function MainShell() {
     }, []);
 
     return <TooltipProvider delayDuration={300} disableHoverableContent>
-        <div className="flex h-screen bg-gradient-to-b from-[#101319] to-[#0b0d10] text-white">
+        <TopLoadingBar />
+        <div className="flex h-screen text-body">
             <a href="#panel-content" className="tx-skip-link">{t('Skip to page content')}</a>
             <ServerSidebar />
             <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
                 <Header />
-                <main ref={mainRef} id="panel-content" tabIndex={-1} className="scroll-smooth flex-1 overflow-x-hidden overflow-y-auto">
-                    <div className="container mx-auto px-4 py-2 md:px-8"><MainRouter /></div>
+                <main ref={mainRef} id="panel-content" tabIndex={-1} className="flex-1 overflow-x-hidden overflow-y-auto focus:outline-none">
+                    <div className="mx-auto w-full max-w-screen-2xl px-4 pb-8 md:px-6 lg:px-8"><MainRouter /></div>
                 </main>
             </div>
             <button
@@ -80,7 +82,7 @@ export default function MainShell() {
                 onClick={() => mainRef.current?.scrollTo({ top: 0, behavior: 'smooth' })}
                 className={`tx-scroll-top ${showScrollTop ? 'tx-scroll-top-visible' : ''}`}
             >
-                <ArrowUp className="size-4" />
+                <ArrowUp className="size-4" aria-hidden="true" />
             </button>
         </div>
         <MainSheets />

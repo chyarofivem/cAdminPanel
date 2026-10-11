@@ -1,6 +1,5 @@
 import { debounce } from 'throttle-debounce';
 import { useRef, useEffect, useCallback, memo } from 'react';
-import { Loader2Icon } from 'lucide-react';
 
 type SizeType = {
     width: number;
@@ -15,6 +14,7 @@ type DebouncedResizeContainerProps = {
 
 /**
  * A container that will call onDebouncedResize with the width and height of the container after a resize event.
+ * While a resize settles, the children are hidden behind a flat placeholder block.
  */
 function DebouncedResizeContainerInner({
     delay,
@@ -75,10 +75,9 @@ function DebouncedResizeContainerInner({
         >
             <div
                 ref={loaderRef}
-                className="absolute inset-0 flex items-center justify-center"
-            >
-                <Loader2Icon className="animate-spin size-16 text-muted-foreground" />
-            </div>
+                aria-hidden="true"
+                className="absolute inset-0 rounded-md bg-raise"
+            />
             <div
                 className="absolute inset-0"
                 ref={childRef}

@@ -106,94 +106,89 @@ export default function BanTemplatesInputDialog({
     return (
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogContent className="md:max-w-xl">
-                <form onSubmit={handleSubmit}>
-                    <div className="space-y-4">
-                        <DialogHeader>
-                            <DialogTitle>{reasonData ? 'Edit' : 'Add'} Template</DialogTitle>
-                        </DialogHeader>
-                        <div className="grid grid-cols-6 items-center gap-4">
-                            <Label htmlFor="banReason" className="col-span-6 sm:col-auto">
-                                Reason
-                            </Label>
-                            <AutosizeTextarea
-                                id="reason"
-                                placeholder="The reason for the ban, rule violated, etc."
-                                className="col-span-full sm:col-span-5"
-                                defaultValue={initialReason}
-                                ref={reasonRef}
-                                maxHeight={160}
-                                minLength={3}
-                                autoFocus
-                                required
-                                onChangeCapture={(e) => {
-                                    //prevent breaking line
-                                    const target = e.target as HTMLInputElement;
-                                    if (target.value.includes('\n')) {
-                                        target.value = target.value.replace(/\s*\r*\n+\s*/g, ' ');
-                                    }
-                                }}
-                            />
-                        </div>
-                        <div className="grid grid-cols-6 items-center gap-4">
-                            <Label htmlFor="durationSelect" className="col-span-6 sm:col-auto">
-                                Duration
-                            </Label>
-                            <div className="col-span-full sm:col-span-5 space-y-1">
-                                <Select
-                                    onValueChange={setSelectedDuration}
-                                    defaultValue={selectedDuration}
-                                >
-                                    <SelectTrigger id="durationSelect" className="tracking-wide">
-                                        <SelectValue placeholder="Select Duration" />
-                                    </SelectTrigger>
-                                    <SelectContent className="tracking-wide">
-                                        <SelectItem value="custom" className="font-bold">Custom (set below)</SelectItem>
-                                        <SelectItem value="2 hours">2 HOURS</SelectItem>
-                                        <SelectItem value="8 hours">8 HOURS</SelectItem>
-                                        <SelectItem value="1 days">1 DAY</SelectItem>
-                                        <SelectItem value="2 days">2 DAYS</SelectItem>
-                                        <SelectItem value="1 weeks">1 WEEK</SelectItem>
-                                        <SelectItem value="2 weeks">2 WEEKS</SelectItem>
-                                        <SelectItem value="permanent" className="font-bold">Permanent</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                                <div className="flex flex-row gap-2">
-                                    <Input
-                                        id="durationMultiplier"
-                                        type="number"
-                                        placeholder="123"
-                                        defaultValue={initialCustomValue}
-                                        disabled={selectedDuration !== 'custom'}
-                                        ref={customMultiplierRef}
-                                        min={1}
-                                        max={99}
-                                        required
-                                    />
-                                    <Select
-                                        onValueChange={setCustomUnits}
-                                        defaultValue={customUnits}
-                                    >
-                                        <SelectTrigger
-                                            id="durationUnits"
-                                            className="tracking-wide"
-                                            disabled={selectedDuration !== 'custom'}
-                                        >
-                                            <SelectValue />
-                                        </SelectTrigger>
-                                        <SelectContent className="tracking-wide">
-                                            <SelectItem value="hours">HOURS</SelectItem>
-                                            <SelectItem value="days">DAYS</SelectItem>
-                                            <SelectItem value="weeks">WEEKS</SelectItem>
-                                            <SelectItem value="months">MONTHS</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-                            </div>
-                        </div>
-                        <DialogFooter>
-                            <Button type="submit">Save changes</Button>
-                        </DialogFooter>
+                <form onSubmit={handleSubmit} className="flex flex-col gap-6">
+                    <DialogHeader>
+                        <DialogTitle>{reasonData ? t('Edit template') : t('Add template')}</DialogTitle>
+                    </DialogHeader>
+                    <div className="flex flex-col gap-2">
+                        <Label htmlFor="reason">
+                            {t('Reason')}
+                        </Label>
+                        <AutosizeTextarea
+                            id="reason"
+                            placeholder={t('The reason for the ban, rule violated, etc.')}
+                            defaultValue={initialReason}
+                            ref={reasonRef}
+                            maxHeight={160}
+                            minLength={3}
+                            autoFocus
+                            required
+                            onChangeCapture={(e) => {
+                                //prevent breaking line
+                                const target = e.target as HTMLInputElement;
+                                if (target.value.includes('\n')) {
+                                    target.value = target.value.replace(/\s*\r*\n+\s*/g, ' ');
+                                }
+                            }}
+                        />
                     </div>
+                    <div className="flex flex-col gap-2">
+                        <Label htmlFor="durationSelect">
+                            {t('Duration')}
+                        </Label>
+                        <Select
+                            onValueChange={setSelectedDuration}
+                            defaultValue={selectedDuration}
+                        >
+                            <SelectTrigger id="durationSelect">
+                                <SelectValue placeholder={t('Select Duration')} />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="custom">{t('Custom (set below)')}</SelectItem>
+                                <SelectItem value="2 hours">{t('2 hours')}</SelectItem>
+                                <SelectItem value="8 hours">{t('8 hours')}</SelectItem>
+                                <SelectItem value="1 days">{t('1 day')}</SelectItem>
+                                <SelectItem value="2 days">{t('2 days')}</SelectItem>
+                                <SelectItem value="1 weeks">{t('1 week')}</SelectItem>
+                                <SelectItem value="2 weeks">{t('2 weeks')}</SelectItem>
+                                <SelectItem value="permanent">{t('Permanent')}</SelectItem>
+                            </SelectContent>
+                        </Select>
+                        <div className="flex flex-row gap-2">
+                            <Input
+                                id="durationMultiplier"
+                                type="number"
+                                placeholder="123"
+                                defaultValue={initialCustomValue}
+                                disabled={selectedDuration !== 'custom'}
+                                ref={customMultiplierRef}
+                                min={1}
+                                max={99}
+                                required
+                            />
+                            <Select
+                                onValueChange={setCustomUnits}
+                                defaultValue={customUnits}
+                            >
+                                <SelectTrigger
+                                    id="durationUnits"
+                                    disabled={selectedDuration !== 'custom'}
+                                >
+                                    <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="hours">{t('Hours')}</SelectItem>
+                                    <SelectItem value="days">{t('Days')}</SelectItem>
+                                    <SelectItem value="weeks">{t('Weeks')}</SelectItem>
+                                    <SelectItem value="months">{t('Months')}</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button type="button" variant="secondary" onClick={() => setIsDialogOpen(false)}>{t('Cancel')}</Button>
+                        <Button type="submit">{t('Save changes')}</Button>
+                    </DialogFooter>
                 </form>
             </DialogContent>
         </Dialog>

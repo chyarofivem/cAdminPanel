@@ -32,17 +32,20 @@ export function ServerIcon({ serverName, gameName, iconFilename, className, extr
                 alt={serverName}
             />
             <AvatarFallback asChild>
-                <img src={fallbackUrl} className="aspect-square rounded-md h-full w-full" />
+                <img src={fallbackUrl} alt="" className="aspect-square h-full w-full rounded-md" />
             </AvatarFallback>
         </ShadcnAvatar>
     );
 }
 
+/**
+ * The large server icon. The name is kept for existing imports; the icon is flat,
+ * without the blurred glow copy behind it.
+ */
 export function ServerGlowIcon(props: Omit<ServerIconProps, 'extraClasses'>) {
     return (
-        <div className="relative flex shrink-0">
-            <ServerIcon {...props} extraClasses="size-14 xs:size-16 rounded-md z-10" />
-            <ServerIcon {...props} extraClasses="size-14 xs:size-16 absolute blur-lg z-0 scale-90" />
+        <div className="flex shrink-0">
+            <ServerIcon {...props} extraClasses="size-14 xs:size-16 rounded-md" />
         </div>
     );
 }

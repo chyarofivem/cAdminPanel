@@ -1,9 +1,15 @@
 import { useEffect, useState } from 'react';
 import useSWR from 'swr';
-import { AlertCircle, Car, Loader2, LockKeyhole, Plus, RefreshCw } from 'lucide-react';
+import { RefreshCwIcon } from 'lucide-react';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { IconButton } from '@/components/ui/icon-button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import EmptyState from '@/components/EmptyState';
+import { ListRow, ListRows } from '@/components/ListRow';
+import Section from '@/components/Section';
 import { useAuthedFetcher } from '@/hooks/fetch';
 import { useAdminPerms } from '@/hooks/auth';
 import { txToast } from '@/components/TxToaster';
@@ -92,60 +98,91 @@ export default function GarageTab({ player, refresh }: { player: CadminPlayer; r
         });
     };
 
-    if (!canView) return <section className="rounded-2xl border border-amber-500/15 bg-amber-500/[0.06] p-6">
-        <h3 className="flex items-center font-medium text-amber-200"><LockKeyhole className="mr-2 size-4" />{t('Garage access is read-only')}</h3>
-        <p className="mt-2 text-sm text-amber-200/70">{t('You need the Character Management: View Garage permission to see this character’s vehicles.')}</p>
-    </section>;
+    if (!canView) return <Alert variant="warning">
+        <AlertTitle>{t('Garage access is read-only')}</AlertTitle>
+        <AlertDescription>{t('You need the Character Management: View Garage permission to see this character’s vehicles.')}</AlertDescription>
+    </Alert>;
 
     const vehicles = garage.data ?? (player.vehicles as GarageVehicle[] | undefined);
+    const isBusy = Boolean(busyAction);
 
-    return <div className="grid gap-4 xl:grid-cols-[minmax(0,1.45fr)_minmax(320px,0.75fr)]">
-        <section className="overflow-hidden rounded-2xl border border-white/5 bg-white/[0.025]">
-            <header className="flex items-center justify-between gap-3 border-b border-white/5 px-5 py-4">
-                <div>
-                    <h3 className="flex items-center font-medium text-white"><Car className="mr-2 size-4 text-brand-400" />{t('Owned vehicles')}</h3>
-                    <p className="mt-1 text-xs text-zinc-500">{t('{count} vehicles in the framework garage', { count: vehicles?.length ?? 0 })}</p>
+    return <div className="grid gap-6 xl:grid-cols-[minmax(0,1.45fr)_minmax(320px,0.75fr)] xl:items-start">
+        <div className="flex min-w-0 flex-col gap-3">
+            <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                    <h2 className="text-base font-semibold text-white">{t('Owned vehicles')}</h2>
+                    <p className="mt-1 text-dense tabular-nums text-muted-foreground">{t('{count} vehicles in the framework garage', { count: vehicles?.length ?? 0 })}</p>
                 </div>
-                <Button size="sm" variant="outline" disabled={garage.isLoading || Boolean(busyAction)} onClick={() => void garage.mutate()}><RefreshCw className={`mr-2 size-3.5 ${garage.isLoading ? 'animate-spin' : ''}`} />{t('Refresh')}</Button>
-            </header>
-
-            {garage.error && <div className="m-5 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-red-500/20 bg-red-500/10 p-3 text-sm text-red-200">
-                <span className="flex items-center"><AlertCircle className="mr-2 size-4" />{garage.error.message || t('The garage could not be loaded.')}</span>
-                <Button size="sm" variant="outline" onClick={() => void garage.mutate()}>{t('Try again')}</Button>
-            </div>}
-
-            {garage.isLoading && !vehicles && <div className="flex items-center justify-center p-12 text-sm text-zinc-500"><Loader2 className="mr-2 size-4 animate-spin" />{t('Loading garage...')}</div>}
-            {vehicles?.map(vehicle => {
-                const actionKey = `${vehicle.stored ? 'retrieve' : 'store'}:${vehicle.plate}`;
-                return <div key={vehicle.plate} className="flex flex-wrap items-center justify-between gap-3 border-b border-dashed border-white/5 px-5 py-4 last:border-0 hover:bg-white/[0.025]">
-                    <div className="min-w-0">
-                        <strong className="block truncate text-zinc-100">{vehicle.model || vehicle.vehicle || t('Vehicle')}</strong>
-                        <div className="mt-1 flex flex-wrap gap-x-2 font-mono text-xs text-zinc-500">
-                            <span>{vehicle.plate}</span><span>·</span><span>{vehicle.state || (vehicle.stored ? t('Garaged') : t('Out'))}</span>{vehicle.garage && <><span>·</span><span>{vehicle.garage}</span></>}
-                        </div>
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                        <Button size="xs" variant="outline" disabled={!canManage || Boolean(busyAction)} onClick={() => void act(vehicle.stored ? 'retrieve' : 'store', { plate: vehicle.plate })}>{busyAction === actionKey && <Loader2 className="mr-1 size-3 animate-spin" />}{vehicle.stored ? t('Mark out') : t('Force store')}</Button>
-                        <Button size="xs" variant="outline" disabled={!canManage || Boolean(busyAction)} onClick={() => rename(vehicle.plate)}>{t('Change plate')}</Button>
-                        <Button size="xs" variant="destructive" disabled={!canManage || Boolean(busyAction)} onClick={() => removeVehicle(vehicle.plate)}>{t('Delete')}</Button>
-                    </div>
-                </div>;
-            })}
-            {!garage.isLoading && !garage.error && vehicles?.length === 0 && <p className="p-12 text-center text-sm text-zinc-500">{t('This character owns no vehicles.')}</p>}
-        </section>
-
-        <section className="h-fit rounded-2xl border border-white/5 bg-white/[0.025] p-5">
-            <h3 className="flex items-center font-medium text-white"><Plus className="mr-2 size-4 text-brand-400" />{t('Give a vehicle')}</h3>
-            <p className="mt-1 text-xs text-zinc-500">{t('The vehicle is added directly to the configured garage. Leave the plate blank to generate one.')}</p>
-            <div className="mt-5 space-y-4">
-                <div><Label htmlFor="garage-model">{t('Vehicle model')}</Label><Input id="garage-model" className="mt-2" value={model} disabled={!canManage || Boolean(busyAction)} maxLength={64} onChange={event => setModel(event.target.value)} placeholder="sultan" /></div>
-                <div><Label htmlFor="garage-plate">{t('Plate (optional)')}</Label><Input id="garage-plate" className="mt-2 font-mono uppercase" value={plate} disabled={!canManage || Boolean(busyAction)} maxLength={8} onChange={event => setPlate(event.target.value.toUpperCase())} placeholder={t('Auto-generate')} /></div>
-                <div><Label htmlFor="garage-reason">{t('Reason')}</Label><Input id="garage-reason" className="mt-2" value={reason} disabled={!canManage || Boolean(busyAction)} maxLength={200} onChange={event => setReason(event.target.value)} placeholder={t('Optional staff note')} /></div>
-                <Button className="w-full" disabled={!canManage || !model.trim() || Boolean(busyAction)} onClick={() => void act('give', { model: model.trim(), plate: plate.trim() || undefined, reason: reason.trim() })} title={!canManage ? t('You need the Character Management: Manage Garage permission.') : undefined}>
-                    {busyAction.startsWith('give:') ? <Loader2 className="mr-2 size-4 animate-spin" /> : <Plus className="mr-2 size-4" />}{busyAction.startsWith('give:') ? t('Adding...') : t('Add to garage')}
-                </Button>
+                <IconButton
+                    label={t('Refresh')}
+                    icon={<RefreshCwIcon />}
+                    disabled={garage.isLoading || isBusy}
+                    onClick={() => void garage.mutate()}
+                />
             </div>
-            {!canManage && <p className="mt-4 flex items-center text-xs text-amber-300"><LockKeyhole className="mr-2 size-3.5" />{t('Read-only: you need the Character Management: Manage Garage permission to edit vehicles.')}</p>}
-        </section>
+
+            {garage.error && <Alert variant="destructive" className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <span>{garage.error.message || t('The garage could not be loaded.')}</span>
+                <Button size="sm" variant="secondary" className="self-start sm:self-auto" onClick={() => void garage.mutate()}>{t('Try again')}</Button>
+            </Alert>}
+
+            {garage.isLoading && !vehicles && <p role="status" className="rounded-lg bg-raise p-4 text-sm text-muted-foreground sm:p-6">{t('Loading garage...')}</p>}
+
+            {vehicles && vehicles.length > 0 && <ListRows>
+                {vehicles.map(vehicle => {
+                    const actionKey = `${vehicle.stored ? 'retrieve' : 'store'}:${vehicle.plate}`;
+                    return <ListRow key={vehicle.plate} className="flex-col items-stretch sm:flex-row sm:items-center">
+                        <div className="min-w-0 flex-1">
+                            <div className="flex min-w-0 flex-wrap items-center gap-2">
+                                <p className="min-w-0 truncate font-medium text-white">{vehicle.model || vehicle.vehicle || t('Vehicle')}</p>
+                                <Badge variant={vehicle.stored ? 'default' : 'info'}>{vehicle.state || (vehicle.stored ? t('Garaged') : t('Out'))}</Badge>
+                            </div>
+                            <p className="mt-1 flex flex-wrap gap-x-2 font-mono text-xs text-muted-foreground">
+                                <span>{vehicle.plate}</span>
+                                {vehicle.garage && <><span aria-hidden="true">·</span><span>{vehicle.garage}</span></>}
+                            </p>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                            <Button size="sm" variant="secondary" disabled={!canManage || isBusy} onClick={() => void act(vehicle.stored ? 'retrieve' : 'store', { plate: vehicle.plate })}>
+                                {busyAction === actionKey ? t('Saving...') : vehicle.stored ? t('Mark out') : t('Force store')}
+                            </Button>
+                            <Button size="sm" variant="secondary" disabled={!canManage || isBusy} onClick={() => rename(vehicle.plate)}>{t('Change plate')}</Button>
+                            <Button size="sm" variant="outline-destructive" disabled={!canManage || isBusy} onClick={() => removeVehicle(vehicle.plate)}>{t('Delete')}</Button>
+                        </div>
+                    </ListRow>;
+                })}
+            </ListRows>}
+
+            {!garage.isLoading && !garage.error && vehicles?.length === 0 && <EmptyState message={t('This character owns no vehicles.')} />}
+        </div>
+
+        <Section
+            title={t('Give a vehicle')}
+            description={t('The vehicle is added directly to the configured garage. Leave the plate blank to generate one.')}
+        >
+            <div className="flex flex-col gap-4">
+                <div className="flex flex-col gap-2">
+                    <Label htmlFor="garage-model">{t('Vehicle model')}</Label>
+                    <Input id="garage-model" value={model} disabled={!canManage || isBusy} maxLength={64} onChange={event => setModel(event.target.value)} placeholder="sultan" />
+                </div>
+                <div className="flex flex-col gap-2">
+                    <Label htmlFor="garage-plate">{t('Plate (optional)')}</Label>
+                    <Input id="garage-plate" className="font-mono uppercase" value={plate} disabled={!canManage || isBusy} maxLength={8} onChange={event => setPlate(event.target.value.toUpperCase())} placeholder={t('Auto-generate')} />
+                </div>
+                <div className="flex flex-col gap-2">
+                    <Label htmlFor="garage-reason">{t('Reason')}</Label>
+                    <Input id="garage-reason" value={reason} disabled={!canManage || isBusy} maxLength={200} onChange={event => setReason(event.target.value)} placeholder={t('Optional staff note')} />
+                </div>
+                <Button
+                    className="self-start"
+                    disabled={!canManage || !model.trim() || isBusy}
+                    onClick={() => void act('give', { model: model.trim(), plate: plate.trim() || undefined, reason: reason.trim() })}
+                    title={!canManage ? t('You need the Character Management: Manage Garage permission.') : undefined}
+                >
+                    {busyAction.startsWith('give:') ? t('Adding...') : t('Add to garage')}
+                </Button>
+                {!canManage && <p className="text-dense text-warning-text">{t('Read-only: you need the Character Management: Manage Garage permission to edit vehicles.')}</p>}
+            </div>
+        </Section>
     </div>;
 }

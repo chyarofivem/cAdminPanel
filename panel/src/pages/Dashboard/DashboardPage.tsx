@@ -9,12 +9,16 @@ import { useAtomValue } from 'jotai';
 import { txConfigStateAtom } from '@/hooks/status';
 import { useLocation } from 'wouter';
 import { TxConfigState } from '@shared/enums';
-import { ModalTabMessage } from '@/components/modal-tabs';
-import GenericSpinner from '@/components/GenericSpinner';
 import useSWR from 'swr';
 import { useAuthedFetcher } from '@/hooks/fetch';
 import { useAuth } from '@/hooks/auth';
 import TxAnchor from '@/components/TxAnchor';
+import { PageHeader } from '@/components/page-header';
+import Section from '@/components/Section';
+import { ListRow, ListRows } from '@/components/ListRow';
+import EmptyState from '@/components/EmptyState';
+import { Alert } from '@/components/ui/alert';
+import { Badge } from '@/components/ui/badge';
 import { cadminApiPath, cadminData, isCadminAvailable, toTxAdminLicense, type CadminResponse, type CadminPlayer } from '@/pages/CAdmin/api';
 import { t } from '@/lib/i18n';
 
@@ -28,35 +32,91 @@ const safeText = (value: unknown, fallback = '') => (
     typeof value === 'string' || typeof value === 'number' ? String(value) : fallback
 );
 
+//Header links keep a 44px touch target on phones.
+const headerLinkClass = 'inline-flex min-h-11 shrink-0 items-center text-dense sm:min-h-0';
+
 function CadminDashboard() {
     const fetcher = useAuthedFetcher();
-    const { authData } = useAuth();
     const overviewPath = cadminApiPath('overview');
     const cadminAvailable = isCadminAvailable();
     const swr = useSWR(cadminAvailable ? overviewPath : null, async () => cadminData(await fetcher<CadminResponse<CadminOverview>>(overviewPath)), { refreshInterval: 10_000 });
     if (!cadminAvailable) return null;
     const data = swr.data;
-    const displayName = (authData && authData.name) || 'admin';
+    const framework = safeText(data?.status.framework);
+    const resourceVersion = safeText(data?.status.version);
+
+    let statusBadge: React.ReactNode;
+    if (!data && swr.isLoading) {
+        statusBadge = <Badge>{t('Loading…')}</Badge>;
+    } else if (data?.status.online) {
+        statusBadge = <Badge variant="success">{t('Online')}</Badge>;
+    } else {
+        statusBadge = <Badge variant="danger">{t('Unreachable')}</Badge>;
+    }
+
     return <>
-        <div className="mt-6">
-            <h1 className="text-2xl font-semibold">{t('Welcome back, {name}.', { name: displayName })}</h1>
-            <p className="mt-1 text-sm text-zinc-400">{t('{name} at a glance.', { name: window.txConsts.panelName })}</p>
-        </div>
-        {safeText(data?.status.schema) && <div className="mt-6 rounded-2xl border border-yellow-500/20 bg-yellow-500/10 p-4 text-sm text-yellow-200">{safeText(data?.status.schema)}</div>}
-        <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2">
-            <div className="rounded-2xl bg-white/5 p-6">
-                <div className="flex items-center justify-between"><p className="text-xs uppercase tracking-widest text-neutral-500">{t('Server')}</p><span className={data?.status.online ? 'text-xs text-green-400' : 'text-xs text-red-400'}>● {data?.status.online ? t('Online') : t('Unreachable')}</span></div>
-                <p className="mt-3 text-3xl font-semibold">{data?.status.online ? data.players.length : '—'}</p><p className="text-xs text-zinc-400">{t('players connected')}</p>
-                {data?.status.error && <p className="mt-3 text-xs text-red-300">{data.status.error}</p>}
+        {safeText(data?.status.schema) && <Alert variant="warning">{safeText(data?.status.schema)}</Alert>}
+
+        <Section title={t('Server')} actions={statusBadge}>
+            <div className="grid grid-cols-1 gap-x-6 gap-y-4 sm:grid-cols-2">
+                <div className="min-w-0">
+                    <p className="text-2xl font-semibold tabular-nums text-white">{data?.status.online ? data.players.length : '--'}</p>
+                    <p className="text-dense text-muted-foreground">{t('players connected')}</p>
+                </div>
+                <div className="min-w-0">
+                    <p className="truncate text-base font-semibold text-white">{framework ? framework.toUpperCase() : t('unknown')}</p>
+                    <p className="text-dense text-muted-foreground">{t('Framework')}</p>
+                    {(data?.status.oxInventory || resourceVersion) && <div className="mt-2 flex flex-wrap items-center gap-2">
+                        {data?.status.oxInventory && <Badge>ox_inventory</Badge>}
+                        {resourceVersion && <span className="text-dense text-muted-foreground">{t('resource v{version}', { version: resourceVersion })}</span>}
+                    </div>}
+                </div>
             </div>
-            <div className="rounded-2xl bg-white/5 p-6"><p className="text-xs uppercase tracking-widest text-neutral-500">{t('Framework')}</p><p className="mt-3 text-3xl font-semibold uppercase">{safeText(data?.status.framework, t('unknown'))}</p><div className="mt-2 flex gap-2 text-xs">{data?.status.oxInventory && <span className="rounded-md border border-green-500/20 bg-green-500/10 px-2 py-0.5 text-green-400">ox_inventory</span>}{safeText(data?.status.version) && <span className="rounded-md bg-white/5 px-2 py-0.5 text-zinc-400">{t('resource v{version}', { version: safeText(data?.status.version) })}</span>}</div></div>
-        </div>
-        <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
-            <div className="overflow-hidden rounded-2xl bg-white/5"><div className="flex items-center justify-between border-b border-dashed border-white/5 px-6 py-4"><h2 className="font-medium">{t('Online now')}</h2><TxAnchor className="text-xs" href="/administration/players">{t('View all')}</TxAnchor></div>{data?.players.length ? <ul className="divide-y divide-dashed divide-white/5">{data.players.slice(0, 8).map(player => {
-                const license = toTxAdminLicense(player.playerLicense ?? player.identifier);
-                return <li key={player.characterId ?? player.identifier} className="flex items-center justify-between px-6 py-3 transition hover:bg-white/5">{license ? <TxAnchor className="text-white hover:no-underline" href={`/administration/players/${encodeURIComponent(license)}`}><span className="block text-sm font-medium">{player.name}</span><span className="text-xs text-zinc-500">#{player.source}{player.job?.label ? ` · ${player.job.label}` : ''}</span></TxAnchor> : <span className="text-white"><span className="block text-sm font-medium">{player.name}</span><span className="text-xs text-zinc-500">#{player.source}</span></span>}<span className="text-xs uppercase tracking-widest text-zinc-500">{player.group || 'user'}</span></li>;
-            })}</ul> : <p className="px-6 py-8 text-center text-sm text-zinc-500">{data?.status.online ? t('Nobody is connected.') : t('The game server is unreachable.')}</p>}</div>
-            <div className="overflow-hidden rounded-2xl bg-white/5"><div className="flex items-center justify-between border-b border-dashed border-white/5 px-6 py-4"><h2 className="font-medium">{t('Recent administrator actions')}</h2><TxAnchor className="text-xs" href="/system/panel-log">{t('View logs')}</TxAnchor></div>{data?.recent.length ? <ul className="divide-y divide-dashed divide-white/5">{data.recent.map((line, index) => <li key={index} className="truncate px-6 py-3 font-mono text-xs text-zinc-400">{line}</li>)}</ul> : <p className="px-6 py-8 text-center text-sm text-zinc-500">{t('Nothing recorded since the panel started.')}</p>}</div>
+            {data?.status.error && <p className="mt-4 text-dense text-danger-text">{data.status.error}</p>}
+        </Section>
+
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+            <section className="flex min-w-0 flex-col gap-3">
+                <div className="flex items-center justify-between gap-4">
+                    <h2 className="text-base font-semibold text-white">{t('Online now')}</h2>
+                    <TxAnchor className={headerLinkClass} href="/administration/players">{t('View all')}</TxAnchor>
+                </div>
+                {data?.players.length ? <ListRows>
+                    {data.players.slice(0, 8).map(player => {
+                        const license = toTxAdminLicense(player.playerLicense ?? player.identifier);
+                        return <ListRow key={player.characterId ?? player.identifier} interactive={!!license} className="relative justify-between">
+                            <div className="min-w-0">
+                                {license ? (
+                                    <TxAnchor
+                                        className="block truncate text-sm font-medium text-white after:absolute after:inset-0 after:rounded-lg hover:text-white hover:no-underline"
+                                        href={`/administration/players/${encodeURIComponent(license)}`}
+                                    >
+                                        {player.name}
+                                    </TxAnchor>
+                                ) : (
+                                    <span className="block truncate text-sm font-medium text-white">{player.name}</span>
+                                )}
+                                <span className="block truncate text-dense tabular-nums text-muted-foreground">
+                                    #{player.source}{license && player.job?.label ? ` · ${player.job.label}` : ''}
+                                </span>
+                            </div>
+                            <span className="shrink-0 text-dense text-muted-foreground">{player.group || 'user'}</span>
+                        </ListRow>;
+                    })}
+                </ListRows> : <EmptyState message={data?.status.online ? t('Nobody is connected.') : t('The game server is unreachable.')} />}
+            </section>
+
+            <section className="flex min-w-0 flex-col gap-3">
+                <div className="flex items-center justify-between gap-4">
+                    <h2 className="text-base font-semibold text-white">{t('Recent administrator actions')}</h2>
+                    <TxAnchor className={headerLinkClass} href="/system/panel-log">{t('View logs')}</TxAnchor>
+                </div>
+                {data?.recent.length ? <ListRows>
+                    {data.recent.map((line, index) => <ListRow key={index}>
+                        <span className="min-w-0 truncate font-mono text-xs text-body">{line}</span>
+                    </ListRow>)}
+                </ListRows> : <EmptyState message={t('Nothing recorded since the panel started.')} />}
+            </section>
         </div>
     </>;
 }
@@ -65,6 +125,8 @@ function CadminDashboard() {
 function DashboardPageInner() {
     const pageSocket = useRef<ReturnType<typeof getSocket> | null>(null);
     const setDashboardData = useSetDashboardData();
+    const { authData } = useAuth();
+    const displayName = (authData && authData.name) || 'admin';
 
     //Runing on mount only
     useEffect(() => {
@@ -89,18 +151,28 @@ function DashboardPageInner() {
     }, []);
 
     return (
-        <div className="w-full min-w-96 flex flex-col gap-4 pb-10">
-            <CadminDashboard />
-            <div className="mt-6 border-t border-dashed border-white/5 pt-6">
-                <h2 className="text-lg font-semibold">{t('Server performance')}</h2>
-                <p className="mt-1 text-sm text-zinc-400">{t('Runtime health of the game server.')}</p>
+        <div className="w-full min-w-0 pb-10">
+            <PageHeader
+                title={t('Welcome back, {name}.', { name: displayName })}
+                subtitle={t('{name} at a glance.', { name: window.txConsts.panelName })}
+            />
+            <div className="flex flex-col gap-6">
+                <CadminDashboard />
+                <section className="flex flex-col gap-3">
+                    <div>
+                        <h2 className="text-base font-semibold text-white">{t('Server performance')}</h2>
+                        <p className="mt-1 text-sm text-muted-foreground">{t('Runtime health of the game server.')}</p>
+                    </div>
+                    <div className="flex flex-col gap-6">
+                        <ServerStatsCard />
+                        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+                            <PlayerDropCard />
+                            <ThreadPerfCard />
+                        </div>
+                        <FullPerfCard />
+                    </div>
+                </section>
             </div>
-            <div className="w-full grid grid-cols-1 md:grid-cols-3 3xl:grid-cols-8 gap-4">
-                <PlayerDropCard />
-                <ServerStatsCard />
-                <ThreadPerfCard />
-            </div>
-            <FullPerfCard />
         </div>
     );
 }
@@ -122,10 +194,8 @@ export default function DashboardPage() {
     if (txConfigState === TxConfigState.Setup || txConfigState === TxConfigState.Deployer) {
         return null;
     } else if (txConfigState !== TxConfigState.Ready) {
-        return <div className='size-full'>
-            <ModalTabMessage>
-                <GenericSpinner msg={t('Checking server configuration...')} />
-            </ModalTabMessage>
+        return <div role="status" className="flex min-h-64 w-full items-center justify-center text-sm text-muted-foreground">
+            {t('Checking server configuration...')}
         </div>;
     } else {
         return <DashboardPageInner />;

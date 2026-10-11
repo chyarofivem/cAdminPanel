@@ -44,7 +44,7 @@ export default function PlayerIdsTab({ playerRef, player, refreshModalData }: Pl
     }
 
     return (
-        <ModalTabInner className="flex flex-col gap-4">
+        <ModalTabInner className="flex flex-col gap-6">
             <MultiIdsList
                 type='id'
                 src='player'

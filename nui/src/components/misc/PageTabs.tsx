@@ -1,41 +1,15 @@
 import React, { useCallback } from "react";
-import { Box, ButtonBase, alpha, styled } from "@mui/material";
+import { useTranslate } from "react-polyglot";
 import { usePage } from "../../state/page.state";
 import { useKey } from "../../hooks/useKey";
 import { useTabDisabledValue } from "../../state/keys.state";
 import { useIsMenuVisibleValue } from "../../state/visibility.state";
 import { useServerCtxValue } from "../../state/server.state";
-import { useTranslate } from "react-polyglot";
-import { microLabel, nuiTokens } from "@nui/src/styles/nuiTokens";
 
-const TabRail = styled(Box)({
-  display: "flex",
-  gap: 4,
-  padding: 4,
-  borderRadius: nuiTokens.radiusSm,
-  backgroundColor: nuiTokens.surface,
-  boxShadow: `inset 0 0 0 1px ${nuiTokens.ring}`,
-});
-
-const TabButton = styled(ButtonBase, {
-  shouldForwardProp: (prop) => prop !== "isActive",
-})<{ isActive: boolean }>(({ theme, isActive }) => ({
-  ...microLabel,
-  flex: 1,
-  minHeight: 38,
-  padding: "0 8px",
-  borderRadius: nuiTokens.radiusXs,
-  color: isActive ? theme.palette.text.primary : theme.palette.text.secondary,
-  backgroundColor: isActive ? alpha(theme.palette.primary.main, 0.16) : "transparent",
-  boxShadow: isActive ? `inset 0 0 0 1px ${alpha(theme.palette.primary.main, 0.34)}` : "none",
-  transition: "background-color 120ms ease, color 120ms ease, box-shadow 120ms ease",
-  "&:hover": {
-    backgroundColor: isActive
-      ? alpha(theme.palette.primary.main, 0.2)
-      : nuiTokens.surfaceHover,
-  },
-}));
-
+/**
+ * The page strip: raise-to-transparent gradient, active tab on raise-2.
+ * The switch-page key cycles through the same three pages.
+ */
 export const PageTabs: React.FC = () => {
   const [page, setPage] = usePage();
   const tabDisabled = useTabDisabledValue();
@@ -57,17 +31,19 @@ export const PageTabs: React.FC = () => {
   ];
 
   return (
-    <TabRail>
+    <div className="tabs" role="tablist" aria-label={t("nui_menu.help.pages")}>
       {tabs.map((label, index) => (
-        <TabButton
+        <button
           key={label}
-          isActive={page === index}
+          type="button"
+          role="tab"
+          aria-selected={page === index}
+          className={page === index ? "tab is-active" : "tab"}
           onClick={() => setPage(index)}
-          disableRipple
         >
           {label}
-        </TabButton>
+        </button>
       ))}
-    </TabRail>
+    </div>
   );
 };

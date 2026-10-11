@@ -1,18 +1,17 @@
 import { PageHeader, PageHeaderChangelog, PageHeaderLinks } from "@/components/page-header";
-import { AmpersandIcon, Settings2Icon } from "lucide-react";
 
-const Divider = () => <AmpersandIcon className="size-6 mx-auto" />
-const Wrapper = ({ children }: { children: React.ReactNode }) => <div className="border border-transparent hover:border-fuchsia-500">{children}</div>
+const Divider = () => <div className="border-b border-hairline" role="separator" />
+const Wrapper = ({ children }: { children: React.ReactNode }) => <div className="rounded-sm ring-1 ring-transparent hover:ring-hairline">{children}</div>
 
 export default function TmpPageHeader() {
     return (
         <div className="w-full h-full flex flex-col gap-4">
             <Wrapper>
-                <PageHeader title="Simple" icon={<Settings2Icon />} />
+                <PageHeader title="Simple" />
             </Wrapper>
             <Divider />
             <Wrapper>
-                <PageHeader title="Simple + custom" icon={<Settings2Icon />}>
+                <PageHeader title="Simple + custom">
                     <div className="text-xs">
                         example
                     </div>
@@ -20,7 +19,7 @@ export default function TmpPageHeader() {
             </Wrapper>
             <Divider />
             <Wrapper>
-                <PageHeader title="Simple + links" icon={<Settings2Icon />}>
+                <PageHeader title="Simple + links">
                     <PageHeaderLinks
                         topLabel="Documentation"
                         topLink="https://github.com/chyarofivem/cAdminPanel"
@@ -31,7 +30,7 @@ export default function TmpPageHeader() {
             </Wrapper>
             <Divider />
             <Wrapper>
-                <PageHeader title="Simple + changelog" icon={<Settings2Icon />}>
+                <PageHeader title="Simple + changelog">
                     <PageHeaderChangelog
                         changelogData={[{ author: 'chyarogroup', keys: [], ts: Date.now() }]}
                     />
@@ -40,7 +39,6 @@ export default function TmpPageHeader() {
             <Divider />
             <Wrapper>
                 <PageHeader
-                    icon={<Settings2Icon />}
                     title="Breadcrumbs"
                     parentName="Parent"
                     parentLink="/parent"
@@ -49,7 +47,6 @@ export default function TmpPageHeader() {
             <Divider />
             <Wrapper>
                 <PageHeader
-                    icon={<Settings2Icon />}
                     title="Breadcrumbs"
                     parentName="Parent"
                     parentLink="/parent"
@@ -61,7 +58,7 @@ export default function TmpPageHeader() {
             </Wrapper>
             <Divider />
             <Wrapper>
-                <PageHeader title="Simple + empty changelog" icon={<Settings2Icon />}>
+                <PageHeader title="Simple + empty changelog">
                     <PageHeaderChangelog
                         changelogData={[]}
                     />

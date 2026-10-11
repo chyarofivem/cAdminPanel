@@ -34,7 +34,9 @@ describe('branding assets', () => {
         const body = asset.body.toString('utf8');
 
         expect(asset.mime).toBe('image/svg+xml');
-        expect(body).toContain('stop-color="rgb(');
+        //A flat fill: the design system allows no gradients, and the game browser has no oklch().
+        expect(body).toContain('fill="#be123c"');
+        expect(body).not.toContain('Gradient');
         expect(body).not.toContain('oklch(');
     });
 });

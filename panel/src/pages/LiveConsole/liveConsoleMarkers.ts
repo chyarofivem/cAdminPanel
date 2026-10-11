@@ -32,7 +32,7 @@ export const getTermLineRtlData = (line: string): TerminalMarkerGetterResult => 
     if (!rtlRangeRegex.test(line)) return;
     return {
         markerData: {
-            classes: 'bg-warning text-warning-foreground',
+            classes: 'text-warning-text',
             labelShort: 'RTL',
             labelLong: 'VIEW RIGHT-TO-LEFT TEXT',
             onClick: () => {
@@ -72,7 +72,7 @@ export const getTermLineEventData = (line: string): TerminalMarkerGetterResult =
     return {
         newLine: line.replace(lineMatcher, newLinePart),
         markerData: {
-            classes: 'bg-info text-info-foreground',
+            classes: 'text-info-text',
             labelShort: 'EVENT',
             labelLong: 'VIEW EVENT',
             onClick: () => {
@@ -103,7 +103,7 @@ export const getTermLineInitialData = (line: string): TerminalMarkerGetterResult
     return {
         newLine: line.replace(lineMatcher, newLinePart),
         markerData: {
-            classes: 'bg-info text-info-foreground',
+            classes: 'text-info-text',
             labelShort: 'CMD',
             labelLong: 'VIEW COMMAND',
             onClick: () => {
@@ -130,20 +130,14 @@ export const registerTermLineMarker = (
     const decoration = term.registerDecoration({ layer: 'top', marker });
     decoration && decoration.onRender((element) => {
         if (element.innerHTML) return; //terminal re-rendering
-        //old simple method
-        // element.style.height = '';
-        // element.style.width = '';
-        // element.style.right = '0px';
-        // const elClasses = cn('max-w-min px-1 py-0 text-2xs cursor-pointer rounded', classes);
-        // element.innerHTML = `<div class="${elClasses}">${label}</div>`;
-        // element.onclick = onClick;
-        // console.log(element);
-
-        const bgNormal = 'rgba(255,255,255, 0.01)';
-        const bgHover = 'rgba(255,255,255, 0.05)';
+        //Tokens only: the label sits on the opaque menu surface so console text never shows
+        //through it, and the hovered line is highlighted with the raise layer.
+        const bgNormal = 'transparent';
+        const bgHover = 'var(--raise)';
 
         const btn = document.createElement('button');
-        btn.className = cn('absolute right-0 px-1 py-0 text-2xs rounded overflow-hidden text-nowrap transition-all', markerData.classes);
+        btn.type = 'button';
+        btn.className = cn('absolute right-0 overflow-hidden text-nowrap rounded-xs bg-menu px-1 py-0 font-mono text-micro font-medium transition-colors duration-150', markerData.classes);
         btn.innerText = markerData.labelShort;
         btn.onclick = markerData.onClick;
 
@@ -164,7 +158,7 @@ export const registerTermLineMarker = (
 
         //Adding to the DOM
         updateWidth();
-        element.classList.add('rounded');
+        element.classList.add('rounded-xs');
         element.style.backgroundColor = bgNormal;
         element.style.width = '100%';
         element.replaceChildren(btn);

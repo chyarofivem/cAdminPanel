@@ -10,7 +10,7 @@ type SettingsTabProps = {
 export default function SettingsTab({ tab, pageCtx }: SettingsTabProps) {
     if ('cards' in tab) {
         return (
-            <div id={`tab-${tab.ctx.tabId}`} className='space-y-4'>
+            <div id={`tab-${tab.ctx.tabId}`} className='flex flex-col gap-6'>
                 {tab.cards.map(({ ctx, Component }) => (
                     <Component
                         key={ctx.cardId}

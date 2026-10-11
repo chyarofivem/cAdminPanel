@@ -1,7 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { useAdminPerms } from "@/hooks/auth";
 import { PlayerModalRefType, useClosePlayerModal } from "@/hooks/playerModal";
-import { Loader2Icon } from "lucide-react";
 import { useRef, useState } from "react";
 import { useBackendApi } from "@/hooks/fetch";
 import { GenericApiOkResp } from "@shared/genericApiTypes";
@@ -29,7 +28,7 @@ export default function PlayerBanTab({ playerRef, banTemplates }: PlayerBanTabPr
     });
 
     if (!hasPerm('players.ban')) {
-        return <ModalTabMessage>
+        return <ModalTabMessage className="text-sm">
             {t("You don't have permission to ban players.")}
         </ModalTabMessage>;
     }
@@ -65,18 +64,12 @@ export default function PlayerBanTab({ playerRef, banTemplates }: PlayerBanTabPr
                 disabled={isSaving}
                 onNavigateAway={() => { closeModal(); }}
             />
-            <div className="flex place-content-end">
+            <div>
                 <Button
-                    size="sm"
-                    variant="destructive"
                     disabled={isSaving}
                     onClick={handleSave}
                 >
-                    {isSaving ? (
-                        <span className="flex items-center leading-relaxed">
-                            <Loader2Icon className="inline animate-spin h-4" /> {t('Banning...')}
-                        </span>
-                    ) : t('Apply Ban')}
+                    {isSaving ? t('Banning...') : t('Apply Ban')}
                 </Button>
             </div>
         </ModalTabInner>

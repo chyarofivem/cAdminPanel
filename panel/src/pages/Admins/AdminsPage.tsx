@@ -1,18 +1,23 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import useSWR from 'swr';
-import { KeyRound, Pencil, Plus, ShieldCheck, Trash2, UserRound } from 'lucide-react';
+import { CopyIcon } from 'lucide-react';
 import { useAuthedFetcher } from '@/hooks/fetch';
 import { txToast } from '@/components/TxToaster';
+import { ListRow, ListRows } from '@/components/ListRow';
+import CopyRow from '@/components/CopyRow';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
+import { IconButton } from '@/components/ui/icon-button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { PageHeader } from '@/components/page-header';
-import { cn } from '@/lib/utils';
+import { cn, copyToClipboard } from '@/lib/utils';
 import { useOpenConfirmDialog } from '@/hooks/dialogs';
 import { t } from '@/lib/i18n';
+import { normalizeLicenseIdentifier } from '@shared/licenseIdentifier';
 
 type StaffMember = {
     name: string;
@@ -23,6 +28,8 @@ type StaffMember = {
     citizenfxId: string;
     citizenfxIdentifier: string;
     discordId: string;
+    /** Rockstar license as `license:<hex>`, or an empty string. */
+    licenseIdentifier: string;
     permissions: string[];
 };
 
@@ -40,10 +47,11 @@ type StaffDraft = {
     name: string;
     citizenfxID: string;
     discordID: string;
+    licenseID: string;
     permissions: string[];
 };
 
-const emptyDraft: StaffDraft = { name: '', citizenfxID: '', discordID: '', permissions: [] };
+const emptyDraft: StaffDraft = { name: '', citizenfxID: '', discordID: '', licenseID: '', permissions: [] };
 const sectionOrder: Permission['section'][] = ['Panel & Server', 'Character Management', 'In-game Menu'];
 
 const permissionSummary = (member: StaffMember) => {
@@ -51,6 +59,24 @@ const permissionSummary = (member: StaffMember) => {
     if (member.permissions.includes('all_permissions')) return t('All permissions');
     return t(member.permissions.length === 1 ? '{count} permission' : '{count} permissions', { count: member.permissions.length });
 };
+
+/** Icon-only copy button for an identifier shown in a row. */
+function CopyIdButton({ value }: { value: string }) {
+    const surrogateRef = useRef<HTMLDivElement>(null);
+    const handleCopy = async () => {
+        if (!surrogateRef.current) return;
+        try {
+            const result = await copyToClipboard(value, surrogateRef.current);
+            if (result === false) throw new Error('copy failed');
+            txToast.success(t('Copied to clipboard.'));
+        } catch (error) {
+            txToast.error(t('Could not copy to the clipboard.'));
+        }
+    };
+    return <div ref={surrogateRef} className="shrink-0">
+        <IconButton label={t('Copy identifier')} icon={<CopyIcon />} onClick={() => void handleCopy()} />
+    </div>;
+}
 
 export default function AdminsPage() {
     const fetcher = useAuthedFetcher();
@@ -72,7 +98,10 @@ export default function AdminsPage() {
 
     //An account with neither identifier is reachable only through the panel: the
     //in-game menu authenticates on the identifiers the game reports and nothing else.
-    const hasGameIdentity = draft.citizenfxID.trim().length > 0 || draft.discordID.trim().length > 0;
+    const hasGameIdentity = draft.citizenfxID.trim().length > 0
+        || draft.discordID.trim().length > 0
+        || draft.licenseID.trim().length > 0;
+    const licenseIsInvalid = draft.licenseID.trim().length > 0 && !normalizeLicenseIdentifier(draft.licenseID);
 
     const openNew = (prefill: Partial<StaffDraft> = {}) => {
         setDraft({ ...emptyDraft, ...prefill });
@@ -94,6 +123,7 @@ export default function AdminsPage() {
             name: safeName,
             citizenfxID: params.get('citizenfx') || '',
             discordID: discord.includes(':') ? discord.split(':').pop() || '' : discord,
+            licenseID: normalizeLicenseIdentifier(params.get('license')) ?? '',
         };
         openNew(prefill);
         window.history.replaceState({}, '', window.location.pathname);
@@ -103,6 +133,7 @@ export default function AdminsPage() {
             name: member.name,
             citizenfxID: member.citizenfxId,
             discordID: member.discordId,
+            licenseID: member.licenseIdentifier,
             permissions: member.permissions,
         });
         setEditing(member);
@@ -115,6 +146,7 @@ export default function AdminsPage() {
     }));
     const save = async () => {
         if (!draft.name.trim()) return txToast.error(t('Enter a username.'));
+        if (licenseIsInvalid) return txToast.error(t('Enter license: followed by 40 letters and digits.'));
         setSaving(true);
         try {
             const action = editing === 'new' ? 'add' : 'edit';
@@ -124,6 +156,7 @@ export default function AdminsPage() {
                     name: draft.name.trim(),
                     citizenfxID: draft.citizenfxID.trim(),
                     discordID: draft.discordID.trim(),
+                    licenseID: draft.licenseID.trim(),
                     permissions: draft.permissions,
                 },
             });
@@ -153,76 +186,113 @@ export default function AdminsPage() {
         onConfirm: () => { void performRemove(member); },
     });
 
-    return <div>
-        <PageHeader title={t('Staff & Permissions')} icon={<ShieldCheck className="size-6" />} />
-        <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-            <div>
-                <p className="max-w-3xl text-sm text-zinc-400">{t("Access is stored locally in the panel's admins.json. Staff sign in with a local username and password, or use linked game identifiers in-menu.")}</p>
-                {swr.data && <p className="mt-1 text-xs text-zinc-600">{t(swr.data.admins.length === 1 ? '{count} local staff account' : '{count} local staff accounts', { count: swr.data.admins.length })}</p>}
-            </div>
-            <Button onClick={() => openNew()}><Plus className="mr-2 size-4" />{t('Add staff member')}</Button>
+    return <div className="pb-8">
+        <PageHeader
+            title={t('Staff & Permissions')}
+            subtitle={t("Access is stored locally in the panel's admins.json. Staff sign in with a local username and password, or use linked game identifiers in-menu.")}
+        >
+            <Button onClick={() => openNew()}>{t('Add staff member')}</Button>
+        </PageHeader>
+
+        <div className="flex flex-col gap-6">
+            {swr.error && <Alert variant="destructive"><AlertDescription>{swr.error.message}</AlertDescription></Alert>}
+            {swr.isLoading && <p role="status" className="text-sm text-muted-foreground">{t('Loading local staff…')}</p>}
+            {swr.data && <section className="flex flex-col gap-3">
+                <h2 className="text-base font-semibold tabular-nums text-white">
+                    {t(swr.data.admins.length === 1 ? '{count} local staff account' : '{count} local staff accounts', { count: swr.data.admins.length })}
+                </h2>
+                <ListRows>
+                    {swr.data.admins.map(member => {
+                        const gameIdentifier = member.licenseIdentifier
+                            || member.citizenfxIdentifier
+                            || (member.discordId ? `discord:${member.discordId}` : '');
+                        const hasFullAccess = member.master || member.permissions.includes('all_permissions');
+                        return <ListRow key={member.name} className="flex-col items-stretch sm:flex-row sm:items-center">
+                            <div className="min-w-0 flex-1">
+                                <div className="flex flex-wrap items-center gap-2">
+                                    <span className="truncate text-sm font-medium text-white">{member.name}</span>
+                                    {member.isSelf && <Badge>{t('you')}</Badge>}
+                                    <span className="text-dense text-muted-foreground">{member.master ? t('Owner') : t('Staff')}</span>
+                                </div>
+                                {gameIdentifier
+                                    ? <div className="flex min-w-0 items-center gap-1">
+                                        <code className="min-w-0 break-all font-mono text-xs text-muted-foreground">{gameIdentifier}</code>
+                                        <CopyIdButton value={gameIdentifier} />
+                                    </div>
+                                    : <Badge variant="warning" className="mt-2">{t('No game identifier')}</Badge>}
+                            </div>
+                            <div className="flex shrink-0 flex-wrap items-center gap-2">
+                                <Badge variant={hasFullAccess ? 'warning' : 'default'}>{permissionSummary(member)}</Badge>
+                                {!member.isSelf && <Button size="sm" variant="secondary" disabled={member.disableEdit} onClick={() => openEdit(member)}>{t('Edit')}</Button>}
+                                <Button size="sm" variant="outline-destructive" disabled={member.disableDelete} onClick={() => remove(member)}>{t('Remove')}</Button>
+                            </div>
+                        </ListRow>;
+                    })}
+                </ListRows>
+            </section>}
         </div>
 
-        {swr.error && <div className="rounded-2xl border border-red-500/20 bg-red-500/10 p-4 text-sm text-red-300">{swr.error.message}</div>}
-        <Card className="overflow-hidden">
-            <CardContent className="p-0">
-                <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
-                        <thead className="border-b border-dashed border-white/5 text-xs uppercase tracking-widest text-zinc-500">
-                            <tr><th className="px-6 py-3 text-left font-medium">{t('Staff member')}</th><th className="px-6 py-3 text-left font-medium">{t('Game identifier')}</th><th className="px-6 py-3 text-left font-medium">{t('Local access')}</th><th className="px-6 py-3" /></tr>
-                        </thead>
-                        <tbody className="divide-y divide-dashed divide-white/5">
-                            {swr.data?.admins.map(member => <tr key={member.name} className="transition hover:bg-white/[0.03]">
-                                <td className="px-6 py-4"><div className="flex items-center gap-3"><span className="grid size-9 place-items-center rounded-xl bg-brand-500/10 text-brand-400"><UserRound className="size-4" /></span><div><p className="font-medium text-white">{member.name}{member.isSelf && <span className="ml-2 text-xs text-brand-400">{t('you')}</span>}</p><p className="text-xs text-zinc-600">{member.master ? t('Owner') : t('Staff')}</p></div></div></td>
-                                <td className="px-6 py-4">{member.citizenfxIdentifier || member.discordId
-                                    ? <p className="font-mono text-xs text-zinc-400">{member.citizenfxIdentifier || `discord:${member.discordId}`}</p>
-                                    : <span className="rounded-md bg-amber-500/10 px-2 py-1 text-xs text-amber-300">{t('No game identifier')}</span>}</td>
-                                <td className="px-6 py-4"><span className={cn('rounded-md px-2 py-1 text-xs', member.master || member.permissions.includes('all_permissions') ? 'bg-amber-500/10 text-amber-300' : 'bg-white/5 text-zinc-400')}>{permissionSummary(member)}</span></td>
-                                <td className="px-6 py-4"><div className="flex justify-end gap-2">{!member.isSelf && <Button size="sm" variant="outline" disabled={member.disableEdit} onClick={() => openEdit(member)}><Pencil className="mr-1 size-3.5" />{t('Edit')}</Button>}<Button size="sm" variant="destructive" disabled={member.disableDelete} onClick={() => remove(member)}><Trash2 className="size-3.5" /></Button></div></td>
-                            </tr>)}
-                        </tbody>
-                    </table>
-                </div>
-                {swr.isLoading && <p className="px-6 py-12 text-center text-sm text-zinc-500">{t('Loading local staff…')}</p>}
-            </CardContent>
-        </Card>
-
         <Dialog open={editing !== null} onOpenChange={open => !open && setEditing(null)}>
-            <DialogContent className="max-h-[90vh] max-w-4xl overflow-y-auto border-white/10 bg-[#17191e]">
+            <DialogContent className="max-h-[90vh] max-w-4xl">
                 <DialogHeader><DialogTitle>{editing === 'new' ? t('Add local staff member') : t('Edit {name}', { name: draft.name })}</DialogTitle><DialogDescription>{t('Identity determines who signs in. The checkboxes below are the only source of authorization.')}</DialogDescription></DialogHeader>
-                <div className="grid gap-6 py-2">
-                    <section className="rounded-2xl border border-white/5 bg-white/[0.025] p-5">
-                        <h3 className="mb-4 flex items-center text-sm font-semibold text-white"><UserRound className="mr-2 size-4 text-brand-400" />{t('Identity')}</h3>
-                        {editing === 'new' && <p className="mb-4 rounded-xl border border-brand-500/20 bg-brand-500/5 p-3 text-xs text-zinc-300">{t('A temporary local password will be generated and shown once after saving. The staff member must change it on first login.')}</p>}
-                        {!hasGameIdentity && <p className="mb-4 rounded-xl border border-amber-500/20 bg-amber-500/5 p-3 text-xs text-amber-200">{t('Fill in at least one identifier below, or this account can only sign in to the panel. The in-game menu recognises staff by identifier alone, so it never opens for an account without one.')}</p>}
-                        <div className="grid gap-4 md:grid-cols-2">
-                            <div className="space-y-2"><Label htmlFor="staff-name">{t('Username')}</Label><Input id="staff-name" value={draft.name} readOnly={editing !== 'new'} onChange={event => setDraft({ ...draft, name: event.target.value })} placeholder={t('panel username')} /></div>
-                            <div className="space-y-2"><Label htmlFor="staff-fivem">{t('Cfx.re username or fivem ID')}</Label><Input id="staff-fivem" value={draft.citizenfxID} onChange={event => setDraft({ ...draft, citizenfxID: event.target.value })} placeholder={t('optional')} /><p className="text-xs text-zinc-600">{t('The identifier the game reports, so this is what matches staff in game.')}</p></div>
-                            <div className="space-y-2"><Label htmlFor="staff-discord">{t('Discord user ID')}</Label><Input id="staff-discord" value={draft.discordID} onChange={event => setDraft({ ...draft, discordID: event.target.value })} placeholder={t('optional')} /><p className="text-xs text-zinc-600">{t('Also matches in game, and links the account to the Discord bot.')}</p></div>
+                <section className="flex flex-col gap-4">
+                    <h3 className="text-base font-semibold text-white">{t('Identity')}</h3>
+                    {editing === 'new' && <Alert><AlertDescription>{t('A temporary local password will be generated and shown once after saving. The staff member must change it on first login.')}</AlertDescription></Alert>}
+                    {!hasGameIdentity && <Alert variant="warning"><AlertDescription>{t('Fill in at least one identifier below, or this account can only sign in to the panel. The in-game menu recognises staff by identifier alone, so it never opens for an account without one.')}</AlertDescription></Alert>}
+                    <div className="grid gap-4 md:grid-cols-2">
+                        <div className="flex flex-col gap-2"><Label htmlFor="staff-name">{t('Username')}</Label><Input id="staff-name" value={draft.name} readOnly={editing !== 'new'} onChange={event => setDraft({ ...draft, name: event.target.value })} placeholder={t('panel username')} /></div>
+                        <div className="flex flex-col gap-2"><Label htmlFor="staff-fivem">{t('Cfx.re username or fivem ID')}</Label><Input id="staff-fivem" value={draft.citizenfxID} onChange={event => setDraft({ ...draft, citizenfxID: event.target.value })} placeholder={t('optional')} /><p className="text-dense text-muted-foreground">{t('The identifier the game reports, so this is what matches staff in game.')}</p></div>
+                        <div className="flex flex-col gap-2"><Label htmlFor="staff-discord">{t('Discord user ID')}</Label><Input id="staff-discord" value={draft.discordID} onChange={event => setDraft({ ...draft, discordID: event.target.value })} placeholder={t('optional')} /><p className="text-dense text-muted-foreground">{t('Also matches in game, and links the account to the Discord bot.')}</p></div>
+                        <div className="flex flex-col gap-2">
+                            <Label htmlFor="staff-license">{t('Rockstar license')}</Label>
+                            <Input
+                                id="staff-license"
+                                className="font-mono"
+                                value={draft.licenseID}
+                                onChange={event => setDraft({ ...draft, licenseID: event.target.value })}
+                                placeholder="license:…"
+                                spellCheck={false}
+                                autoComplete="off"
+                                aria-invalid={licenseIsInvalid}
+                            />
+                            {licenseIsInvalid
+                                ? <p className="text-dense text-danger-text">{t('Enter license: followed by 40 letters and digits.')}</p>
+                                : <p className="text-dense text-muted-foreground">{t('Every FiveM and RedM player has one, so it is the most reliable way to match staff in game.')}</p>}
                         </div>
-                    </section>
-                    <section className="rounded-2xl border border-white/5 bg-white/[0.025] p-5">
-                        <h3 className="mb-1 flex items-center text-sm font-semibold text-white"><KeyRound className="mr-2 size-4 text-brand-400" />{t('Local panel permissions')}</h3>
-                        <p className="mb-5 text-xs text-zinc-600">{t('Dangerous permissions are highlighted. Staff cannot grant permissions they do not already have.')}</p>
-                        <p className="mb-5 -mt-3 text-xs text-zinc-500">{t('All Permissions grants every listed permission. The CFG Editor is master-only and is not a permission.')}</p>
-                        <div className="grid gap-6 lg:grid-cols-3">{groupedPermissions.map(group => <div key={group.section}><h4 className="mb-3 text-xs font-semibold uppercase tracking-widest text-zinc-500">{t(group.section)}</h4><div className="space-y-2.5">{group.permissions.map(permission => <label key={permission.id} className="flex cursor-pointer items-start gap-3 rounded-lg p-2 transition hover:bg-white/5"><Checkbox checked={draft.permissions.includes(permission.id)} onCheckedChange={value => togglePermission(permission.id, value === true)} /><span><span className={cn('block text-sm', permission.dangerous ? 'text-red-300' : 'text-zinc-300')}>{t(permission.label)}</span><span className="font-mono text-[10px] text-zinc-600">{permission.id}</span></span></label>)}</div></div>)}</div>
-                    </section>
-                </div>
-                <DialogFooter><Button variant="outline" onClick={() => setEditing(null)}>{t('Cancel')}</Button><Button disabled={saving} onClick={save}>{saving ? t('Saving…') : t('Save local access')}</Button></DialogFooter>
+                    </div>
+                </section>
+                <section className="flex flex-col gap-4">
+                    <div>
+                        <h3 className="text-base font-semibold text-white">{t('Local panel permissions')}</h3>
+                        <p className="mt-1 text-dense text-muted-foreground">{t('Dangerous permissions are highlighted. Staff cannot grant permissions they do not already have.')}</p>
+                        <p className="mt-1 text-dense text-muted-foreground">{t('All Permissions grants every listed permission. The CFG Editor is master-only and is not a permission.')}</p>
+                    </div>
+                    <div className="grid gap-6 lg:grid-cols-3">{groupedPermissions.map(group => <div key={group.section} className="flex flex-col gap-2">
+                        <h4 className="text-dense font-medium text-muted-foreground">{t(group.section)}</h4>
+                        <div className="flex flex-col gap-1">{group.permissions.map(permission => <label key={permission.id} className="flex min-h-11 cursor-pointer items-start gap-3 rounded-sm p-2 transition-colors duration-150 hover:bg-raise">
+                            <Checkbox checked={draft.permissions.includes(permission.id)} onCheckedChange={value => togglePermission(permission.id, value === true)} />
+                            <span className="min-w-0">
+                                <span className={cn('block text-sm', permission.dangerous ? 'text-danger-text' : 'text-body')}>{t(permission.label)}</span>
+                                <span className="block break-all font-mono text-micro text-muted-foreground">{permission.id}</span>
+                            </span>
+                        </label>)}</div>
+                    </div>)}</div>
+                </section>
+                <DialogFooter><Button variant="secondary" onClick={() => setEditing(null)}>{t('Cancel')}</Button><Button disabled={saving} onClick={save}>{saving ? t('Saving…') : t('Save local access')}</Button></DialogFooter>
             </DialogContent>
         </Dialog>
         <Dialog open={temporaryCredentials !== null} onOpenChange={open => !open && setTemporaryCredentials(null)}>
-            <DialogContent className="max-w-lg border-white/10 bg-[#17191e]">
+            <DialogContent className="max-w-lg">
                 <DialogHeader>
                     <DialogTitle>{t('Temporary login created')}</DialogTitle>
                     <DialogDescription>{t('Give these credentials to the staff member now. This password is shown once and must be changed on first login.')}</DialogDescription>
                 </DialogHeader>
-                <div className="space-y-3 rounded-xl border border-amber-500/20 bg-amber-500/5 p-4">
-                    <div><Label>{t('Username')}</Label><p className="mt-1 select-all font-mono text-sm text-white">{temporaryCredentials?.username}</p></div>
-                    <div><Label>{t('Temporary password')}</Label><p className="mt-1 select-all break-all font-mono text-sm text-amber-200">{temporaryCredentials?.password}</p></div>
+                <div className="flex flex-col gap-2">
+                    <CopyRow label={t('Username')} value={temporaryCredentials?.username ?? ''} />
+                    <CopyRow label={t('Temporary password')} value={temporaryCredentials?.password ?? ''} />
                 </div>
                 <DialogFooter>
-                    <Button variant="outline" onClick={() => {
+                    <Button variant="secondary" onClick={() => {
                         if (!temporaryCredentials) return;
                         void navigator.clipboard.writeText(`${temporaryCredentials.username}\n${temporaryCredentials.password}`);
                         txToast.success(t('Credentials copied.'));

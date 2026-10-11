@@ -50,7 +50,7 @@ export default function TmpApi() {
     }
 
     return <>
-        <div className="mx-auto mt-auto flex gap-4 group">
+        <div className="mx-auto mt-auto flex flex-wrap gap-3">
             <Button
                 size={'lg'}
                 variant="default"
@@ -60,14 +60,14 @@ export default function TmpApi() {
             </Button>
             <Button
                 size={'lg'}
-                variant="default"
+                variant="secondary"
                 onClick={testTypedPromise}
             >
                 Typed Promise
             </Button>
             <Button
                 size={'lg'}
-                variant="default"
+                variant="secondary"
                 onClick={testTypedCallback}
             >
                 Typed Callback

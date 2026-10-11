@@ -41,18 +41,25 @@ export default function DrilldownOverviewSubcard({ dropTypes }: DrilldownOvervie
     }
 
     return (
-        <div className="grid grid-cols-[repeat(auto-fit,minmax(9rem,1fr))] gap-3 p-4 text-muted-foreground">
+        <div className="grid grid-cols-[repeat(auto-fit,minmax(9rem,1fr))] gap-x-6 gap-y-4">
             {categories.map(([reasonId, reasonData]) => (
                 <Tooltip key={reasonId}>
                     <TooltipTrigger asChild>
-                        <div className="flex min-h-24 flex-col items-center justify-center gap-2 rounded-xl border border-white/[0.06] bg-black/[0.1] px-4 py-3 transition-colors hover:bg-white/[0.035]">
-                            <span
-                                className="border-b-2 pb-1 text-base font-semibold tracking-wide text-foreground"
-                                style={{ borderColor: reasonData.color }}
-                            >{reasonData.label}</span>
-                            <span className="text-sm">
-                                {numberToLocaleString(reasonData.count)} <small className="opacity-75">({numberToLocaleString((reasonData.count / totalDrops) * 100, 1)}%)</small>
-                            </span>
+                        <div className="min-w-0">
+                            <p className="flex items-center gap-2 text-dense text-muted-foreground">
+                                <span
+                                    aria-hidden="true"
+                                    className="size-2.5 shrink-0 rounded-full"
+                                    style={{ backgroundColor: reasonData.color }}
+                                />
+                                <span className="truncate">{reasonData.label}</span>
+                            </p>
+                            <p className="mt-1 text-lg font-semibold tabular-nums text-white">
+                                {numberToLocaleString(reasonData.count)}{' '}
+                                <span className="text-dense font-normal text-muted-foreground">
+                                    ({numberToLocaleString((reasonData.count / totalDrops) * 100, 1)}%)
+                                </span>
+                            </p>
                         </div>
                     </TooltipTrigger>
                     <TooltipContent className="max-w-96 text-center">

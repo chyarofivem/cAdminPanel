@@ -1,29 +1,31 @@
 import { Fragment, useMemo } from "react";
-import { PlayerDropsMessage } from "./PlayerDropsGenericSubcards";
 import type { PDLChangeEventType } from "@shared/otherTypes";
 import { processResourceChanges } from "./utils";
-import { cn } from "@/lib/utils";
 import { tsToLocaleDateString, tsToLocaleDateTimeString, tsToLocaleTimeString } from "@/lib/dateTime";
+import { ListRow, ListRows } from "@/components/ListRow";
+import EmptyState from "@/components/EmptyState";
 import { t } from "@/lib/i18n";
 
 
+//Diff chips use the status tints. The words around them ("Removed:", "Added:", "Updated:",
+//"Switched from ... to ...") carry the meaning, so colour is never the only signal.
 function DiffOld({ children }: { children: React.ReactNode }) {
     return (
-        <span className="rounded px-1.5 py-0.5 font-mono text-xs text-primary dark:bg-destructive-inline/90 dark:text-background bg-destructive-inline/60">
+        <span className="rounded-xs bg-danger/15 px-1.5 py-0.5 font-mono text-xs text-danger-text">
             {children}
         </span>
     );
 }
 function DiffNew({ children }: { children: React.ReactNode }) {
     return (
-        <span className="rounded px-1.5 py-0.5 font-mono text-xs text-primary dark:bg-success-inline/90 dark:text-background bg-success-inline/60">
+        <span className="rounded-xs bg-success/15 px-1.5 py-0.5 font-mono text-xs text-success-text">
             {children}
         </span>
     );
 }
 function DiffUpdated({ children }: { children: React.ReactNode }) {
     return (
-        <span className="rounded px-1.5 py-0.5 font-mono text-xs text-primary dark:bg-warning/90 dark:text-background bg-warning/60">
+        <span className="rounded-xs bg-warning/15 px-1.5 py-0.5 font-mono text-xs text-warning-text">
             {children}
         </span>
     );
@@ -120,43 +122,32 @@ export default function DrilldownChangesSubcard({ changes }: DrilldownChangesSub
     }, [changes]);
 
     if (!changes.length) {
-        return <PlayerDropsMessage message={t('No environmental changes within this time window.')} />;
+        return <EmptyState message={t('No environmental changes within this time window.')} />;
     }
 
     return (
-        <div className="grid gap-3 p-4 md:grid-cols-[auto_minmax(0,1fr)]">
+        <ListRows>
             {sortedChanges.map((change, index) => (
-                <Fragment key={index}>
-                    <div className="hidden items-start md:flex">
-                        <div className="flex min-w-24 flex-col items-center justify-center rounded-lg border border-white/[0.06] bg-black/[0.1] px-2 py-2 text-xs font-medium text-muted-foreground">
-                            <span>{tsToLocaleDateString(change.ts, 'medium')}</span>
-                            <span>{tsToLocaleTimeString(change.ts)}</span>
-                        </div>
+                <ListRow key={index} className="items-start gap-4">
+                    <div className="hidden w-28 shrink-0 flex-col text-dense tabular-nums text-muted-foreground md:flex">
+                        <span>{tsToLocaleDateString(change.ts, 'medium')}</span>
+                        <span>{tsToLocaleTimeString(change.ts)}</span>
                     </div>
-                    <div
-                        className={cn(
-                            'col-span-2 flex-1 rounded-xl border border-white/[0.06] bg-black/[0.08] px-4 py-3 md:col-span-1',
-                            index % 2 === 0 && 'bg-white/[0.025]',
-                        )}
-                    >
-                        <div className="flex flex-wrap-reverse justify-between">
-                            <h3 className="inline flex-grow text-sm font-semibold">
-                                {change.type in eventTitles ? eventTitles[change.type] : change.type}
-                            </h3>
-                            <div className="md:hidden mx-auto">
-                                <span className="border-muted-foreground border rounded px-2 py-0.5 font-normal text-xs text-muted-foreground">
-                                    {tsToLocaleDateTimeString(change.ts, 'medium', 'short')}
-                                </span>
-                            </div>
-                        </div>
-                        <div className="mt-1 text-sm leading-6 text-gray-500 dark:text-gray-400">
+                    <div className="min-w-0 flex-1">
+                        <h3 className="text-sm font-medium text-white">
+                            {change.type in eventTitles ? eventTitles[change.type] : change.type}
+                        </h3>
+                        <p className="text-dense tabular-nums text-muted-foreground md:hidden">
+                            {tsToLocaleDateTimeString(change.ts, 'medium', 'short')}
+                        </p>
+                        <div className="mt-1 break-words text-dense leading-6 text-body">
                             {change.type === 'fxsChanged' && <ChangedFxsEvent change={change} />}
                             {change.type === 'gameChanged' && <ChangedGameEvent change={change} />}
                             {change.type === 'resourcesChanged' && <ChangedResourcesEvent change={change} />}
                         </div>
                     </div>
-                </Fragment>
+                </ListRow>
             ))}
-        </div>
+        </ListRows>
     );
 }

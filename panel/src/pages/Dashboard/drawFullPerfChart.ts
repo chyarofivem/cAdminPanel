@@ -1,5 +1,5 @@
 import * as d3 from 'd3';
-import { PerfLifeSpanType, PerfSnapType } from './chartingUtils';
+import { PerfLifeSpanType, PerfSnapType, getChartChromeColors, styleChartAxis } from './chartingUtils';
 import { msToShortDuration } from '@/lib/dateTime';
 import { throttle } from 'throttle-debounce';
 
@@ -69,6 +69,9 @@ export default function drawFullPerfChart({
     //closed by the end of file
 
     //Setup
+    //NOTE: chart chrome (axes, plot background, cursor) uses the design tokens.
+    //The heatmap palette and the player line are fixed series colours.
+    const chromeColors = getChartChromeColors();
     const drawableAreaHeight = height - margins.top - margins.bottom;
     const drawableAreaWidth = width - margins.left - margins.right;
 
@@ -118,21 +121,24 @@ export default function drawFullPerfChart({
         .attr('transform', translate(margins.left, height - margins.bottom))
         .attr('class', 'time-axis')
         .call(timeAxis);
+    styleChartAxis(timeAxisGroup, chromeColors);
 
     const bucketsAxis = d3.axisRight(tickBucketsScale);
-    svg.append('g')
+    const bucketsAxisGroup = svg.append('g')
         .attr('class', 'buckets-axis')
         .attr('transform', translate(width - margins.right + margins.axis, margins.top))
         .call(bucketsAxis);
+    styleChartAxis(bucketsAxisGroup, chromeColors);
 
     const playersAxisTickValues = (maxPlayersDomain <= 7) ? d3.range(maxPlayersDomain + 1) : null;
     const playersAxis = d3.axisLeft(playersScale)
         .tickFormat(t => t.toString())
         .tickValues(playersAxisTickValues as any); //integer values only 
-    svg.append('g')
+    const playersAxisGroup = svg.append('g')
         .attr('class', 'players-axis')
         .attr('transform', translate(margins.left - margins.axis, 0))
         .call(playersAxis);
+    styleChartAxis(playersAxisGroup, chromeColors);
 
     // const fxsMemoryAxisTickValues = (maxFxsMemory <= 7) ? d3.range(maxFxsMemory + 1) : null;
     // const fxsMemoryAxis = d3.axisLeft(fxsMemoryScale)
@@ -176,7 +182,7 @@ export default function drawFullPerfChart({
         //Setup
         isFirstRender && console.time('drawing canvas heatmap');
         ctx.clearRect(0, 0, drawableAreaWidth, drawableAreaHeight);
-        ctx.fillStyle = isDarkMode ? '#281C2B' : '#E4D4FA';
+        ctx.fillStyle = chromeColors.raise;
         ctx.fillRect(0, 0, drawableAreaWidth, drawableAreaHeight);
         snapshotsDrawn = [];
 
@@ -395,29 +401,28 @@ export default function drawFullPerfChart({
      */
     const cursorLineVert = chartGroup.append('line')
         .attr('class', 'cursorLineHorz')
-        .attr('stroke', 'rgba(216, 245, 19, 0.75)')
+        .attr('stroke', chromeColors.body)
         .attr('stroke-width', 1)
         .attr('stroke-dasharray', '3 3');
     const cursorLineHorz = chartGroup.append('line')
         .attr('class', 'cursorLineHorz')
-        .attr('stroke', 'rgba(216, 245, 19, 0.75)')
+        .attr('stroke', chromeColors.body)
         .attr('stroke-width', 1)
         .attr('stroke-dasharray', '3 3');
     const cursorDot = chartGroup.append('circle')
         .attr('class', 'cursorDot')
-        .attr('fill', 'red')
+        .attr('fill', chromeColors.text)
         .attr('r', 4);
+    //Same surface as a tooltip: menu background, radius-xs, no outline.
     const cursorTextBg = chartGroup.append('rect')
         .attr('class', 'cursorTextBg')
-        .attr('fill', 'black')
-        .attr('rx', 5)
-        .attr('ry', 5)
-        .attr('stroke', 'rgba(216, 245, 19, 0.35)')
-        .attr('stroke-width', 1);
+        .attr('fill', chromeColors.menu)
+        .attr('rx', 6)
+        .attr('ry', 6);
     const cursorText = chartGroup.append('text')
-        .attr('class', 'cursorText font-mono')
-        .attr('fill', 'rgba(216, 245, 19)')
-        .attr('font-size', 16);
+        .attr('class', 'cursorText font-mono tabular-nums')
+        .attr('fill', chromeColors.text)
+        .attr('font-size', 13);
     const cursorTextNode = cursorText.node();
 
     const clearCursor = () => {
@@ -551,6 +556,7 @@ export default function drawFullPerfChart({
         ]);
         timeAxis.scale(transform.rescaleX(timeScale).range([0, drawableAreaWidth]));
         timeAxisGroup.call(timeAxis);
+        styleChartAxis(timeAxisGroup, chromeColors);
 
         //@ts-ignore
         chartGroup.selectAll('g.lifespan').call(drawLifespan);

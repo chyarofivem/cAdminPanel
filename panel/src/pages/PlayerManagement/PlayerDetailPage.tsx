@@ -1,25 +1,17 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import useSWR from 'swr';
-import {
-    AlertCircle,
-    ArrowLeft,
-    BadgeDollarSign,
-    Car,
-    Clock3,
-    Database,
-    Fingerprint,
-    History,
-    Loader2,
-    LockKeyhole,
-    RefreshCw,
-    Save,
-    ShieldCheck,
-    UserRoundCog,
-} from 'lucide-react';
-import { useLocation, useRoute } from 'wouter';
+import { CopyIcon, Trash2Icon } from 'lucide-react';
+import { useRoute } from 'wouter';
+import CopyRow from '@/components/CopyRow';
+import EmptyState from '@/components/EmptyState';
+import { ListRow, ListRows } from '@/components/ListRow';
 import { PageHeader } from '@/components/page-header';
+import Section from '@/components/Section';
+import { txToast } from '@/components/TxToaster';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
+import { IconButton } from '@/components/ui/icon-button';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
@@ -29,7 +21,7 @@ import { useOpenConfirmDialog } from '@/hooks/dialogs';
 import { useAuthedFetcher, useBackendApi } from '@/hooks/fetch';
 import { msToDuration, tsToLocaleDateTimeString } from '@/lib/dateTime';
 import { t } from '@/lib/i18n';
-import { cn } from '@/lib/utils';
+import { cn, copyToClipboard } from '@/lib/utils';
 import type { GenericApiOkResp } from '@shared/genericApiTypes';
 import type { PlayerHistoryItem, PlayerModalResp, PlayerModalSuccess } from '@shared/playerApiTypes';
 import {
@@ -41,6 +33,7 @@ import {
     type CadminPlayer,
     type CadminResponse,
 } from '@/pages/CAdmin/api';
+import { nativeSelectClass } from '@/pages/CAdmin/nativeSelect';
 import GarageTab from '@/pages/CAdmin/GarageTab';
 import GroupTab from '@/pages/CAdmin/GroupTab';
 import InventoryTab from '@/pages/CAdmin/InventoryTab';
@@ -53,13 +46,14 @@ type CharacterLookupState = {
     message?: string;
 };
 
+const playerListPath = '/administration/players';
+
 export default function PlayerDetailPage() {
     const [, params] = useRoute('/administration/players/:license');
     const rawLicense = decodeURIComponent(params?.license ?? '');
     const license = toTxAdminLicense(rawLicense);
     const fetcher = useAuthedFetcher();
     const { hasPerm } = useAdminPerms();
-    const setLocation = useLocation()[1];
     const [selectedCharacterId, setSelectedCharacterId] = useState(() => (
         new URLSearchParams(window.location.search).get('character') || ''
     ));
@@ -111,8 +105,8 @@ export default function PlayerDetailPage() {
     };
 
     if (!license) return <div className="pb-10">
-        <PageHeader title={t('Player Management')} icon={<UserRoundCog className="size-6" />} />
-        <div className="rounded-2xl border border-red-500/20 bg-red-500/10 p-5 text-sm text-red-300">{t('This is not a valid FiveM license.')}</div>
+        <PageHeader title={t('Player Management')} />
+        <Alert variant="destructive">{t('This is not a valid FiveM license.')}</Alert>
     </div>;
 
     const txPlayer = txDetails.data?.player;
@@ -164,101 +158,102 @@ export default function PlayerDetailPage() {
             setRetryingCharacter(false);
         }
     };
+    const characterState = <CharacterManagementState
+        state={characterLookupState}
+        license={license}
+        onRetry={() => void retryCharacter()}
+    />;
+    const showsCharacterId = canQueryCharacter && Boolean(selectedCharacterId);
 
-    return <div className="w-full min-w-0 pb-10">
-        <Button variant="ghost" size="sm" className="mb-2 -ml-2 text-zinc-400" onClick={() => setLocation('/administration/players')}>
-            <ArrowLeft className="mr-2 size-4" />{t('Back to Player Management')}
-        </Button>
-        <PageHeader title={displayName} icon={<UserRoundCog className="size-6" />} />
-
-        <div className="mb-4 flex flex-col gap-4 rounded-2xl border border-white/5 bg-white/[0.035] p-5 xl:flex-row xl:items-center xl:justify-between">
-            <div className="min-w-0">
-                <div className="flex flex-wrap items-center gap-2">
-                    <span className={cn('rounded-md px-2 py-1 text-xs', isOnline ? 'bg-emerald-500/10 text-emerald-300' : 'bg-white/5 text-zinc-500')}>{isOnline ? t('Online') : t('Offline')}</span>
-                    {character && <span className="rounded-md bg-brand-500/10 px-2 py-1 text-xs text-brand-300">{character.group || 'user'}</span>}
-                    {txPlayer?.isRegistered && <span className="rounded-md bg-blue-500/10 px-2 py-1 text-xs text-blue-300">{t('Panel record')}</span>}
-                </div>
-                <p className="mt-2 break-all font-mono text-xs text-zinc-600">{
-                    canQueryCharacter && selectedCharacterId ? selectedCharacterId : `license:${license}`
-                }</p>
-            </div>
+    return <div className="flex w-full min-w-0 flex-col pb-10">
+        <PageHeader title={displayName} parentName={t('Player Management')} parentLink={playerListPath}>
             <PlayerActions target={target} extended onChanged={refresh} className="flex flex-wrap gap-2" />
-        </div>
+        </PageHeader>
 
-        {txDetails.error && <div className="mb-4 rounded-2xl border border-yellow-500/20 bg-yellow-500/10 p-4 text-sm text-yellow-200">
-            {t('Panel record unavailable: {error}', { error: txDetails.error.message })}
-        </div>}
-
-        {canQueryCharacter && characterLookupState.kind !== 'ready' && !initialPlayerLoading && <CharacterManagementState
-            state={characterLookupState}
-            license={license}
-            onRetry={() => void retryCharacter()}
-        />}
-
-        {characterList.data && characterList.data.length > 1 && <div className="mb-4 rounded-2xl border border-white/5 bg-white/[0.035] p-4">
-            <Label htmlFor="player-management-character">{t('Character')}</Label>
-            <select
-                id="player-management-character"
-                className="mt-2 h-10 w-full rounded-lg border border-white/10 bg-[#0f1116] px-3 text-sm text-white outline-none focus:border-brand-600 sm:max-w-md"
-                value={selectedCharacterId}
-                onChange={event => selectCharacter(event.target.value)}
-            >
-                {characterList.data.map(entry => {
-                    const characterId = cadminCharacterIdentifier(entry);
-                    return <option key={characterId} value={characterId}>{entry.name || characterId}</option>;
-                })}
-            </select>
-        </div>}
-
-        {initialPlayerLoading
-            ? <div className="rounded-2xl bg-white/[0.035] p-12 text-center text-sm text-zinc-500">{t('Loading player management...')}</div>
-            : <>
-                <div className={cn('mb-4 grid grid-cols-2 gap-3', canQueryCharacter ? 'lg:grid-cols-4' : 'lg:grid-cols-2')}>
-                    <Metric icon={<Clock3 />} label={t('Play time')} value={txPlayer?.playTime ? msToDuration(txPlayer.playTime * 60_000, { units: ['d', 'h', 'm'] }) : '—'} />
-                    {canQueryCharacter && <Metric icon={<BadgeDollarSign />} label={t('Cash')} value={character ? Number(character.money?.cash || 0).toLocaleString() : '—'} />}
-                    {canQueryCharacter && <Metric icon={<Car />} label={t('Vehicles')} value={character ? String(character.vehicles?.length ?? 0) : '—'} />}
-                    <Metric icon={<History />} label={t('Sanctions')} value={String(txPlayer?.actionHistory.filter(action => !action.revokedAt).length ?? 0)} />
+        <div className="flex flex-col gap-6">
+            <div className="flex flex-col gap-3">
+                <div className="flex flex-wrap items-center gap-2">
+                    <Badge variant={isOnline ? 'success' : 'default'}>{isOnline ? t('Online') : t('Offline')}</Badge>
+                    {character && <Badge className="font-mono">{character.group || 'user'}</Badge>}
+                    {txPlayer?.isRegistered && <Badge variant="info">{t('Panel record')}</Badge>}
                 </div>
+                <CopyRow
+                    value={showsCharacterId ? selectedCharacterId : `license:${license}`}
+                    label={showsCharacterId ? t('Character') : undefined}
+                />
+            </div>
 
-                <Tabs key={`${canQueryCharacter}`} defaultValue="overview" className="rounded-2xl border border-white/5 bg-white/[0.025] p-4 md:p-6">
-                    <TabsList className="h-auto w-full flex-wrap justify-start bg-white/5">
-                        <TabsTrigger value="overview">{t('Overview')}</TabsTrigger>
-                        {canQueryCharacter && <TabsTrigger value="money">{t('Money')}</TabsTrigger>}
-                        {canQueryCharacter && <TabsTrigger value="job">{t('Job')}</TabsTrigger>}
-                        {canQueryCharacter && <TabsTrigger value="group">{t('Group')}</TabsTrigger>}
-                        {canQueryCharacter && <TabsTrigger value="inventory">{t('Inventory')}</TabsTrigger>}
-                        {canQueryCharacter && <TabsTrigger value="garage">{t('Garage')}</TabsTrigger>}
-                        {txPlayer && <TabsTrigger value="history">{t('History')}</TabsTrigger>}
-                        {txPlayer && <TabsTrigger value="identifiers">{t('Identifiers')}</TabsTrigger>}
-                    </TabsList>
+            {txDetails.error && <Alert variant="warning">
+                {t('Panel record unavailable: {error}', { error: txDetails.error.message })}
+            </Alert>}
 
-                    <TabsContent value="overview" className="mt-6">
-                        <OverviewTab player={txDetails.data} character={character} license={license} refresh={refresh} showCharacter={canQueryCharacter} />
-                    </TabsContent>
-                    {canQueryCharacter && <TabsContent value="money" className="mt-6">{character
-                        ? <MoneyTab player={character} refresh={refresh} />
-                        : <CharacterManagementState state={characterLookupState} license={license} onRetry={() => void retryCharacter()} />}
-                    </TabsContent>}
-                    {canQueryCharacter && <TabsContent value="job" className="mt-6">{character
-                        ? <JobTab player={character} refresh={refresh} />
-                        : <CharacterManagementState state={characterLookupState} license={license} onRetry={() => void retryCharacter()} />}
-                    </TabsContent>}
-                    {canQueryCharacter && <TabsContent value="group" className="mt-6">{character
-                        ? <GroupTab player={character} refresh={refresh} />
-                        : <CharacterManagementState state={characterLookupState} license={license} onRetry={() => void retryCharacter()} />}
-                    </TabsContent>}
-                    {canQueryCharacter && <TabsContent value="inventory" className="mt-6">{character
-                        ? <InventoryTab player={character} refresh={refresh} />
-                        : <CharacterManagementState state={characterLookupState} license={license} onRetry={() => void retryCharacter()} />}
-                    </TabsContent>}
-                    {canQueryCharacter && <TabsContent value="garage" className="mt-6">{character
-                        ? <GarageTab player={character} refresh={refresh} />
-                        : <CharacterManagementState state={characterLookupState} license={license} onRetry={() => void retryCharacter()} />}
-                    </TabsContent>}
-                    {txPlayer && <TabsContent value="history" className="mt-6"><HistoryTab actions={txPlayer.actionHistory} serverTime={txDetails.data!.serverTime} /></TabsContent>}
-                    {txPlayer && <TabsContent value="identifiers" className="mt-6"><IdentifiersTab license={license} player={txPlayer} refresh={refresh} /></TabsContent>}
-                </Tabs>
-            </>}
+            {canQueryCharacter && characterLookupState.kind !== 'ready' && !initialPlayerLoading && characterState}
+
+            {characterList.data && characterList.data.length > 1 && <div className="flex flex-col gap-2 sm:max-w-md">
+                <Label htmlFor="player-management-character">{t('Character')}</Label>
+                <select
+                    id="player-management-character"
+                    className={nativeSelectClass}
+                    value={selectedCharacterId}
+                    onChange={event => selectCharacter(event.target.value)}
+                >
+                    {characterList.data.map(entry => {
+                        const characterId = cadminCharacterIdentifier(entry);
+                        return <option key={characterId} value={characterId}>{entry.name || characterId}</option>;
+                    })}
+                </select>
+            </div>}
+
+            {initialPlayerLoading
+                ? <p role="status" className="rounded-lg bg-raise p-4 text-sm text-muted-foreground sm:p-6">{t('Loading player management...')}</p>
+                : <>
+                    <dl className={cn('grid grid-cols-2 gap-4 rounded-lg bg-raise p-4 sm:p-6', canQueryCharacter ? 'lg:grid-cols-4' : 'lg:grid-cols-2')}>
+                        <Metric label={t('Play time')} value={txPlayer?.playTime ? msToDuration(txPlayer.playTime * 60_000, { units: ['d', 'h', 'm'] }) : '—'} />
+                        {canQueryCharacter && <Metric label={t('Cash')} value={character ? Number(character.money?.cash || 0).toLocaleString() : '—'} />}
+                        {canQueryCharacter && <Metric label={t('Vehicles')} value={character ? String(character.vehicles?.length ?? 0) : '—'} />}
+                        <Metric label={t('Sanctions')} value={String(txPlayer?.actionHistory.filter(action => !action.revokedAt).length ?? 0)} />
+                    </dl>
+
+                    <Tabs key={`${canQueryCharacter}`} defaultValue="overview" className="min-w-0">
+                        <TabsList className="flex h-auto w-full flex-wrap justify-start">
+                            <TabsTrigger value="overview">{t('Overview')}</TabsTrigger>
+                            {canQueryCharacter && <TabsTrigger value="money">{t('Money')}</TabsTrigger>}
+                            {canQueryCharacter && <TabsTrigger value="job">{t('Job')}</TabsTrigger>}
+                            {canQueryCharacter && <TabsTrigger value="group">{t('Group')}</TabsTrigger>}
+                            {canQueryCharacter && <TabsTrigger value="inventory">{t('Inventory')}</TabsTrigger>}
+                            {canQueryCharacter && <TabsTrigger value="garage">{t('Garage')}</TabsTrigger>}
+                            {txPlayer && <TabsTrigger value="history">{t('History')}</TabsTrigger>}
+                            {txPlayer && <TabsTrigger value="identifiers">{t('Identifiers')}</TabsTrigger>}
+                        </TabsList>
+
+                        <TabsContent value="overview">
+                            <OverviewTab player={txDetails.data} character={character} license={license} refresh={refresh} showCharacter={canQueryCharacter} />
+                        </TabsContent>
+                        {canQueryCharacter && <TabsContent value="money">{character
+                            ? <MoneyTab player={character} refresh={refresh} />
+                            : characterState}
+                        </TabsContent>}
+                        {canQueryCharacter && <TabsContent value="job">{character
+                            ? <JobTab player={character} refresh={refresh} />
+                            : characterState}
+                        </TabsContent>}
+                        {canQueryCharacter && <TabsContent value="group">{character
+                            ? <GroupTab player={character} refresh={refresh} />
+                            : characterState}
+                        </TabsContent>}
+                        {canQueryCharacter && <TabsContent value="inventory">{character
+                            ? <InventoryTab player={character} refresh={refresh} />
+                            : characterState}
+                        </TabsContent>}
+                        {canQueryCharacter && <TabsContent value="garage">{character
+                            ? <GarageTab player={character} refresh={refresh} />
+                            : characterState}
+                        </TabsContent>}
+                        {txPlayer && <TabsContent value="history"><HistoryTab actions={txPlayer.actionHistory} serverTime={txDetails.data!.serverTime} /></TabsContent>}
+                        {txPlayer && <TabsContent value="identifiers"><IdentifiersTab license={license} player={txPlayer} refresh={refresh} /></TabsContent>}
+                    </Tabs>
+                </>}
+        </div>
     </div>;
 }
 
@@ -273,40 +268,28 @@ function CharacterManagementState({
 }) {
     const isError = state.kind === 'error';
     const isLocked = state.kind === 'locked';
-    const isLoading = state.kind === 'loading';
-    const Icon = isLoading ? Loader2 : isLocked ? LockKeyhole : isError ? AlertCircle : UserRoundCog;
-    return <section className={cn(
-        'mb-4 flex flex-col gap-4 rounded-2xl border p-5 sm:flex-row sm:items-center sm:justify-between',
-        isError
-            ? 'border-red-500/20 bg-red-500/[0.08]'
-            : isLocked
-                ? 'border-amber-500/20 bg-amber-500/[0.08]'
-                : 'border-white/5 bg-white/[0.035]',
-    )}>
-        <div className="flex min-w-0 gap-3">
-            <Icon className={cn(
-                'mt-0.5 size-5 shrink-0',
-                isLoading && 'animate-spin text-zinc-500',
-                isError && 'text-red-300',
-                isLocked && 'text-amber-300',
-                state.kind === 'empty' && 'text-brand-400',
-            )} />
-            <div className="min-w-0">
-                <h3 className="font-medium text-white">{t('Character Management')}</h3>
-                <p className={cn('mt-1 text-sm', isError ? 'text-red-200' : isLocked ? 'text-amber-200' : 'text-zinc-400')}>{state.message}</p>
-                <p className="mt-2 break-all font-mono text-[11px] text-zinc-600">license:{license}</p>
-            </div>
+    if (state.kind === 'loading') {
+        return <p role="status" className="rounded-lg bg-raise p-4 text-sm text-muted-foreground sm:p-6">{state.message}</p>;
+    }
+    return <Alert
+        variant={isError ? 'destructive' : isLocked ? 'warning' : 'default'}
+        className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
+    >
+        <div className="min-w-0">
+            <AlertTitle>{t('Character Management')}</AlertTitle>
+            <AlertDescription>{state.message}</AlertDescription>
+            <p className="mt-2 break-all font-mono text-xs text-muted-foreground">license:{license}</p>
         </div>
-        {(isError || state.kind === 'empty') && <Button size="sm" variant="outline" onClick={onRetry}>
-            <RefreshCw className="mr-2 size-3.5" />{t('Try again')}
+        {(isError || state.kind === 'empty') && <Button size="sm" variant="secondary" className="self-start sm:self-auto" onClick={onRetry}>
+            {t('Try again')}
         </Button>}
-    </section>;
+    </Alert>;
 }
 
-function Metric({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
-    return <div className="rounded-2xl border border-white/5 bg-white/[0.035] p-4">
-        <div className="flex items-center justify-between text-zinc-500"><span className="text-xs uppercase tracking-widest">{label}</span><span className="[&_svg]:size-4">{icon}</span></div>
-        <p className="mt-2 truncate text-lg font-semibold text-white">{value}</p>
+function Metric({ label, value }: { label: string; value: string }) {
+    return <div className="min-w-0">
+        <dt className="text-dense text-muted-foreground">{label}</dt>
+        <dd className="mt-1 truncate text-lg font-semibold tabular-nums text-white">{value}</dd>
     </div>;
 }
 
@@ -353,77 +336,116 @@ function OverviewTab({
         });
     };
 
-    return <div className="grid gap-4 xl:grid-cols-[1.4fr_1fr]">
-        <div className="space-y-4">
-            <Card className="border-white/5 bg-white/[0.03] shadow-none">
-                <CardContent className="grid gap-3 p-5 sm:grid-cols-2">
+    return <div className="grid gap-6 xl:grid-cols-[1.4fr_1fr] xl:items-start">
+        <div className="flex min-w-0 flex-col gap-6">
+            <Section>
+                <dl className="grid gap-4 sm:grid-cols-2">
                     <Detail label={t('Connection')} value={txPlayer?.isConnected ? t('Connected') : t('Offline')} />
                     <Detail label={t('First joined')} value={txPlayer?.tsJoined ? tsToLocaleDateTimeString(txPlayer.tsJoined, 'medium', 'short') : '—'} />
                     <Detail label={t('Last connection')} value={txPlayer?.tsLastConnection ? tsToLocaleDateTimeString(txPlayer.tsLastConnection, 'medium', 'short') : '—'} />
-                    <Detail label={t('Allowlist')} value={txPlayer?.tsWhitelisted ? t('Allowed') : t('Not allowed')} />
+                    <div className="min-w-0">
+                        <dt className="text-dense text-muted-foreground">{t('Allowlist')}</dt>
+                        <dd className="mt-1 flex flex-wrap items-center gap-3">
+                            <span className="text-sm text-white">{txPlayer?.tsWhitelisted ? t('Allowed') : t('Not allowed')}</span>
+                            <Button size="xs" variant="secondary" disabled={!txPlayer || !hasPerm('players.whitelist')} onClick={toggleAllowlist}>
+                                {txPlayer?.tsWhitelisted ? t('Remove from allowlist') : t('Add to allowlist')}
+                            </Button>
+                        </dd>
+                    </div>
                     {character && <Detail label={t('Job')} value={`${character.job?.label || character.job?.name || t('None')} · ${t('Grade {grade}', { grade: character.job?.grade ?? 0 })}`} />}
                     {character && <Detail label={t('Framework group')} value={character.group || 'user'} />}
-                </CardContent>
-            </Card>
-            {txPlayer && <Card className="border-white/5 bg-white/[0.03] shadow-none">
-                <CardContent className="p-5">
-                    <div className="mb-2 flex items-center justify-between gap-3">
-                        <Label htmlFor="player-management-notes">{t('Staff notes')}</Label>
-                        <Button size="sm" variant="outline" disabled={saving || !txPlayer.isRegistered} onClick={saveNote}><Save className="mr-1.5 size-4" />{t('Save note')}</Button>
-                    </div>
+                </dl>
+            </Section>
+            {txPlayer && <Section>
+                <div className="flex flex-col gap-2">
+                    <Label htmlFor="player-management-notes">{t('Staff notes')}</Label>
                     <Textarea id="player-management-notes" value={notes} disabled={!txPlayer.isRegistered} onChange={event => setNotes(event.target.value)} placeholder={t('Write an internal note about this player.')} />
-                    <p className="mt-2 text-xs text-zinc-600">{txPlayer.notesLog || t('Only panel staff can see these notes.')}</p>
-                </CardContent>
-            </Card>}
+                    <p className="text-dense text-muted-foreground">{txPlayer.notesLog || t('Only panel staff can see these notes.')}</p>
+                </div>
+                <Button className="mt-4" disabled={saving || !txPlayer.isRegistered} onClick={saveNote}>{t('Save note')}</Button>
+            </Section>}
         </div>
-        <div className="space-y-4">
-            <Card className="border-white/5 bg-white/[0.03] shadow-none">
-                <CardContent className="p-5">
-                    <h3 className="flex items-center font-medium text-white"><ShieldCheck className="mr-2 size-4 text-brand-400" />{t('Access')}</h3>
-                    <p className="mt-2 text-sm text-zinc-400">{txPlayer?.tsWhitelisted ? t('This license is allowlisted.') : t('This license is not allowlisted.')}</p>
-                    <Button className="mt-4 w-full" variant="outline" disabled={!txPlayer || !hasPerm('players.whitelist')} onClick={toggleAllowlist}>
-                        {txPlayer?.tsWhitelisted ? t('Remove from allowlist') : t('Add to allowlist')}
-                    </Button>
-                </CardContent>
-            </Card>
-            {showCharacter && <Card className="border-white/5 bg-white/[0.03] shadow-none">
-                <CardContent className="p-5">
-                    <h3 className="flex items-center font-medium text-white"><Database className="mr-2 size-4 text-brand-400" />{t('Character record')}</h3>
-                    {character ? <>
-                        <p className="mt-3 break-all font-mono text-xs text-zinc-200">{cadminCharacterIdentifier(character)}</p>
-                        <p className="mt-1 text-xs text-zinc-500">{character.playerLicense || t('No account identifier reported.')}</p>
-                    </> : <p className="mt-3 text-sm text-zinc-500">{t('No framework character selected.')}</p>}
-                </CardContent>
-            </Card>}
-        </div>
+        {showCharacter && <section className="flex min-w-0 flex-col gap-3" aria-labelledby="player-character-record">
+            <h2 id="player-character-record" className="text-base font-semibold text-white">{t('Character record')}</h2>
+            {character ? <>
+                <CopyRow value={cadminCharacterIdentifier(character)} label={t('Character')} />
+                {character.playerLicense
+                    ? <CopyRow value={character.playerLicense} />
+                    : <p className="text-dense text-muted-foreground">{t('No account identifier reported.')}</p>}
+            </> : <EmptyState message={t('No framework character selected.')} />}
+        </section>}
     </div>;
 }
 
 function Detail({ label, value }: { label: string; value: string }) {
-    return <div className="rounded-xl bg-white/[0.025] p-3"><p className="text-xs uppercase tracking-widest text-zinc-600">{label}</p><p className="mt-1 text-sm text-zinc-200">{value}</p></div>;
+    return <div className="min-w-0">
+        <dt className="text-dense text-muted-foreground">{label}</dt>
+        <dd className="mt-1 break-words text-sm text-white">{value}</dd>
+    </div>;
 }
 
 function HistoryTab({ actions, serverTime }: { actions: PlayerHistoryItem[]; serverTime: number }) {
     const openAction = useOpenActionModal();
-    if (!actions.length) return <p className="py-10 text-center text-sm text-zinc-500">{t('No bans or warnings recorded.')}</p>;
-    return <div className="space-y-2">{[...actions].reverse().map(action => {
-        const active = !action.revokedAt && (!action.exp || action.exp > serverTime);
-        return <button
-            type="button"
-            key={action.id}
-            className="flex w-full flex-col gap-2 rounded-xl border border-white/5 bg-white/[0.025] p-4 text-left transition hover:bg-white/5 md:flex-row md:items-center md:justify-between"
-            onClick={() => openAction(action.id)}
-        >
-            <span>
-                <span className={cn('text-xs font-semibold uppercase tracking-widest', action.type === 'ban' ? 'text-red-300' : 'text-amber-300')}>{t(action.type === 'ban' ? 'Ban' : 'Warning')}</span>
-                <span className="ml-2 text-xs text-zinc-600">{action.id}</span>
-                <span className="mt-1 block text-sm text-zinc-200">{action.reason}</span>
-            </span>
-            <span className="shrink-0 text-xs text-zinc-500">
-                {action.author} · {tsToLocaleDateTimeString(action.ts, 'medium', 'short')} · {active ? t('Active') : t('Inactive')}
-            </span>
-        </button>;
-    })}</div>;
+    return <section className="flex flex-col gap-3" aria-labelledby="player-history-heading">
+        <h2 id="player-history-heading" className="text-base font-semibold text-white">{t('Sanctions')}</h2>
+        {!actions.length
+            ? <EmptyState message={t('No bans or warnings recorded.')} />
+            : <ListRows>{[...actions].reverse().map(action => {
+                const active = !action.revokedAt && (!action.exp || action.exp > serverTime);
+                return <ListRow key={action.id} interactive className="p-0 sm:p-0">
+                    <button
+                        type="button"
+                        className="flex min-h-11 w-full min-w-0 flex-col gap-2 rounded-lg px-4 py-3 text-left sm:px-5 md:flex-row md:items-center md:justify-between"
+                        onClick={() => openAction(action.id)}
+                    >
+                        <span className="min-w-0">
+                            <span className="flex flex-wrap items-center gap-2">
+                                <Badge variant={action.type === 'ban' ? 'danger' : 'warning'}>{t(action.type === 'ban' ? 'Ban' : 'Warning')}</Badge>
+                                <span className="font-mono text-xs text-muted-foreground">{action.id}</span>
+                            </span>
+                            <span className="mt-1 block break-words text-sm text-body">{action.reason}</span>
+                        </span>
+                        <span className="flex shrink-0 flex-wrap items-center gap-2 text-dense text-muted-foreground">
+                            <span>{action.author} · <span className="tabular-nums">{tsToLocaleDateTimeString(action.ts, 'medium', 'short')}</span></span>
+                            <Badge variant={active ? 'info' : 'default'}>{active ? t('Active') : t('Inactive')}</Badge>
+                        </span>
+                    </button>
+                </ListRow>;
+            })}</ListRows>}
+    </section>;
+}
+
+function IdentifierRow({ identifier, isOnline, canRemove, onRemove }: {
+    identifier: string;
+    isOnline: boolean;
+    canRemove: boolean;
+    onRemove: () => void;
+}) {
+    const rowRef = useRef<HTMLDivElement>(null);
+    const handleCopy = async () => {
+        if (!rowRef.current) return;
+        try {
+            const result = await copyToClipboard(identifier, rowRef.current);
+            if (result === false) throw new Error('copy failed');
+            txToast.success(t('Copied to clipboard.'));
+        } catch (error) {
+            txToast.error(t('Could not copy to the clipboard.'));
+        }
+    };
+    return <ListRow className="py-1 pr-1 sm:pr-1">
+        <div ref={rowRef} className="min-w-0 flex-1 py-1">
+            <code className="block break-all font-mono text-dense text-white">{identifier}</code>
+            <p className="mt-0.5 text-xs text-muted-foreground">{isOnline ? t('Active this session') : t('Saved history')}</p>
+        </div>
+        <IconButton label={t('Copy')} icon={<CopyIcon />} onClick={() => void handleCopy()} />
+        <IconButton
+            label={t('Remove identifier')}
+            icon={<Trash2Icon />}
+            variant="ghost-destructive"
+            disabled={!canRemove}
+            onClick={onRemove}
+        />
+    </ListRow>;
 }
 
 function IdentifiersTab({ license, player, refresh }: { license: string; player: PlayerModalSuccess['player']; refresh: () => void }) {
@@ -453,16 +475,25 @@ function IdentifiersTab({ license, player, refresh }: { license: string; player:
         },
     });
 
-    return <div className="space-y-2">
-        <div className="mb-4 flex items-center gap-2 text-sm text-zinc-400"><Fingerprint className="size-4" />{t('Online identifiers are protected until the player disconnects.')}</div>
-        {identifiers.map(identifier => {
-            const isOnline = online.has(identifier);
-            const protectedLicense = identifier.startsWith('license:') || identifier.startsWith('license2:');
-            return <div key={identifier} className="flex items-center justify-between gap-3 rounded-xl border border-white/5 bg-white/[0.025] px-4 py-3">
-                <div className="min-w-0"><p className="break-all font-mono text-xs text-zinc-300">{identifier}</p><p className="mt-1 text-[11px] text-zinc-600">{isOnline ? t('Active this session') : t('Saved history')}</p></div>
-                <Button size="sm" variant="destructive" disabled={!hasPerm('players.remove_ids') || isOnline || protectedLicense} onClick={() => remove(identifier)}>{t('Remove')}</Button>
-            </div>;
-        })}
-        {!identifiers.length && <p className="py-10 text-center text-sm text-zinc-500">{t('No identifiers recorded.')}</p>}
-    </div>;
+    return <section className="flex flex-col gap-3" aria-labelledby="player-identifiers-heading">
+        <div>
+            <h2 id="player-identifiers-heading" className="text-base font-semibold text-white">{t('Identifiers')}</h2>
+            <p className="mt-1 text-dense text-muted-foreground">{t('Online identifiers are protected until the player disconnects.')}</p>
+        </div>
+        {identifiers.length
+            ? <ListRows>
+                {identifiers.map(identifier => {
+                    const isOnline = online.has(identifier);
+                    const protectedLicense = identifier.startsWith('license:') || identifier.startsWith('license2:');
+                    return <IdentifierRow
+                        key={identifier}
+                        identifier={identifier}
+                        isOnline={isOnline}
+                        canRemove={hasPerm('players.remove_ids') && !isOnline && !protectedLicense}
+                        onRemove={() => remove(identifier)}
+                    />;
+                })}
+            </ListRows>
+            : <EmptyState message={t('No identifiers recorded.')} />}
+    </section>;
 }

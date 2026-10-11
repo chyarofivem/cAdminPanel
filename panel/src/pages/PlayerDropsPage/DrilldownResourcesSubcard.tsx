@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { numberToLocaleString } from "@/lib/utils";
-import { PlayerDropsMessage } from "./PlayerDropsGenericSubcards";
+import { ListRow, ListRows } from "@/components/ListRow";
+import EmptyState from "@/components/EmptyState";
 import { t } from "@/lib/i18n";
 
 type DisplayResourceDatum = {
@@ -30,22 +31,24 @@ export default function DrilldownResourcesSubcard({ resKicks }: DrilldownResourc
     }, [resKicks]);
 
     if (!resources.length) {
-        return <PlayerDropsMessage message={t('No players kicked by resources within this time window.')} />;
+        return <EmptyState message={t('No players kicked by resources within this time window.')} />;
     }
 
     return (
-        <div className="grid grid-cols-[repeat(auto-fit,minmax(11rem,1fr))] gap-3 p-4 text-muted-foreground">
+        <ListRows>
             {resources.map(([resName, resData]) => (
-                <div
-                    key={resName}
-                    className="flex min-h-20 flex-col items-center justify-center gap-2 rounded-xl border border-white/[0.06] bg-black/[0.1] px-4 py-3"
-                >
-                    <span className="max-w-full truncate border-b border-white/10 pb-1 text-sm font-medium tracking-wide text-foreground">{resData.label}</span>
-                    <span className="text-sm">
-                        {numberToLocaleString(resData.count)} <small className="opacity-75">({numberToLocaleString((resData.count / totalKicks) * 100, 1)}%)</small>
+                <ListRow key={resName} className="justify-between">
+                    <span className="min-w-0 truncate font-mono text-dense text-white" title={resData.label}>
+                        {resData.label}
                     </span>
-                </div>
+                    <span className="shrink-0 text-sm tabular-nums text-white">
+                        {numberToLocaleString(resData.count)}{' '}
+                        <span className="text-dense text-muted-foreground">
+                            ({numberToLocaleString((resData.count / totalKicks) * 100, 1)}%)
+                        </span>
+                    </span>
+                </ListRow>
             ))}
-        </div>
+        </ListRows>
     );
 }

@@ -1,8 +1,4 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import {
-    AlertTriangle, ArrowDown, ArrowUp, Ban, CalendarDays, CheckCircle2,
-    Clock3, Gavel, Hourglass, Loader2, RefreshCw, RotateCcw, ShieldOff, UserRound,
-} from 'lucide-react';
 import type {
     HistoryTableActionType,
     HistoryTableSearchResp,
@@ -14,9 +10,11 @@ import { useOpenActionModal } from '@/hooks/actionModal';
 import { tsToDate, tsToLocaleTimeString } from '@/lib/dateTime';
 import { t } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
-import { Badge } from '@/components/ui/badge';
+import { Badge, type BadgeProps } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { ListRow, ListRows } from '@/components/ListRow';
+import EmptyState from '@/components/EmptyState';
 import { SEARCH_ANY_STRING } from './HistorySearchBox';
 
 type HistoryTableProps = {
@@ -30,39 +28,15 @@ const initialSort = (): HistoryTableSortingType => ({
     desc: new URLSearchParams(window.location.search).get('sort') !== 'oldest',
 });
 
-const statusDetails = (action: HistoryTableActionType) => {
-    if (action.isRevoked) return {
-        label: t('Revoked'),
-        icon: <RotateCcw className="size-3" />,
-        className: 'border-zinc-500/20 bg-zinc-500/10 text-zinc-400',
-    };
+const statusDetails = (action: HistoryTableActionType): { label: string; variant: BadgeProps['variant'] } => {
+    if (action.isRevoked) return { label: t('Revoked'), variant: 'default' };
     if (action.type === 'ban') {
-        if (action.banExpiration === 'permanent') return {
-            label: t('Permanent'),
-            icon: <ShieldOff className="size-3" />,
-            className: 'border-red-500/20 bg-red-500/10 text-red-300',
-        };
-        if (action.banExpiration === 'expired') return {
-            label: t('Expired'),
-            icon: <Clock3 className="size-3" />,
-            className: 'border-zinc-500/20 bg-zinc-500/10 text-zinc-400',
-        };
-        return {
-            label: t('Active'),
-            icon: <Clock3 className="size-3" />,
-            className: 'border-amber-500/20 bg-amber-500/10 text-amber-300',
-        };
+        if (action.banExpiration === 'permanent') return { label: t('Permanent'), variant: 'danger' };
+        if (action.banExpiration === 'expired') return { label: t('Expired'), variant: 'default' };
+        return { label: t('Active'), variant: 'warning' };
     }
-    if (!action.warnAcked) return {
-        label: t('Awaiting acknowledgement'),
-        icon: <Hourglass className="size-3" />,
-        className: 'border-amber-500/20 bg-amber-500/10 text-amber-300',
-    };
-    return {
-        label: t('Acknowledged'),
-        icon: <CheckCircle2 className="size-3" />,
-        className: 'border-emerald-500/20 bg-emerald-500/10 text-emerald-300',
-    };
+    if (!action.warnAcked) return { label: t('Awaiting acknowledgement'), variant: 'warning' };
+    return { label: t('Acknowledged'), variant: 'success' };
 };
 
 const TimelineAction = memo(function TimelineAction({ action, onOpen }: {
@@ -71,41 +45,29 @@ const TimelineAction = memo(function TimelineAction({ action, onOpen }: {
 }) {
     const status = statusDetails(action);
     const isBan = action.type === 'ban';
-    return <li className="relative pl-9 sm:pl-12">
-        <span className={cn(
-            'absolute left-[0.42rem] top-6 z-[1] flex size-7 items-center justify-center rounded-full border ring-4 ring-[#0d1015] sm:left-[0.8rem]',
-            isBan ? 'border-red-500/30 bg-red-500/15 text-red-300' : 'border-amber-500/30 bg-amber-500/15 text-amber-300',
-        )}>{isBan ? <Gavel className="size-3.5" /> : <AlertTriangle className="size-3.5" />}</span>
+    return <ListRow interactive className="p-0 sm:px-0">
         <button
             type="button"
             onClick={() => onOpen(action.id)}
-            className="group w-full rounded-2xl border border-white/5 bg-white/[0.035] p-4 text-left transition duration-200 hover:-translate-y-0.5 hover:border-brand-500/20 hover:bg-white/[0.055] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 motion-reduce:transform-none motion-reduce:transition-none"
+            className="flex w-full min-w-0 flex-col gap-2 rounded-lg px-4 py-3 text-left sm:px-5"
         >
-            <div className="flex flex-wrap items-start justify-between gap-3">
-                <div className="min-w-0">
-                    <div className="flex flex-wrap items-center gap-2">
-                        <Badge variant="outline" className={isBan ? 'border-red-500/20 bg-red-500/10 text-red-300' : 'border-amber-500/20 bg-amber-500/10 text-amber-300'}>
-                            {isBan ? t('Ban') : t('Warning')}
-                        </Badge>
-                        <Badge variant="outline" className={cn('gap-1', status.className)}>{status.icon}{status.label}</Badge>
-                        <span className="font-mono text-[11px] tracking-wider text-zinc-600 group-hover:text-zinc-400">{action.id}</span>
-                    </div>
-                    <div className="mt-3 flex items-center gap-2 text-sm font-medium text-zinc-100">
-                        <UserRound className="size-4 text-zinc-600" />
-                        <span className="truncate">{action.playerName || t('Unknown player')}</span>
-                    </div>
+            <div className="flex w-full items-start justify-between gap-3">
+                <div className="flex min-w-0 flex-wrap items-center gap-2">
+                    <span className="max-w-full truncate text-sm font-medium text-white">{action.playerName || t('Unknown player')}</span>
+                    <Badge>{isBan ? t('Ban') : t('Warning')}</Badge>
+                    <Badge variant={status.variant}>{status.label}</Badge>
                 </div>
-                <time className="shrink-0 text-xs text-zinc-500" dateTime={tsToDate(action.timestamp).toISOString()}>
+                <time className="shrink-0 text-dense tabular-nums text-muted-foreground" dateTime={tsToDate(action.timestamp).toISOString()}>
                     {tsToLocaleTimeString(action.timestamp)}
                 </time>
             </div>
-            <p className="mt-3 line-clamp-2 break-words text-sm leading-relaxed text-zinc-400">{action.reason}</p>
-            <div className="mt-4 flex items-center justify-between gap-3 border-t border-white/5 pt-3 text-xs text-zinc-600">
+            <p className="line-clamp-2 break-words text-sm text-body">{action.reason}</p>
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-dense text-muted-foreground">
                 <span>{t('Issued by {author}', { author: action.author })}</span>
-                <span className="text-brand-500/70 opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100">{t('View details')}</span>
+                <span className="font-mono text-xs">{action.id}</span>
             </div>
         </button>
-    </li>;
+    </ListRow>;
 });
 
 export default function HistoryTable({ search, filterbyType, filterbyAdmin }: HistoryTableProps) {
@@ -217,40 +179,44 @@ export default function HistoryTable({ search, filterbyType, filterbyAdmin }: Hi
         });
     };
 
-    return <section className="mt-4 pb-8">
-        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-            <div className="flex items-center gap-2 text-sm text-zinc-500"><CalendarDays className="size-4" />{t('{count} loaded actions', { count: history.length })}</div>
-            <div className="flex items-center gap-2">
-                <Button variant="ghost-muted" size="sm" onClick={() => void fetchNextPage(true)} disabled={isResetting}>
-                    <RefreshCw className={cn('mr-2 size-4', isResetting && 'animate-spin')} />{t('Refresh activity')}
+    return <section aria-label={t('History')} className="flex flex-col gap-6 pb-8">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+            <p className="text-dense tabular-nums text-muted-foreground">{t('{count} loaded actions', { count: history.length })}</p>
+            <div className="flex flex-wrap items-center gap-2">
+                <Button variant="secondary" size="sm" onClick={() => void fetchNextPage(true)} disabled={isResetting}>
+                    {t('Refresh activity')}
                 </Button>
-                <Button variant="outline" size="sm" onClick={toggleSort} disabled={isResetting}>
-                    {sorting.desc ? <ArrowDown className="mr-2 size-4" /> : <ArrowUp className="mr-2 size-4" />}
+                <Button variant="secondary" size="sm" onClick={toggleSort} disabled={isResetting}>
                     {sorting.desc ? t('Newest first') : t('Oldest first')}
                 </Button>
             </div>
         </div>
 
-        {isResetting && !history.length && <Card><CardContent className="flex items-center justify-center gap-2 p-14 text-sm text-zinc-500"><Loader2 className="size-4 animate-spin" />{t('Loading history...')}</CardContent></Card>}
-        {!isResetting && loadError && !history.length && <Card className="border-red-500/20 bg-red-500/10"><CardContent className="flex flex-col items-center p-10 text-center text-sm text-red-300">
-            <Ban className="mb-3 size-6" /><p>{loadError}</p><Button variant="outline" className="mt-4" onClick={() => void fetchNextPage(true)}>{t('Try again')}</Button>
-        </CardContent></Card>}
-        {!isResetting && !loadError && hasReachedEnd && !history.length && <Card><CardContent className="flex flex-col items-center p-12 text-center text-zinc-500">
-            <Clock3 className="mb-3 size-7" /><p className="font-medium text-zinc-300">{t('No actions found')}</p><p className="mt-1 text-sm">{t('Adjust the search or filters to inspect another part of the activity log.')}</p>
-        </CardContent></Card>}
+        {isResetting && !history.length && <p role="status" className="text-sm text-muted-foreground">{t('Loading history...')}</p>}
+        {!isResetting && loadError && !history.length && <Alert variant="destructive" className="flex flex-wrap items-center justify-between gap-3">
+            <AlertDescription>{loadError}</AlertDescription>
+            <Button variant="secondary" size="sm" onClick={() => void fetchNextPage(true)}>{t('Try again')}</Button>
+        </Alert>}
+        {!isResetting && !loadError && hasReachedEnd && !history.length && <EmptyState message={t('No actions found')} />}
 
-        <div className={cn('space-y-7 transition-opacity duration-200', isResetting && 'opacity-40')}>
-            {grouped.map(group => <section key={group.label} className="animate-in fade-in slide-in-from-bottom-1 duration-300 motion-reduce:animate-none">
-                <h2 className="mb-3 ml-9 text-xs font-semibold uppercase tracking-[0.16em] text-zinc-500 sm:ml-12">{group.label}</h2>
-                <ol className="relative space-y-3 before:absolute before:bottom-5 before:left-5 before:top-5 before:w-px before:bg-gradient-to-b before:from-brand-500/35 before:via-white/10 before:to-transparent sm:before:left-[1.65rem]">
+        {grouped.length > 0 && <div
+            aria-busy={isResetting}
+            className={cn('flex flex-col gap-6 transition-opacity duration-150', isResetting && 'opacity-40')}
+        >
+            {grouped.map(group => <section key={group.label} className="flex flex-col gap-3">
+                <h2 className="text-base font-semibold text-white">{group.label}</h2>
+                <ListRows>
                     {group.actions.map(action => <TimelineAction key={action.id} action={action} onOpen={openActionModal} />)}
-                </ol>
+                </ListRows>
             </section>)}
-        </div>
+        </div>}
 
-        <div ref={sentinelRef} className="flex min-h-16 items-center justify-center pt-5 text-center text-sm text-zinc-500">
-            {isFetching && !isResetting && <span className="flex items-center gap-2"><Loader2 className="size-4 animate-spin" />{t('Loading more actions...')}</span>}
-            {loadError && history.length > 0 && <div><p className="text-red-300">{loadError}</p><Button variant="ghost-muted" size="sm" className="mt-2" onClick={() => void fetchNextPage()}>{t('Try again')}</Button></div>}
+        <div ref={sentinelRef} className="flex min-h-16 flex-col items-center justify-center gap-2 text-center text-sm text-muted-foreground">
+            {isFetching && !isResetting && <span role="status">{t('Loading more actions...')}</span>}
+            {loadError && history.length > 0 && <>
+                <p className="text-danger-text">{loadError}</p>
+                <Button variant="secondary" size="sm" onClick={() => void fetchNextPage()}>{t('Try again')}</Button>
+            </>}
             {hasReachedEnd && history.length > 0 && <span>{t('You have reached the end of the activity log.')}</span>}
         </div>
     </section>;

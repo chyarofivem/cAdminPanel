@@ -2,12 +2,12 @@ import { z } from 'zod';
 import localeMap from '@shared/localeMap';
 import type { ApiSelfPreferencesResp } from '@shared/authApiTypes';
 import type { AuthedCtx } from '@modules/WebServer/ctxTypes';
-import { ACCENTS, type AccentId } from '@lib/theme';
+import { accentFillHex, isValidAccent } from '@lib/theme';
 
-const accentIds = Object.keys(ACCENTS) as [AccentId, ...AccentId[]];
 const bodySchema = z.object({
     locale: z.string().optional(),
-    accent: z.enum(accentIds).optional(),
+    //A preset id, or a custom fill colour as #rrggbb.
+    accent: z.string().refine(isValidAccent).transform(value => value.toLowerCase()).optional(),
 }).strict().refine(value => value.locale !== undefined || value.accent !== undefined);
 
 export default async function AuthSelfPreferences(ctx: AuthedCtx) {
@@ -32,6 +32,6 @@ export default async function AuthSelfPreferences(ctx: AuthedCtx) {
         success: true,
         locale,
         accent,
-        accentColor: accent ? ACCENTS[accent].hex : undefined,
+        accentColor: accent ? accentFillHex(accent) : undefined,
     });
 }

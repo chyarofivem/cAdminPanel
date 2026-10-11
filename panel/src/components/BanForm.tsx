@@ -2,10 +2,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useClosePlayerModal } from "@/hooks/playerModal";
-import { ClipboardPasteIcon, ExternalLinkIcon, Loader2Icon } from "lucide-react";
+import { ClipboardPasteIcon } from "lucide-react";
+import { IconButton } from "@/components/ui/icon-button";
 import { forwardRef, useImperativeHandle, useMemo, useRef, useState } from "react";
 import { DropDownSelect, DropDownSelectContent, DropDownSelectItem, DropDownSelectTrigger } from "@/components/dropDownSelect";
-import { banDurationToShortString, banDurationToString, cn } from "@/lib/utils";
+import { banDurationToShortString, banDurationToString } from "@/lib/utils";
 import { Link, useLocation } from "wouter";
 import type { BanTemplatesDataType } from "@shared/otherTypes";
 import { t } from '@/lib/i18n';
@@ -103,10 +104,10 @@ export default forwardRef(function BanForm({ banTemplates, disabled, onNavigateA
                 <DropDownSelectItem
                     key={index}
                     value={template.id}
-                    className="focus:bg-secondary focus:text-secondary-foreground"
+                    className="focus:bg-raise-2 focus:text-white"
                 >
                     <span
-                        className="inline-block pr-1 font-mono opacity-75 min-w-[4ch]"
+                        className="inline-block min-w-[4ch] pr-1 font-mono text-muted-foreground"
                     >{duration}</span> {reason}
                 </DropDownSelectItem>
             );
@@ -117,22 +118,21 @@ export default forwardRef(function BanForm({ banTemplates, disabled, onNavigateA
     let banTemplatesContentNode: React.ReactNode;
     if (!Array.isArray(banTemplates)) {
         banTemplatesContentNode = (
-            <div className="text-secondary-foreground text-center p-4">
-                <Loader2Icon className="inline animate-spin size-6" />
+            <div role="status" className="p-4 text-center text-sm text-muted-foreground">
+                {t('Loading...')}
             </div>
         );
     } else {
         if (!banTemplates.length) {
             banTemplatesContentNode = (
-                <div className="text-warning-inline text-center p-4">
-                    {t('You do not have any ban templates configured.')} <br />
+                <div className="flex flex-col items-center gap-2 p-4 text-center text-sm text-warning-text">
+                    {t('You do not have any ban templates configured.')}
                     <Link
                         href="/settings/ban-templates"
-                        className="cursor-pointer underline hover:text-accent"
+                        className="cursor-pointer text-accent-text underline-offset-4 hover:text-accent-glow hover:underline"
                         onClick={() => { closeModal(); }}
                     >
                         {t('Add Ban Template')}
-                        <ExternalLinkIcon className="inline mr-1 h-4" />
                     </Link>
                 </div>
             );
@@ -141,10 +141,9 @@ export default forwardRef(function BanForm({ banTemplates, disabled, onNavigateA
                 {processedTemplates}
                 <DropDownSelectItem
                     value={ADD_NEW_SELECT_OPTION}
-                    className="font-bold text-warning-inline"
+                    className="font-medium text-accent-text focus:bg-raise-2 focus:text-accent-glow"
                 >
                     {t('Add Ban Template')}
-                    <ExternalLinkIcon className="inline mr-1 h-4" />
                 </DropDownSelectItem>
             </>;
         }
@@ -152,11 +151,11 @@ export default forwardRef(function BanForm({ banTemplates, disabled, onNavigateA
 
     return (
         <div className="flex flex-col gap-4">
-            <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-2">
                 <Label htmlFor="banReason">
                     {t('Reason')}
                 </Label>
-                <div className="flex gap-1">
+                <div className="flex items-center gap-2">
                     <Input
                         id="banReason"
                         ref={reasonRef}
@@ -166,53 +165,50 @@ export default forwardRef(function BanForm({ banTemplates, disabled, onNavigateA
                         autoFocus
                     />
                     <DropDownSelect onValueChange={handleTemplateSelectChange} disabled={disabled}>
-                        <DropDownSelectTrigger className="tracking-wide">
-                            <button
-                                className={cn(
-                                    'size-10 inline-flex justify-center items-center rounded-md shrink-0',
-                                    'ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
-                                    'border bg-black/20 shadow-sm',
-                                    'hover:bg-primary hover:text-primary-foreground hover:border-primary',
-                                    'disabled:opacity-50 disabled:cursor-not-allowed',
-                                )}
-                            >
-                                <ClipboardPasteIcon className="size-5" />
-                            </button>
+                        <DropDownSelectTrigger>
+                            <IconButton
+                                label={t('Ban Templates')}
+                                icon={<ClipboardPasteIcon />}
+                                variant="secondary"
+                                className="size-11"
+                            />
                         </DropDownSelectTrigger>
-                        <DropDownSelectContent className="tracking-wide w-[calc(100vw-1rem)] sm:max-w-screen-sm" align="end">
+                        <DropDownSelectContent className="w-[calc(100vw-1rem)] sm:max-w-screen-sm" align="end">
                             {banTemplatesContentNode}
                         </DropDownSelectContent>
                     </DropDownSelect>
                 </div>
             </div>
-            <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-2">
                 <Label htmlFor="durationSelect">
                     {t('Duration')}
                 </Label>
-                <div className="space-y-1">
+                <div className="flex flex-col gap-2">
                     <Select
                         onValueChange={setCurrentDuration}
                         value={currentDuration}
                         disabled={disabled}
                     >
-                        <SelectTrigger id="durationSelect" className="tracking-wide">
+                        <SelectTrigger id="durationSelect">
                             <SelectValue placeholder={t('Select Duration')} />
                         </SelectTrigger>
-                        <SelectContent className="tracking-wide">
-                            <SelectItem value="custom" className="font-bold">{t('Custom (set below)')}</SelectItem>
-                            <SelectItem value="2 hours">{t('2 HOURS')}</SelectItem>
-                            <SelectItem value="8 hours">{t('8 HOURS')}</SelectItem>
-                            <SelectItem value="1 day">{t('1 DAY')}</SelectItem>
-                            <SelectItem value="2 days">{t('2 DAYS')}</SelectItem>
-                            <SelectItem value="1 week">{t('1 WEEK')}</SelectItem>
-                            <SelectItem value="2 weeks">{t('2 WEEKS')}</SelectItem>
-                            <SelectItem value="permanent" className="font-bold">{t('Permanent')}</SelectItem>
+                        <SelectContent>
+                            <SelectItem value="custom" className="font-medium">{t('Custom (set below)')}</SelectItem>
+                            <SelectItem value="2 hours">{t('2 hours')}</SelectItem>
+                            <SelectItem value="8 hours">{t('8 hours')}</SelectItem>
+                            <SelectItem value="1 day">{t('1 day')}</SelectItem>
+                            <SelectItem value="2 days">{t('2 days')}</SelectItem>
+                            <SelectItem value="1 week">{t('1 week')}</SelectItem>
+                            <SelectItem value="2 weeks">{t('2 weeks')}</SelectItem>
+                            <SelectItem value="permanent" className="font-medium">{t('Permanent')}</SelectItem>
                         </SelectContent>
                     </Select>
                     <div className="flex flex-row gap-2">
                         <Input
                             id="durationMultiplier"
                             type="number"
+                            className="tabular-nums"
+                            aria-label={t('Duration')}
                             placeholder="123"
                             required
                             disabled={currentDuration !== 'custom' || disabled}
@@ -223,17 +219,16 @@ export default forwardRef(function BanForm({ banTemplates, disabled, onNavigateA
                             value={customUnits}
                         >
                             <SelectTrigger
-                                className="tracking-wide"
                                 id="durationUnits"
                                 disabled={currentDuration !== 'custom' || disabled}
                             >
                                 <SelectValue />
                             </SelectTrigger>
-                            <SelectContent className="tracking-wide">
-                                <SelectItem value="hours">{t('HOURS')}</SelectItem>
-                                <SelectItem value="days">{t('DAYS')}</SelectItem>
-                                <SelectItem value="weeks">{t('WEEKS')}</SelectItem>
-                                <SelectItem value="months">{t('MONTHS')}</SelectItem>
+                            <SelectContent>
+                                <SelectItem value="hours">{t('Hours')}</SelectItem>
+                                <SelectItem value="days">{t('Days')}</SelectItem>
+                                <SelectItem value="weeks">{t('Weeks')}</SelectItem>
+                                <SelectItem value="months">{t('Months')}</SelectItem>
                             </SelectContent>
                         </Select>
                     </div>

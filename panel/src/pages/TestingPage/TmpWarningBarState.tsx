@@ -14,16 +14,16 @@ export default function TmpWarningBarState() {
                 <CardTitle>Warning Bar States</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-                <div className="space-y-2 divide-y-2 rounded border p-2">
+                <div className="flex flex-col gap-3">
                     <div className="flex justify-start gap-3">
-                        <Button size="sm" onClick={() => setOfflineWarning(false)}>
+                        <Button size="sm" variant="secondary" onClick={() => setOfflineWarning(false)}>
                             Socket On
                         </Button>
-                        <Button size="sm" onClick={() => setOfflineWarning(true)}>
+                        <Button size="sm" variant="secondary" onClick={() => setOfflineWarning(true)}>
                             Socket Off
                         </Button>
                     </div>
-                    <pre className="bg-muted p-2">
+                    <pre className="rounded-sm bg-sunken p-3 font-mono text-xs text-body">
                         {JSON.stringify(offlineWarning, null, 2)}
                     </pre>
                 </div>

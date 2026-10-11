@@ -7,23 +7,14 @@ import React, {
   useEffect,
   useState,
 } from "react";
-
-import {
-  alpha,
-  Button,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogContentText,
-  TextField,
-} from "@mui/material";
-import { CampaignRounded, MarkChatUnreadRounded } from "@mui/icons-material";
-import { useKeyboardNavContext } from "./KeyboardNavProvider";
 import { useSnackbar } from "notistack";
 import { useTranslate } from "react-polyglot";
+import { useKeyboardNavContext } from "./KeyboardNavProvider";
 import { useSetDisableTab, useSetListenForExit } from "../state/keys.state";
 import { txAdminMenuPage, usePageValue } from "../state/page.state";
-import { Box } from "@mui/system";
+import { usePlayerModalVisbilityValue } from "../state/playerModal.state";
+import { Modal } from "../components/ui/Modal";
+import { Button } from "../components/ui/Button";
 
 interface InputDialogProps {
   title: string;
@@ -32,6 +23,7 @@ interface InputDialogProps {
   onSubmit: (inputValue: string) => void;
   isMultiline?: boolean;
   suggestions?: string[];
+  /** Kept for callers; the composer no longer draws a tone-specific icon. */
   composerTone?: "announcement" | "direct-message";
 }
 
@@ -43,17 +35,22 @@ interface DialogProviderContext {
 
 const DialogContext = createContext<DialogProviderContext | null>(null);
 
-const defaultDialogState = {
-  description: "This is the default description for whatever",
-  placeholder: "This is the default placeholder...",
+const defaultDialogState: InputDialogProps = {
+  description: "",
+  placeholder: "",
   onSubmit: () => {},
-  title: "Dialog Title",
+  title: "",
 };
 
 interface DialogProviderProps {
   children: ReactNode;
 }
 
+/**
+ * The single-input dialog used by the main page and the player modal.
+ * Title and description in the header, the field in the body, suggestions as a
+ * row of secondary buttons, then Cancel (left) and Submit (right).
+ */
 export const DialogProvider: React.FC<DialogProviderProps> = ({ children }) => {
   const [canSubmit, setCanSubmit] = useState(true);
 
@@ -62,15 +59,17 @@ export const DialogProvider: React.FC<DialogProviderProps> = ({ children }) => {
   const setListenForExit = useSetListenForExit();
 
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [dialogProps, setDialogProps] =
-    useState<InputDialogProps>(defaultDialogState);
+  const [dialogProps, setDialogProps] = useState<InputDialogProps>(defaultDialogState);
   const [dialogInputVal, setDialogInputVal] = useState<string>("");
   const { enqueueSnackbar } = useSnackbar();
   const curPage = usePageValue();
+  const isPlayerModalOpen = usePlayerModalVisbilityValue();
   const t = useTranslate();
-  const ComposerIcon = dialogProps.composerTone === "announcement"
-    ? CampaignRounded
-    : MarkChatUnreadRounded;
+  //A dialog opened from the player modal hands Escape back to the modal, not to
+  //the global listener that closes the whole menu.
+  const releaseExitKeys = useCallback(() => {
+    setListenForExit(!isPlayerModalOpen);
+  }, [isPlayerModalOpen, setListenForExit]);
 
   useEffect(() => {
     if (curPage === txAdminMenuPage.Main) {
@@ -78,6 +77,14 @@ export const DialogProvider: React.FC<DialogProviderProps> = ({ children }) => {
       setDisableTabs(dialogOpen);
     }
   }, [dialogOpen, setDisabledKeyNav, setDisableTabs]);
+
+  //There is no exit animation, so the dialog resets as soon as it closes.
+  useEffect(() => {
+    if (dialogOpen) return;
+    setDialogProps(defaultDialogState);
+    setCanSubmit(true);
+    setDialogInputVal("");
+  }, [dialogOpen]);
 
   const handleDialogSubmit = (suggested?: string) => {
     if (!canSubmit) return;
@@ -92,11 +99,11 @@ export const DialogProvider: React.FC<DialogProviderProps> = ({ children }) => {
     dialogProps.onSubmit(input);
     setCanSubmit(false);
 
-    setListenForExit(true);
+    releaseExitKeys();
     setDialogOpen(false);
   };
 
-  const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setDialogInputVal(e.target.value);
   };
 
@@ -108,15 +115,8 @@ export const DialogProvider: React.FC<DialogProviderProps> = ({ children }) => {
 
   const handleDialogClose = useCallback(() => {
     setDialogOpen(false);
-    setListenForExit(true);
-  }, []);
-
-  // We reset default state after the animation is complete
-  const handleOnExited = () => {
-    setDialogProps(defaultDialogState);
-    setCanSubmit(true);
-    setDialogInputVal("");
-  };
+    releaseExitKeys();
+  }, [releaseExitKeys]);
 
   return (
     <DialogContext.Provider
@@ -126,128 +126,66 @@ export const DialogProvider: React.FC<DialogProviderProps> = ({ children }) => {
         isDialogOpen: dialogOpen,
       }}
     >
-      <Dialog
-        onClose={() => handleDialogClose()}
+      <Modal
         open={dialogOpen}
-        fullWidth
-        TransitionProps={{
-          onExited: handleOnExited,
-        }}
-        PaperProps={{
-          sx: {
-            overflow: "hidden",
-            borderRadius: 3,
-            border: "1px solid",
-            borderColor: "rgba(255,255,255,0.12)",
-            //Reads the live theme: the literal FiveM wash painted RedM dialogs in the
-            //wrong palette, since the menu swaps the whole theme per game.
-            backgroundColor: (theme) => alpha(theme.palette.background.default, 0.98),
-            backgroundImage: "none",
-            boxShadow: "0 28px 80px rgba(0,0,0,0.55)",
-          },
-        }}
+        onClose={handleDialogClose}
+        labelledBy="input-dialog-title"
+        skipInitialFocus
       >
         <form
           onSubmit={(e) => {
             e.preventDefault();
             handleDialogSubmit();
           }}
+          style={{ display: "contents" }}
         >
-          <Box
-            sx={{
-              display: "flex",
-              gap: 2,
-              alignItems: "center",
-              px: 3,
-              pt: 3,
-              pb: 2,
-              borderBottom: "1px solid rgba(255,255,255,0.08)",
-            }}
-          >
-            {dialogProps.composerTone && (
-              <Box
-                aria-hidden="true"
-                sx={{
-                  display: "grid",
-                  placeItems: "center",
-                  width: 48,
-                  height: 48,
-                  flexShrink: 0,
-                  borderRadius: 2,
-                  color: dialogProps.composerTone === "announcement"
-                    ? "#fbbf24"
-                    : "primary.main",
-                  bgcolor: dialogProps.composerTone === "announcement"
-                    ? "rgba(251,191,36,0.12)"
-                    : (theme) => alpha(theme.palette.primary.main, 0.12),
-                  border: "1px solid currentColor",
-                }}
-              >
-                <ComposerIcon />
-              </Box>
+          <div className="modal-header">
+            <div style={{ minWidth: 0 }}>
+              <h2 id="input-dialog-title" className="modal-title">{dialogProps.title}</h2>
+              {dialogProps.description && (
+                <p className="modal-description">{dialogProps.description}</p>
+              )}
+            </div>
+          </div>
+          <div className="modal-body">
+            <label className="sr-only" htmlFor="dialog-input">{dialogProps.title}</label>
+            {dialogProps.isMultiline ? (
+              <textarea
+                id="dialog-input"
+                className="textarea"
+                autoFocus
+                rows={4}
+                placeholder={dialogProps.placeholder}
+                onChange={handleChange}
+                value={dialogInputVal}
+              />
+            ) : (
+              <input
+                id="dialog-input"
+                className="input"
+                autoFocus
+                autoComplete="off"
+                placeholder={dialogProps.placeholder}
+                onChange={handleChange}
+                value={dialogInputVal}
+              />
             )}
-            <Box sx={{ minWidth: 0 }}>
-              <Box
-                component="h2"
-                sx={{ m: 0, color: "text.primary", fontSize: 21, fontWeight: 750, lineHeight: 1.3 }}
-              >
-                {dialogProps.title}
-              </Box>
-              <DialogContentText sx={{ mt: 0.5, color: "text.secondary", lineHeight: 1.5 }}>
-                {dialogProps.description}
-              </DialogContentText>
-            </Box>
-          </Box>
-          <DialogContent sx={{ px: 3, py: 2.5 }}>
-            <TextField
-              variant="outlined"
-              autoFocus
-              fullWidth
-              multiline={dialogProps?.isMultiline}
-              minRows={dialogProps?.isMultiline ? 4 : undefined}
-              id="dialog-input"
-              placeholder={dialogProps.placeholder}
-              sx={{
-                "& .MuiOutlinedInput-root": {
-                  alignItems: "flex-start",
-                  borderRadius: 2,
-                  bgcolor: "rgba(0,0,0,0.2)",
-                },
-              }}
-              onChange={handleChange}
-              value={dialogInputVal}
-            />
-          </DialogContent>
-          <DialogActions sx={{ px: 3, pb: 3, pt: 0, gap: 1, justifyContent: "space-between" }}>
-              <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
-                {Array.isArray(dialogProps.suggestions) && dialogProps.suggestions.map(suggestion => (
-                  <Button
-                    key={suggestion}
-                    variant="outlined"
-                    size="small"
-                    onClick={()=>{
-                      handleDialogSubmit(suggestion);
-                    }}
-                  >
+            {Array.isArray(dialogProps.suggestions) && dialogProps.suggestions.length > 0 && (
+              <div className="chips" style={{ marginTop: 12 }}>
+                {dialogProps.suggestions.map((suggestion) => (
+                  <Button key={suggestion} small onClick={() => handleDialogSubmit(suggestion)}>
                     {suggestion}
                   </Button>
                 ))}
-              </Box>
-              <Box sx={{ display: "flex", gap: 1 }}>
-                <Button
-                  onClick={() => handleDialogClose()}
-                  variant="text"
-                  color="secondary"
-                >
-                  {t("nui_menu.common.cancel")}
-                </Button>
-                <Button type="submit" color="primary" variant="contained">
-                  {t("nui_menu.common.submit")}
-                </Button>
-              </Box>
-          </DialogActions>
+              </div>
+            )}
+          </div>
+          <div className="modal-footer">
+            <Button onClick={handleDialogClose}>{t("nui_menu.common.cancel")}</Button>
+            <Button type="submit" variant="primary">{t("nui_menu.common.submit")}</Button>
+          </div>
         </form>
-      </Dialog>
+      </Modal>
       {children}
     </DialogContext.Provider>
   );

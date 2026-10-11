@@ -1,6 +1,8 @@
 import { useMemo } from "react";
-import { cn, numberToLocaleString } from "@/lib/utils";
-import { PlayerDropsMessage } from "./PlayerDropsGenericSubcards";
+import { numberToLocaleString } from "@/lib/utils";
+import { ListRow, ListRows } from "@/components/ListRow";
+import EmptyState from "@/components/EmptyState";
+import { Button } from "@/components/ui/button";
 import { compressMultipleCounter, splitPrefixedStrings } from "./utils";
 import { t } from "@/lib/i18n";
 
@@ -15,15 +17,13 @@ type CrashDatumData = {
 
 type CrashTypeRowProps = {
     datum: CrashDatumData;
-    isOdd: boolean;
-    isLast: boolean;
 };
 
-function CrashTypeRow({ datum, isLast, isOdd }: CrashTypeRowProps) {
+function CrashTypeRow({ datum }: CrashTypeRowProps) {
     let dataCellNode = null;
     if (datum.prefix) {
         dataCellNode = <>
-            <span className="text-muted-foreground/50">{datum.prefix}</span>
+            <span className="text-muted-foreground">{datum.prefix}</span>
             <span>{datum.suffix}</span>
         </>
     } else {
@@ -31,24 +31,19 @@ function CrashTypeRow({ datum, isLast, isOdd }: CrashTypeRowProps) {
     }
 
     return (
-        <tr
-            className={cn(
-                'font-mono text-sm group',
-                !isLast && 'border-b',
-                isOdd && 'bg-secondary/15',
-                'hover:bg-secondary/35'
-            )}
-        >
-            <td className="min-w-[4ch] px-2 py-1 border-r text-right" title={t('Percent of all crashes')}>
-                {datum.pctStr ?? '--'}
-            </td>
-            <td className="min-w-[4ch] px-2 py-1 border-r text-right" title={t('Crash count')}>
-                {datum.cntStr ?? '--'}
-            </td>
-            <td className="px-2 py-1 attempt-word-wrap line-clamp-4">
+        <ListRow className="items-start justify-between gap-4">
+            <p className="attempt-word-wrap line-clamp-4 min-w-0 flex-1 font-mono text-dense text-body">
                 {dataCellNode}
-            </td>
-        </tr>
+            </p>
+            <div className="shrink-0 text-right tabular-nums">
+                <p className="text-sm font-medium text-white" title={t('Percent of all crashes')}>
+                    {datum.pctStr ?? '--'}
+                </p>
+                <p className="text-dense text-muted-foreground" title={t('Crash count')}>
+                    {datum.cntStr ?? '--'}
+                </p>
+            </div>
+        </ListRow>
     );
 }
 
@@ -109,58 +104,36 @@ export default function DrilldownCrashesSubcard({
 
     //Kept after the memo so the hook order never changes between renders.
     if (!crashTypes.length) {
-        return <PlayerDropsMessage message={t('No player crashes within this time window.')} />;
+        return <EmptyState message={t('No player crashes within this time window.')} />;
     }
 
     return (
-        <div className="overflow-x-auto p-4 pt-3">
-        <table className="w-full overflow-hidden rounded-xl border border-white/[0.06]">
-            <thead>
-                <tr className="border-b border-white/[0.06] bg-black/[0.12] text-xs uppercase tracking-wider text-muted-foreground/75">
-                    <th className="min-w-[4ch] border-r border-white/[0.06] px-3 py-2 text-right">%</th>
-                    <th className="min-w-[4ch] border-r border-white/[0.06] px-3 py-2 text-right">{t('Count')}</th>
-                    <th className="px-3 py-2 text-left">{t('Crash Reason')}</th>
-                </tr>
-            </thead>
-            <tbody>
-                {crashesData.display.map((datum, index) => (
-                    <CrashTypeRow
-                        key={datum.key}
-                        datum={datum}
-                        isOdd={index % 2 === 0}
-                        isLast={!crashesData.filteredOut && index === crashesData.display.length - 1}
-                    />
+        <div className="flex flex-col gap-3">
+            <ListRows>
+                {crashesData.display.map((datum) => (
+                    <CrashTypeRow key={datum.key} datum={datum} />
                 ))}
-                {crashesData.filteredOut ? (
-                    <tr>
-                        <td
-                            colSpan={3}
-                            className={cn(
-                                'text-center px-4 py-2 text-muted-foreground',
-                                crashesData.display.length % 2 === 0 && 'bg-secondary/15',
-                                'hover:bg-secondary/35'
-                            )}
-                        >
-                            {t('Showing the top {shown} out of {total} reasons which account for {percent} of all crashes.', {
-                                shown: crashesData.display.length,
-                                total: numberToLocaleString(crashTypes.length),
-                                percent: crashesData.displayPct,
-                            })} <br />
-                            {t('The remaining {count} reasons account for {percent} of all crashes.', {
-                                count: numberToLocaleString(crashesData.filteredOut.types),
-                                percent: crashesData.filteredOut.countPct,
-                            })} {' '}
-                            <button
-                                className="text-accent hover:underline"
-                                onClick={() => setCrashesTargetLimit(0)}
-                            >
-                                {t('Show All!')}
-                            </button>
-                        </td>
-                    </tr>
-                ) : null}
-            </tbody>
-        </table>
+            </ListRows>
+            {crashesData.filteredOut ? (
+                <p className="text-dense text-muted-foreground">
+                    {t('Showing the top {shown} out of {total} reasons which account for {percent} of all crashes.', {
+                        shown: crashesData.display.length,
+                        total: numberToLocaleString(crashTypes.length),
+                        percent: crashesData.displayPct,
+                    })}{' '}
+                    {t('The remaining {count} reasons account for {percent} of all crashes.', {
+                        count: numberToLocaleString(crashesData.filteredOut.types),
+                        percent: crashesData.filteredOut.countPct,
+                    })}{' '}
+                    <Button
+                        variant="link"
+                        className="text-dense"
+                        onClick={() => setCrashesTargetLimit(0)}
+                    >
+                        {t('Show All!')}
+                    </Button>
+                </p>
+            ) : null}
         </div>
     );
 }

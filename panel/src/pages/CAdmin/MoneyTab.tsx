@@ -5,7 +5,9 @@ import { useAuthedFetcher } from '@/hooks/fetch';
 import { useAdminPerms } from '@/hooks/auth';
 import { txToast } from '@/components/TxToaster';
 import { cadminApiPath, cadminCharacterIdentifier, cadminData, type CadminPlayer, type CadminResponse } from './api';
+import { nativeSelectClass } from './nativeSelect';
 import { t } from '@/lib/i18n';
+import { cn } from '@/lib/utils';
 
 export default function MoneyTab({ player, refresh }: { player: CadminPlayer; refresh: () => void }) {
     const fetcher = useAuthedFetcher();
@@ -19,13 +21,18 @@ export default function MoneyTab({ player, refresh }: { player: CadminPlayer; re
             txToast.success(t('Money updated.')); setAmount(''); refresh();
         } catch (error) { txToast.error(t((error as Error).message)); }
     };
-    return <div className="space-y-4">
-        <div className="grid grid-cols-3 gap-3">{(['cash', 'bank', 'dirty'] as const).map(key => <div key={key} className="rounded-md border p-3"><div className="text-xs uppercase text-muted-foreground">{t(key === 'cash' ? 'Cash' : key === 'bank' ? 'Bank' : 'Dirty')}</div><div className="text-xl font-semibold">{player.money?.[key] ?? 0}</div></div>)}</div>
-        <div className="flex flex-wrap gap-2">
-            <select className="h-10 rounded-lg border border-white/10 bg-[#0f1116] px-3 text-sm text-white outline-none focus:border-brand-600 focus:ring-2 focus:ring-brand-600/20" value={account} onChange={e => setAccount(e.target.value)}><option>cash</option><option>bank</option><option>dirty</option></select>
-            <select className="h-10 rounded-lg border border-white/10 bg-[#0f1116] px-3 text-sm text-white outline-none focus:border-brand-600 focus:ring-2 focus:ring-brand-600/20" value={action} onChange={e => setAction(e.target.value)}><option value="add">{t('Add')}</option><option value="remove">{t('Remove')}</option><option value="set">{t('Set')}</option></select>
-            <Input className="max-w-40" type="number" min="0" value={amount} onChange={e => setAmount(e.target.value)} placeholder={t('Amount')} />
-            <Button disabled={!amount || !hasPerm(action === 'set' ? 'cadmin.money.set' : 'cadmin.money.give')} onClick={submit}>{t('Apply')}</Button>
+    return <div className="flex flex-col gap-4">
+        <dl className="grid grid-cols-3 gap-4 rounded-lg bg-raise p-4 sm:p-6">
+            {(['cash', 'bank', 'dirty'] as const).map(key => <div key={key} className="min-w-0">
+                <dt className="text-dense text-muted-foreground">{t(key === 'cash' ? 'Cash' : key === 'bank' ? 'Bank' : 'Dirty')}</dt>
+                <dd className="mt-1 truncate text-lg font-semibold tabular-nums text-white">{(player.money?.[key] ?? 0).toLocaleString()}</dd>
+            </div>)}
+        </dl>
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+            <select className={cn(nativeSelectClass, 'sm:w-auto')} value={account} onChange={e => setAccount(e.target.value)}><option>cash</option><option>bank</option><option>dirty</option></select>
+            <select className={cn(nativeSelectClass, 'sm:w-auto')} value={action} onChange={e => setAction(e.target.value)}><option value="add">{t('Add')}</option><option value="remove">{t('Remove')}</option><option value="set">{t('Set')}</option></select>
+            <Input className="tabular-nums sm:max-w-40" type="number" min="0" value={amount} onChange={e => setAmount(e.target.value)} placeholder={t('Amount')} />
         </div>
+        <Button className="self-start" disabled={!amount || !hasPerm(action === 'set' ? 'cadmin.money.set' : 'cadmin.money.give')} onClick={submit}>{t('Apply')}</Button>
     </div>;
 }

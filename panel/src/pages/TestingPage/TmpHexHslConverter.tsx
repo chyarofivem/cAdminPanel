@@ -51,9 +51,9 @@ export default function TmpHexHslConverter() {
     }
 
     return (
-        <div className="flex flex-col gap-2 max-w-xs">
-            <div>
-                <label htmlFor="hex-input">Hex Color:</label>
+        <div className="flex max-w-xs flex-col gap-4">
+            <div className="flex flex-col gap-2">
+                <label htmlFor="hex-input" className="text-sm font-medium text-white">Hex Color</label>
                 <div className="flex flex-row justify-start gap-2">
                     <Input
                         id="hex-input"
@@ -65,17 +65,17 @@ export default function TmpHexHslConverter() {
                     />
                     <Button
                         onClick={() => setHex('')}
-                        variant="outline"
+                        variant="secondary"
                     >
                         Clear
                     </Button>
                 </div>
             </div>
-            <div>
-                <label htmlFor="hsl-output">HSL Color:</label>
+            <div className="flex flex-col gap-2">
+                <label htmlFor="hsl-output" className="text-sm font-medium text-white">HSL Color</label>
                 <div className="flex flex-row justify-start gap-2">
                     <Input
-                        id="hex-output"
+                        id="hsl-output"
                         type="text"
                         value={hexToHsl(hex)}
                         onFocus={(e) => e.target.select()}
@@ -83,15 +83,15 @@ export default function TmpHexHslConverter() {
                     />
                     <Button
                         onClick={() => navigator.clipboard.writeText(hexToHsl(hex))}
-                        variant="outline"
+                        variant="secondary"
                     >
                         Copy
                     </Button>
                 </div>
             </div>
-            <div>
-                <label htmlFor="hsl-output">Sanity Check:</label>
-                <div className="flex flex-row justify-start gap-0">
+            <div className="flex flex-col gap-2">
+                <span className="text-sm font-medium text-white">Sanity Check</span>
+                <div className="flex flex-row justify-start gap-0 overflow-hidden rounded-xs">
                     <div className="w-20 h-10" style={{ backgroundColor: `#${hex}` }}></div>
                     <div className="w-20 h-10" style={{ backgroundColor: `hsl(${hexToHsl(hex)})` }}></div>
                     <div className="w-20 h-10" style={{ backgroundColor: `#${hex}` }}></div>
@@ -101,7 +101,7 @@ export default function TmpHexHslConverter() {
                     <div className="w-20 h-10" style={{ backgroundColor: `#${hex}` }}></div>
                     <div className="w-20 h-10" style={{ backgroundColor: `hsl(${hexToHsl(hex)})` }}></div>
                 </div>
-                <small>NOTE: This calculation is not reliable, if the bar above is striped, it means that the hex and hsl differs, in that case please use <a href="https://products.aspose.app/svg/color-converter/rgb-to-hsl" target="_blank" rel="noopener noreferrer" className="text-accent">this page.</a></small>
+                <p className="text-dense text-muted-foreground">NOTE: This calculation is not reliable, if the bar above is striped, it means that the hex and hsl differs, in that case please use <a href="https://products.aspose.app/svg/color-converter/rgb-to-hsl" target="_blank" rel="noopener noreferrer" className="text-accent-text hover:text-accent-glow hover:underline">this page.</a></p>
             </div>
         </div>
     );

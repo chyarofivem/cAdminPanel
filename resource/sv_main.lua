@@ -102,6 +102,21 @@ end
 
 --- Get all resources/statuses and report back to the panel
 local function txaReportResources(source, args)
+    --Collects every value of the given manifest keys, in manifest order
+    local function getMetadataValues(resName, keys)
+        local values = {}
+        for _, key in ipairs(keys) do
+            local count = GetNumResourceMetadata(resName, key) or 0
+            for idx = 0, count - 1 do
+                local value = GetResourceMetadata(resName, key, idx)
+                if type(value) == 'string' and value ~= '' then
+                    values[#values+1] = value
+                end
+            end
+        end
+        return values
+    end
+
     --Prepare resources list
     local resources = {}
     local max = GetNumResources() - 1
@@ -113,7 +128,9 @@ local function txaReportResources(source, args)
             author = GetResourceMetadata(resName, 'author'),
             version = GetResourceMetadata(resName, 'version'),
             description = GetResourceMetadata(resName, 'description'),
-            path = GetResourcePath(resName)
+            path = GetResourcePath(resName),
+            dependencies = getMetadataValues(resName, { 'dependency', 'dependencies' }),
+            repository = GetResourceMetadata(resName, 'repository', 0)
         }
         resources[#resources+1] = currentRes
     end
@@ -455,24 +472,24 @@ end
 --- Converts a '#rrggbb' string into the comma-separated components of rgb()/rgba()
 local function hexToRgbParts(hex)
     local r, g, b = tostring(hex):match('^#?(%x%x)(%x%x)(%x%x)$')
-    if not r then return '37, 99, 235' end
+    if not r then return '29, 78, 216' end
     return string.format('%d, %d, %d', tonumber(r, 16), tonumber(g, 16), tonumber(b, 16))
 end
 
 --- Wraps a string in the same inline-styled <code> tag used by the panel
 local function htmlCode(str)
-    return '<code style="background-color: rgba(148, 163, 184, 0.22); padding: 2px 5px; border-radius: 5px;">'
+    return '<code style="background-color: rgba(255, 255, 255, 0.1); padding: 2px 6px; border-radius: 6px;">'
         .. escapeHtml(str) .. '</code>'
 end
 
---- Builds the on-brand card shown in the game's connection screen.
+--- Builds the accent callout shown in the game's connection screen.
 --- Mirrors rejectMessageTemplate() in core/routes/player/checkJoin.ts, so the messages
 --- coming from this resource look the same as the ones coming from the panel.
 --- NOTE: the title is escaped, but the content is not - it is trusted html built here.
 local function buildConnectionCard(title, content)
     local ctx = GlobalState.txAdminServerCtx
     local panelName = txServerName .. ' Panel'
-    local accent = '37, 99, 235'
+    local accent = '29, 78, 216'
     if type(ctx) == 'table' then
         if type(ctx.panelName) == 'string' and ctx.panelName ~= '' then
             panelName = ctx.panelName
@@ -482,13 +499,17 @@ local function buildConnectionCard(title, content)
         end
     end
 
-    local cardStyle = ('margin-top: 25px; overflow: hidden; border: solid 1px rgba(%s, 0.35); border-radius: 12px; background-color: rgba(17, 20, 26, 0.72); box-shadow: 0 18px 42px rgba(0, 0, 0, 0.35);'):format(accent)
-    local headerStyle = ('padding: 9px 22px; border-bottom: solid 1px rgba(%s, 0.28); background-color: rgba(%s, 0.16); color: rgb(%s); font-size: 0.85rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase;'):format(accent, accent, accent)
-    return ('<div style="%s"><div style="%s">%s</div><div style="padding: 18px 22px 22px;"><h2 style="margin: 0px; padding: 0px; font-size: 1.45rem; line-height: 1.3;">%s</h2><p style="margin: 12px 0px 0px; padding: 0px; font-size: 1.15rem; line-height: 1.55; opacity: 0.92;">%s</p></div></div>'):format(
+    local cardStyle = ('margin-top: 24px; padding: 24px; border-left: solid 4px rgb(%s); border-radius: 0px 16px 16px 0px; background-color: rgba(%s, 0.15);'):format(accent, accent)
+    local brandStyle = 'margin: 0px 0px 4px; font-size: 0.8125rem; line-height: 1.5; color: rgba(255, 255, 255, 0.6);'
+    local titleStyle = 'margin: 0px; padding: 0px; font-size: 1.125rem; font-weight: 600; line-height: 1.25; color: rgba(255, 255, 255, 0.9);'
+    local bodyStyle = 'margin: 8px 0px 0px; padding: 0px; font-size: 0.875rem; line-height: 1.5; color: rgba(255, 255, 255, 0.6);'
+    return ('<div style="%s"><div style="%s">%s</div><h2 style="%s">%s</h2><p style="%s">%s</p></div>'):format(
         cardStyle,
-        headerStyle,
+        brandStyle,
         escapeHtml(panelName),
+        titleStyle,
         escapeHtml(title),
+        bodyStyle,
         content
     )
 end

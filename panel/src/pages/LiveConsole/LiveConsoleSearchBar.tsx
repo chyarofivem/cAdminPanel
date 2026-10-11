@@ -1,5 +1,5 @@
 import { Input } from "@/components/ui/input";
-import { cn } from "@/lib/utils";
+import { IconButton } from "@/components/ui/icon-button";
 import type { ISearchDecorationOptions, ISearchOptions, SearchAddon } from "@xterm/addon-search";
 import { ArrowDownIcon, ArrowUpIcon, CaseSensitiveIcon, RegexIcon, WholeWordIcon, XIcon } from "lucide-react";
 import { ReactNode, useEffect, useRef, useState } from "react";
@@ -8,33 +8,30 @@ import { t } from '@/lib/i18n';
 
 
 type ButtonProps = {
-    title?: string;
+    title: string;
     onClick: () => void;
     isActive?: boolean;
     children: ReactNode;
 };
 
+//Toggles show their on-state on raise-2, like an active tab.
 function SearchBarButton({ title, onClick, isActive, children }: ButtonProps) {
     return (
-        <button
-            type="button"
-            title={title}
-            aria-label={title}
-            className={cn(
-                "rounded p-0.5",
-                "hover:bg-secondary-foreground hover:text-secondary",
-                "focus:outline-none focus:ring-1 focus:ring-secondary-foreground focus:ring-offset-1x focus:ring-offset-secondary-foreground",
-                isActive && 'bg-muted-foreground text-secondary'
-            )}
+        <IconButton
+            label={title}
+            icon={children}
+            variant={isActive ? 'secondary' : 'ghost'}
+            aria-pressed={isActive === undefined ? undefined : isActive}
+            className="size-11 sm:size-9"
             onClick={onClick}
-        >
-            {children}
-        </button>
+        />
     );
 }
 
 
 const labelNoResults = t('No results');
+//NOTE: these are drawn inside the xterm canvas (console content), which only accepts
+//opaque #RRGGBB values, so they cannot read the CSS tokens.
 const xtermDecorations = {
     activeMatchBackground: '#FF00DC',
     activeMatchColorOverviewRuler: '#FF00DC',
@@ -155,63 +152,58 @@ export default function LiveConsoleSearchBar({ show, setShow, searchAddon }: Liv
 
     if (!show) return null;
     return (
-        <div className="absolute right-2 top-2 z-10 flex w-[calc(100%-1rem)] flex-wrap items-center justify-center gap-2 rounded-xl border border-white/10 bg-zinc-950/95 p-2 shadow-2xl backdrop-blur xs:w-auto">
-            <div className="relative">
-                <Input
-                    ref={inputRef}
-                    className="h-8"
-                    placeholder={t('Search console output')}
-                    onKeyDown={handleInputKeyDown}
-                    onChange={handleInputChange}
-                    onBlur={() => { searchAddon.clearActiveDecoration() }}
-                />
-                <div className="absolute top-1/2 right-1 transform -translate-y-1/2 flex text-muted-foreground gap-2">
-                    <SearchBarButton
-                        title={t('Case sensitive')}
-                        isActive={caseSensitive}
-                        onClick={handleCaseSensitiveMode}
-                    >
-                        <CaseSensitiveIcon className="h-5 w-5" />
-                    </SearchBarButton>
-                    <SearchBarButton
-                        title={t('Whole word')}
-                        isActive={wholeWord}
-                        onClick={handleWholeWordMode}
-                    >
-                        <WholeWordIcon className="h-5 w-5" />
-                    </SearchBarButton>
-                    <SearchBarButton
-                        title={t('Regular expression')}
-                        isActive={regex}
-                        onClick={handleRegexMode}
-                    >
-                        <RegexIcon className="h-4 w-5" />
-                    </SearchBarButton>
-                </div>
-            </div>
-            <div className="flex grow text-sm text-muted-foreground whitespace-nowrap min-w-[8ch]">
+        <div className="absolute right-2 top-2 z-10 flex w-[calc(100%-1rem)] flex-wrap items-center gap-1 rounded-md bg-menu p-2 font-sans shadow-menu xs:w-auto">
+            <Input
+                ref={inputRef}
+                className="min-w-0 basis-full text-dense xs:w-56 xs:basis-auto sm:h-9"
+                aria-label={t('Search console output')}
+                placeholder={t('Search console output')}
+                onKeyDown={handleInputKeyDown}
+                onChange={handleInputChange}
+                onBlur={() => { searchAddon.clearActiveDecoration() }}
+            />
+            <SearchBarButton
+                title={t('Case sensitive')}
+                isActive={caseSensitive}
+                onClick={handleCaseSensitiveMode}
+            >
+                <CaseSensitiveIcon />
+            </SearchBarButton>
+            <SearchBarButton
+                title={t('Whole word')}
+                isActive={wholeWord}
+                onClick={handleWholeWordMode}
+            >
+                <WholeWordIcon />
+            </SearchBarButton>
+            <SearchBarButton
+                title={t('Regular expression')}
+                isActive={regex}
+                onClick={handleRegexMode}
+            >
+                <RegexIcon />
+            </SearchBarButton>
+            <div className="min-w-[8ch] grow whitespace-nowrap px-1 text-dense tabular-nums text-muted-foreground" aria-live="polite">
                 {resultCount}
             </div>
-            <div className="flex gap-2 text-muted-foreground">
-                <SearchBarButton
-                    title={t('Previous result')}
-                    onClick={handlePrevious}
-                >
-                    <ArrowUpIcon className="h-5 w-5" />
-                </SearchBarButton>
-                <SearchBarButton
-                    title={t('Next result')}
-                    onClick={handleNext}
-                >
-                    <ArrowDownIcon className="h-5 w-5" />
-                </SearchBarButton>
-                <SearchBarButton
-                    title={t('Close')}
-                    onClick={() => { setShow(false) }}
-                >
-                    <XIcon className="h-5 w-5" />
-                </SearchBarButton>
-            </div>
+            <SearchBarButton
+                title={t('Previous result')}
+                onClick={handlePrevious}
+            >
+                <ArrowUpIcon />
+            </SearchBarButton>
+            <SearchBarButton
+                title={t('Next result')}
+                onClick={handleNext}
+            >
+                <ArrowDownIcon />
+            </SearchBarButton>
+            <SearchBarButton
+                title={t('Close')}
+                onClick={() => { setShow(false) }}
+            >
+                <XIcon />
+            </SearchBarButton>
         </div>
     );
 }

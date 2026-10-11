@@ -1,38 +1,35 @@
 import { cn } from "@/lib/utils";
 import { Switch } from "./ui/switch";
-import { cva, VariantProps } from "class-variance-authority";
 import { forwardRef } from 'react';
 
-const switchVariants = cva(
-    'peer',
-    {
-        variants: {
-            variant: {
-                default: "",
-                checkedGreen: "data-[state=unchecked]:bg-input data-[state=checked]:bg-success",
-                checkedYellow: "data-[state=unchecked]:bg-input data-[state=checked]:bg-warning",
-                checkedRed: "data-[state=unchecked]:bg-input data-[state=checked]:bg-destructive",
-                uncheckedGreen: "data-[state=unchecked]:bg-success data-[state=checked]:bg-input",
-                uncheckedYellow: "data-[state=unchecked]:bg-warning data-[state=checked]:bg-input",
-                uncheckedRed: "data-[state=unchecked]:bg-destructive data-[state=checked]:bg-input",
-                redGreen: "data-[state=unchecked]:bg-destructive data-[state=checked]:bg-success",
-                greenRed: "data-[state=unchecked]:bg-success data-[state=checked]:bg-destructive",
-            },
-        },
-        defaultVariants: {
-            variant: "default",
-        },
-    }
-);
+/**
+ * Legacy colour variants. The design system puts every toggle's on-state on the accent
+ * (docs/design-system.md), so these names are kept for older call sites and all render
+ * the default switch.
+ */
+type SwitchTextVariant =
+    | 'default'
+    | 'checkedGreen'
+    | 'checkedYellow'
+    | 'checkedRed'
+    | 'uncheckedGreen'
+    | 'uncheckedYellow'
+    | 'uncheckedRed'
+    | 'redGreen'
+    | 'greenRed';
 
 
 type SwitchTextProps = Omit<Parameters<typeof Switch>[0], 'children'> & {
     checkedLabel: string;
     uncheckedLabel: string;
     className?: string;
-    variant?: VariantProps<typeof switchVariants>['variant'];
+    variant?: SwitchTextVariant | null;
 };
 
+/**
+ * A switch followed by a word that names its current state ("Enabled", "Hidden"),
+ * so the state is never shown by colour alone.
+ */
 const SwitchText = forwardRef<
     React.ElementRef<typeof Switch>,
     SwitchTextProps
@@ -40,27 +37,24 @@ const SwitchText = forwardRef<
     id,
     checkedLabel,
     uncheckedLabel,
-    variant,
+    variant: _variant,
     className,
     ...props
 }, ref) => {
     return (
-        <div className="flex items-center space-x-2">
+        <div className="flex min-h-6 items-center gap-3">
             <Switch
                 id={id}
-                className={cn(
-                    className,
-                    switchVariants({ variant })
-                )}
+                className={cn('peer', className)}
                 ref={ref}
                 {...props}
             />
-            <div className="text-sm font-medium leading-none tracking-wide text-muted-foreground select-none hidden peer-data-[state=checked]:inline">
+            <span className="hidden select-none text-sm text-body peer-data-[state=checked]:inline">
                 {checkedLabel}
-            </div>
-            <div className="text-sm font-medium leading-none tracking-wide text-muted-foreground select-none hidden peer-data-[state=unchecked]:inline">
+            </span>
+            <span className="hidden select-none text-sm text-body peer-data-[state=unchecked]:inline">
                 {uncheckedLabel}
-            </div>
+            </span>
         </div>
     )
 });

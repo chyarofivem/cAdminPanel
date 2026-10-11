@@ -1,44 +1,16 @@
-import React, { useEffect, useState } from 'react';
-
-const easeOutQuart = (t: number) => 1 - (--t) * t * t * t;
-const frameDuration = 1000 / 60;
-
-type CountUpAnimationProps = {
-    countTo: number;
-    duration?: number;
-};
-
-//Snippet from: https://jshakespeare.com/simple-count-up-number-animation-javascript-react/
-const CountUpAnimation = ({ countTo, duration = 1250 }: CountUpAnimationProps) => {
-    const [count, setCount] = useState(0);
-
-    useEffect(() => {
-        let frame = 0;
-        const totalFrames = Math.round(duration / frameDuration);
-        const counter = setInterval(() => {
-            frame++;
-            const progress = easeOutQuart(frame / totalFrames);
-            setCount(countTo * progress);
-
-            if (frame === totalFrames) {
-                clearInterval(counter);
-            }
-        }, frameDuration);
-    }, []);
-
-    return Math.floor(count).toLocaleString("en-US");
-};
+import React from 'react';
 
 function NumberLoading() {
     return (
-        <div className="h-7 w-28 animate-pulse rounded-md bg-muted" />
+        <div className="mt-1 h-6 w-28 rounded-xs bg-raise" />
     )
 }
 
 
 export type PageCalloutProps = {
     label: string;
-    icon: React.ReactNode;
+    /** @deprecated Ignored: stat labels carry no icons. Kept so older call sites compile. */
+    icon?: React.ReactNode;
     value: number | false;
     prefix?: string;
 }
@@ -46,63 +18,28 @@ export type PageCalloutProps = {
 export type PageCalloutRowProps = {
     callouts: PageCalloutProps[];
 };
+
+/**
+ * A row of four headline stats on one surface: muted label above a white value.
+ * Values render as-is; no count-up animation.
+ */
 export default function PageCalloutRow({ callouts }: PageCalloutRowProps) {
     if (callouts.length !== 4) return null;
 
     return (
-        <div className="grid px-2 md:px-0 gap-2 xs:gap-4 grid-cols-2 lg:grid-cols-4 mb-4 md:mb-6">
-            <div className="py-2 px-4 rounded-lg border shadow-sm">
-                <div className="flex flex-row items-center justify-between space-y-0 pb-2 text-muted-foreground">
-                    <h3 className="tracking-tight text-sm font-medium line-clamp-1">{callouts[0].label}</h3>
-                    <div className='hidden xs:block'>{callouts[0].icon}</div>
+        <div className="grid grid-cols-2 gap-x-6 gap-y-4 rounded-lg bg-raise p-4 sm:p-6 lg:grid-cols-4">
+            {callouts.map((callout, index) => (
+                <div key={index} className="min-w-0">
+                    <h3 className="truncate text-dense text-muted-foreground">{callout.label}</h3>
+                    {callout.value === false ? (
+                        <NumberLoading />
+                    ) : (
+                        <p className="mt-1 text-xl font-semibold tabular-nums text-white">
+                            {callout.prefix}{Math.floor(callout.value).toLocaleString("en-US")}
+                        </p>
+                    )}
                 </div>
-                {callouts[0].value === false ? (
-                    <NumberLoading />
-                ) : (
-                    <div className="text-xl xs:text-2xl font-bold">
-                        {callouts[0].prefix}<CountUpAnimation countTo={callouts[0].value} />
-                    </div>
-                )}
-            </div>
-            <div className="py-2 px-4 rounded-lg border shadow-sm">
-                <div className="flex flex-row items-center justify-between space-y-0 pb-2 text-muted-foreground">
-                    <h3 className="tracking-tight text-sm font-medium line-clamp-1">{callouts[1].label}</h3>
-                    <div className='hidden xs:block'>{callouts[1].icon}</div>
-                </div>
-                {callouts[1].value === false ? (
-                    <NumberLoading />
-                ) : (
-                    <div className="text-xl xs:text-2xl font-bold">
-                        {callouts[1].prefix}<CountUpAnimation countTo={callouts[1].value} />
-                    </div>
-                )}
-            </div>
-            <div className="py-2 px-4 rounded-lg border shadow-sm">
-                <div className="flex flex-row items-center justify-between space-y-0 pb-2 text-muted-foreground">
-                    <h3 className="tracking-tight text-sm font-medium line-clamp-1">{callouts[2].label}</h3>
-                    <div className='hidden xs:block'>{callouts[2].icon}</div>
-                </div>
-                {callouts[2].value === false ? (
-                    <NumberLoading />
-                ) : (
-                    <div className="text-xl xs:text-2xl font-bold">
-                        {callouts[2].prefix}<CountUpAnimation countTo={callouts[2].value} />
-                    </div>
-                )}
-            </div>
-            <div className="py-2 px-4 rounded-lg border shadow-sm">
-                <div className="flex flex-row items-center justify-between space-y-0 pb-2 text-muted-foreground">
-                    <h3 className="tracking-tight text-sm font-medium line-clamp-1">{callouts[3].label}</h3>
-                    <div className='hidden xs:block'>{callouts[3].icon}</div>
-                </div>
-                {callouts[3].value === false ? (
-                    <NumberLoading />
-                ) : (
-                    <div className="text-xl xs:text-2xl font-bold">
-                        {callouts[3].prefix}<CountUpAnimation countTo={callouts[3].value} />
-                    </div>
-                )}
-            </div>
-        </div >
+            ))}
+        </div>
     )
 }

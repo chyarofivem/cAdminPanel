@@ -1,53 +1,39 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { setPlayerModalUrlParam, usePlayerModalStateValue } from "@/hooks/playerModal";
-import { InfoIcon, ListIcon, HistoryIcon, GavelIcon, UserRoundCogIcon } from "lucide-react";
 import PlayerInfoTab from "./PlayerInfoTab";
 import { useEffect, useMemo, useState } from "react";
 import PlayerIdsTab from "./PlayerIdsTab";
 import PlayerHistoryTab from "./PlayerHistoryTab";
 import PlayerBanTab from "./PlayerBanTab";
-import GenericSpinner from "@/components/GenericSpinner";
-import { cn } from "@/lib/utils";
 import { useBackendApi } from "@/hooks/fetch";
 import { PlayerModalResp, PlayerModalSuccess } from "@shared/playerApiTypes";
 import PlayerModalFooter from "./PlayerModalFooter";
-import { ModalContent, ModalTabMessage, ModalTabsList, ModalTabWrapper, type ModalTabInfo } from "@/components/modal-tabs";
+import { ModalContent, ModalTabMessage, ModalTabsList, ModalTabWrapper } from "@/components/modal-tabs";
 import { useAdminPerms } from "@/hooks/auth";
 import PlayerCharacterTab from "./PlayerCharacterTab";
 import { isCadminAvailable } from "@/pages/CAdmin/api";
 import { t } from '@/lib/i18n';
 
 
-const baseModalTabs: ModalTabInfo[] = [
-    {
-        title: 'Info',
-        icon: <InfoIcon className="mr-2 h-5 w-5 hidden xs:block" />,
-    },
-    {
-        title: 'History',
-        icon: <HistoryIcon className="mr-2 h-5 w-5 hidden xs:block" />,
-    },
-    {
-        title: 'IDs',
-        icon: <ListIcon className="mr-2 h-5 w-5 hidden xs:block" />,
-    },
-    {
-        title: 'Ban',
-        icon: <GavelIcon className="mr-2 h-5 w-5 hidden xs:block" />,
-        className: 'hover:bg-destructive hover:text-destructive-foreground',
-    }
+//Tab labels only: the design system puts no icons on tab triggers.
+type PlayerModalTab = { title: string };
+const baseModalTabs: PlayerModalTab[] = [
+    { title: 'Info' },
+    { title: 'History' },
+    { title: 'IDs' },
+    { title: 'Ban' },
 ];
 
 
 export default function PlayerModal() {
     const { hasPerm } = useAdminPerms();
     const canViewCharacter = isCadminAvailable() && hasPerm('cadmin.players.view');
-    const modalTabs = useMemo<ModalTabInfo[]>(() => {
+    const modalTabs = useMemo<PlayerModalTab[]>(() => {
         if (!canViewCharacter) return baseModalTabs;
         return [
             baseModalTabs[0],
-            { title: 'Character', icon: <UserRoundCogIcon className="mr-2 h-5 w-5 hidden xs:block" /> },
+            { title: 'Character' },
             ...baseModalTabs.slice(1),
         ];
     }, [canViewCharacter]);
@@ -139,26 +125,26 @@ export default function PlayerModal() {
     if (modalData) {
         if (modalData.player.netid) {
             pageTitle = <>
-                <span className="text-success-inline font-mono mr-2">[{modalData.player.netid}]</span>
+                <span className="mr-2 font-mono tabular-nums text-success-text">[{modalData.player.netid}]</span>
                 {modalData.player.displayName}
             </>;
         } else {
             pageTitle = <>
-                <span className="text-destructive-inline font-mono mr-2">[OFF]</span>
+                <span className="mr-2 font-mono text-danger-text">[OFF]</span>
                 {modalData.player.displayName}
             </>;
         }
     } else if (modalError) {
-        pageTitle = <span className="text-destructive-inline">{t('Error')}</span>;
+        pageTitle = <span className="text-danger-text">{t('Error')}</span>;
     } else {
-        pageTitle = <span className="text-muted-foreground italic">{t('Loading...')}</span>;
+        pageTitle = <span className="text-muted-foreground">{t('Loading...')}</span>;
     }
 
     return (
         <Dialog open={isModalOpen} onOpenChange={handleOpenClose}>
             <DialogContent className="max-w-2xl h-full sm:h-auto max-h-full p-0 gap-1 sm:gap-4 flex flex-col">
                 <DialogHeader className="px-4 py-3 border-b">
-                    <DialogTitle className="tracking-wide line-clamp-1 leading-7 break-all mr-6">
+                    <DialogTitle className="line-clamp-1 break-all leading-7">
                         {pageTitle}
                     </DialogTitle>
                 </DialogHeader>
@@ -170,27 +156,25 @@ export default function PlayerModal() {
                                 id={`player-modal-tab-${tab.title}`}
                                 key={tab.title}
                                 variant={selectedTab === tab.title ? "secondary" : "ghost"}
-                                className={cn(
-                                    'w-full tracking-wider justify-center md:justify-start',
-                                    'h-7 rounded-sm px-2 text-sm',
-                                    'md:h-10 md:text-base',
-                                    tab.className,
-                                )}
+                                size="sm"
+                                aria-current={selectedTab === tab.title ? 'page' : undefined}
+                                className="w-full justify-center rounded-sm px-2 md:justify-start md:px-3"
                                 onClick={() => setSelectedTab(tab.title)}
                                 onKeyDown={handleTabButtonKeyDown}
                             >
-                                {tab.icon} {t(tab.title)}
+                                {t(tab.title)}
                             </Button>
                         ))}
                     </ModalTabsList>
                     
                     <ModalTabWrapper className="max-h-[calc(100vh-3.125rem-4rem-5rem)]">
                         {!modalData ? (
-                            <ModalTabMessage>
-                                {modalError ? (
-                                    <span className="text-destructive-inline">{t('Error')}: {t(modalError)}</span>
-                                ) : (
-                                    <GenericSpinner msg={t('Loading...')} />
+                            <ModalTabMessage className="flex-col gap-4 text-center text-sm">
+                                {modalError ? <>
+                                    <span role="alert" className="text-danger-text">{t('Error')}: {t(modalError)}</span>
+                                    <Button size="sm" variant="secondary" onClick={refreshModalData}>{t('Try again')}</Button>
+                                </> : (
+                                    <span role="status">{t('Loading...')}</span>
                                 )}
                             </ModalTabMessage>
                         ) : (

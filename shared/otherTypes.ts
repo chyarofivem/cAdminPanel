@@ -29,6 +29,8 @@ export type ThemeType = {
 export type AccentType = {
     id: string;
     label: string;
+    /** The preset's fill colour, shown as the picker swatch. */
+    fill: string;
     vars: Record<string, string>;
 };
 

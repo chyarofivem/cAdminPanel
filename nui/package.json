@@ -16,12 +16,8 @@
     "author": "chyarogroup",
     "license": "MIT",
     "dependencies": {
-        "@emotion/react": "^11.13.3",
-        "@emotion/styled": "^11.13.0",
         "@fontsource-variable/jetbrains-mono": "^5.1.0",
         "@fontsource-variable/space-grotesk": "^5.2.8",
-        "@mui/icons-material": "^6.1.2",
-        "@mui/material": "6.1.2",
         "notistack": "^3.0.1",
         "react-polyglot": "^0.7.2",
         "recoil": "^0.7.7"

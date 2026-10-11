@@ -18,13 +18,14 @@ type ParseResult =
     | { ok: true; value: JsonValue }
     | { ok: false };
 
+//Syntax colours reuse the status text tokens; they never follow the accent.
 const tokenClass = {
     bracket: "text-muted-foreground",
-    key: "text-sky-600 dark:text-sky-300",
-    string: "text-emerald-600 dark:text-emerald-300",
-    number: "text-amber-600 dark:text-amber-300",
-    boolean: "text-violet-600 dark:text-violet-300",
-    null: "text-rose-600 dark:text-rose-300",
+    key: "text-info-text",
+    string: "text-success-text",
+    number: "text-warning-text",
+    boolean: "text-warning-text",
+    null: "text-danger-text",
 };
 
 const parseJson = (value: string): ParseResult => {
@@ -105,7 +106,7 @@ export default function JsonCodeBlock({ value, className }: JsonCodeBlockProps) 
     const parsed = parseJson(value);
 
     return (
-        <pre className={cn("whitespace-pre-wrap attempt-word-wrap font-mono text-sm leading-6", className)}>
+        <pre className={cn("whitespace-pre-wrap attempt-word-wrap font-mono text-dense leading-6 text-body", className)}>
             {parsed.ok ? renderJson(parsed.value) : value}
         </pre>
     );

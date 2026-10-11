@@ -1,22 +1,16 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import useSWR from 'swr';
-import {
-    ActivityIcon,
-    CircleIcon,
-    Loader2Icon,
-    PauseIcon,
-    PlayIcon,
-    RefreshCwIcon,
-    ScrollTextIcon,
-    SearchIcon,
-    ShieldCheckIcon,
-} from 'lucide-react';
+import { RefreshCwIcon } from 'lucide-react';
 
+import { PageHeader } from '@/components/page-header';
+import { Badge, type BadgeProps } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { IconButton } from '@/components/ui/icon-button';
 import { Input } from '@/components/ui/input';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuthedFetcher } from '@/hooks/fetch';
 import { t } from '@/lib/i18n';
-import { cn, getSocket } from '@/lib/utils';
+import { getSocket } from '@/lib/utils';
 import type {
     TxAdminLogApiResponse,
     TxAdminLogChannel,
@@ -33,14 +27,10 @@ const mergeEntries = (current: TxAdminLogEntry[], incoming: TxAdminLogEntry[]) =
     ));
 };
 
-const channelStyle: Record<TxAdminLogChannel, string> = {
-    action: 'border-brand-500/20 bg-brand-500/10 text-brand-400',
-    server: 'border-sky-500/20 bg-sky-500/10 text-sky-300',
-};
-
-const channelIcon = {
-    action: ShieldCheckIcon,
-    server: ActivityIcon,
+//The word carries the channel; server events get the info tint to tell them apart.
+const channelBadge: Record<TxAdminLogChannel, BadgeProps['variant']> = {
+    action: 'default',
+    server: 'info',
 };
 
 export default function TxAdminLogPage() {
@@ -143,128 +133,94 @@ export default function TxAdminLogPage() {
     }), []);
 
     return (
-        <section className="flex h-contentvh min-h-[38rem] w-full flex-col overflow-hidden rounded-2xl border border-white/10 bg-zinc-950/70 shadow-2xl shadow-black/20">
-            <header className="border-b border-white/10 bg-gradient-to-r from-brand-950/35 via-zinc-950/80 to-zinc-950 px-4 py-4 sm:px-6">
-                <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
-                    <div className="flex min-w-0 items-center gap-3">
-                        <span className="grid size-10 shrink-0 place-items-center rounded-xl border border-brand-500/20 bg-brand-500/10 text-brand-400">
-                            <ScrollTextIcon className="size-5" />
-                        </span>
-                        <div className="min-w-0">
-                            <div className="flex flex-wrap items-center gap-2">
-                                <h1 className="text-lg font-semibold text-white">{t('Panel Log')}</h1>
-                                <span className="rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-[10px] uppercase tracking-[0.16em] text-zinc-400">
-                                    {t('24-hour rotation')}
-                                </span>
-                            </div>
-                            <p className="mt-0.5 text-sm text-zinc-500">
-                                {t('Server events and administrator actions in one timeline.')}
-                            </p>
-                        </div>
-                    </div>
+        <section className="flex h-contentvh min-h-[38rem] w-full flex-col pb-6">
+            <PageHeader
+                title={t('Panel Log')}
+                subtitle={t('Server events and administrator actions in one timeline.')}
+            >
+                <Badge variant={isConnected ? 'success' : 'warning'} aria-live="polite">
+                    {isConnected ? t('Live') : t('Reconnecting')}
+                </Badge>
+                <Badge>{t('24-hour rotation')}</Badge>
+                <Button
+                    type="button"
+                    size="sm"
+                    variant="secondary"
+                    aria-pressed={isPaused}
+                    onClick={() => setIsPaused(value => !value)}
+                >
+                    {isPaused ? t('Resume') : t('Pause')}
+                </Button>
+                <IconButton
+                    label={t('Refresh log')}
+                    icon={<RefreshCwIcon />}
+                    className="size-11 sm:size-9"
+                    disabled={swr.isValidating}
+                    onClick={() => void swr.mutate()}
+                />
+            </PageHeader>
 
-                    <div className="flex flex-wrap items-center gap-2">
-                        <span className={cn(
-                            'inline-flex h-9 items-center gap-2 rounded-lg border px-3 text-xs',
-                            isConnected
-                                ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-300'
-                                : 'border-amber-500/20 bg-amber-500/10 text-amber-300',
-                        )}>
-                            <CircleIcon className={cn('size-2 fill-current', isConnected && 'animate-pulse')} />
-                            {isConnected ? t('Live') : t('Reconnecting')}
-                        </span>
-                        <Button
-                            type="button"
-                            size="sm"
-                            variant="outline"
-                            onClick={() => setIsPaused(value => !value)}
-                        >
-                            {isPaused ? <PlayIcon className="mr-2 size-4" /> : <PauseIcon className="mr-2 size-4" />}
-                            {isPaused ? t('Resume') : t('Pause')}
-                        </Button>
-                        <Button type="button" size="icon" variant="outline" onClick={() => void swr.mutate()} aria-label={t('Refresh log')}>
-                            <RefreshCwIcon className={cn('size-4', swr.isValidating && 'animate-spin')} />
-                        </Button>
-                    </div>
-                </div>
-
-                <div className="mt-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-                    <div className="flex flex-wrap gap-2">
+            <div className="mb-3 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                <Tabs value={channel} onValueChange={value => setChannel(value as typeof channel)} className="min-w-0 max-w-full">
+                    <TabsList className="max-w-full">
                         {(['all', 'action', 'server'] as const).map(filter => (
-                            <button
-                                type="button"
-                                key={filter}
-                                onClick={() => setChannel(filter)}
-                                className={cn(
-                                    'rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors',
-                                    channel === filter
-                                        ? 'border-brand-500/30 bg-brand-500/15 text-brand-300'
-                                        : 'border-white/10 bg-white/[0.03] text-zinc-500 hover:bg-white/[0.06] hover:text-zinc-300',
-                                )}
-                            >
+                            <TabsTrigger key={filter} value={filter} className="gap-2">
                                 {filter === 'all' ? t('All') : filter === 'action' ? t('Actions') : t('Server events')}
-                                <span className="ml-2 font-mono text-[10px] opacity-60">{counts[filter]}</span>
-                            </button>
+                                <span className="tabular-nums text-muted-foreground">{counts[filter]}</span>
+                            </TabsTrigger>
                         ))}
-                    </div>
-                    <label className="relative block w-full lg:max-w-sm">
-                        <SearchIcon className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-zinc-600" />
-                        <Input
-                            value={query}
-                            onChange={event => setQuery(event.target.value)}
-                            placeholder={t('Search message, type, or actor')}
-                            className="border-white/10 bg-black/20 pl-9"
-                        />
-                    </label>
-                </div>
-            </header>
+                    </TabsList>
+                </Tabs>
+                <Input
+                    value={query}
+                    onChange={event => setQuery(event.target.value)}
+                    aria-label={t('Search message, type, or actor')}
+                    placeholder={t('Search message, type, or actor')}
+                    className="text-dense sm:h-9 lg:max-w-sm"
+                />
+            </div>
 
-            <div className="min-h-0 flex-1 overflow-auto">
+            <div className="min-h-0 flex-1 overflow-auto rounded-lg bg-sunken">
                 {swr.isLoading && entries.length === 0 ? (
-                    <div className="grid h-full place-items-center text-zinc-500">
-                        <span className="flex items-center gap-3"><Loader2Icon className="size-5 animate-spin" />{t('Loading panel log...')}</span>
-                    </div>
+                    <p role="status" className="p-4 text-sm text-muted-foreground sm:px-6">{t('Loading panel log...')}</p>
                 ) : swr.error && entries.length === 0 ? (
-                    <div className="grid h-full place-items-center px-6 text-center text-sm text-red-300">
+                    <p role="alert" className="p-4 text-sm text-danger-text sm:px-6">
                         {swr.error.message || t('The panel log could not be loaded.')}
-                    </div>
+                    </p>
                 ) : visibleEntries.length === 0 ? (
-                    <div className="grid h-full place-items-center px-6 text-center text-sm text-zinc-500">
+                    <p className="p-4 text-sm text-muted-foreground sm:px-6">
                         {query || channel !== 'all' ? t('No log entries match these filters.') : t('No panel log entries yet.')}
-                    </div>
+                    </p>
                 ) : (
-                    <ol className="divide-y divide-white/[0.06]">
-                        {visibleEntries.map(entry => {
-                            const EntryIcon = channelIcon[entry.channel];
-                            return (
-                                <li key={entry.id} className="group grid gap-3 px-4 py-3 transition-colors hover:bg-white/[0.025] sm:grid-cols-[11rem_7rem_minmax(0,1fr)] sm:px-6">
-                                    <time className="font-mono text-[11px] text-zinc-600" dateTime={new Date(entry.ts).toISOString()}>
-                                        {timeFormatter.format(entry.ts)}
-                                    </time>
-                                    <span className={cn('inline-flex h-fit w-fit items-center gap-1.5 rounded-md border px-2 py-1 text-[10px] uppercase tracking-wider', channelStyle[entry.channel])}>
-                                        <EntryIcon className="size-3" />
+                    <ol className="divide-y divide-hairline">
+                        {visibleEntries.map(entry => (
+                            <li key={entry.id} className="grid gap-2 px-4 py-3 sm:grid-cols-[11rem_7rem_minmax(0,1fr)] sm:gap-3 sm:px-6">
+                                <time className="font-mono text-xs tabular-nums text-muted-foreground" dateTime={new Date(entry.ts).toISOString()}>
+                                    {timeFormatter.format(entry.ts)}
+                                </time>
+                                <span>
+                                    <Badge variant={channelBadge[entry.channel]}>
                                         {entry.channel === 'action' ? t('Action') : t('Server')}
-                                    </span>
-                                    <div className="min-w-0">
-                                        <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
-                                            <span className="font-medium text-zinc-200">{entry.src.name}</span>
-                                            <span className="font-mono text-[10px] uppercase tracking-wider text-zinc-600">{entry.type}</span>
-                                            {entry.src.id && <span className="truncate font-mono text-[10px] text-zinc-700">{entry.src.id}</span>}
-                                        </div>
-                                        <p className="mt-1 whitespace-pre-wrap break-words text-sm leading-6 text-zinc-400 group-hover:text-zinc-300">{entry.msg}</p>
+                                    </Badge>
+                                </span>
+                                <div className="min-w-0">
+                                    <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
+                                        <span className="font-medium text-white">{entry.src.name}</span>
+                                        <span className="font-mono text-xs text-muted-foreground">{entry.type}</span>
+                                        {entry.src.id && <span className="truncate font-mono text-xs text-faint">{entry.src.id}</span>}
                                     </div>
-                                </li>
-                            );
-                        })}
+                                    <p className="mt-1 whitespace-pre-wrap break-words text-sm text-body">{entry.msg}</p>
+                                </div>
+                            </li>
+                        ))}
                     </ol>
                 )}
             </div>
 
-            <footer className="flex items-center justify-between border-t border-white/10 bg-black/20 px-4 py-3 text-xs text-zinc-600 sm:px-6">
-                <span>{t('{count} entries shown', { count: visibleEntries.length })}</span>
+            <footer className="flex min-h-11 flex-wrap items-center justify-between gap-3 pt-3 text-xs text-muted-foreground">
+                <span className="tabular-nums">{t('{count} entries shown', { count: visibleEntries.length })}</span>
                 {hasMore && (
-                    <Button type="button" size="sm" variant="outline" disabled={isLoadingMore} onClick={() => void loadMore()}>
-                        {isLoadingMore && <Loader2Icon className="mr-2 size-4 animate-spin" />}
+                    <Button type="button" size="sm" variant="secondary" disabled={isLoadingMore} onClick={() => void loadMore()}>
                         {t('Load older entries')}
                     </Button>
                 )}

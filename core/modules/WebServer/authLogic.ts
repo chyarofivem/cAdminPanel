@@ -5,7 +5,7 @@ import consoleFactory from '@lib/console';
 import type { SessToolsType } from "./middlewares/sessionMws";
 import { ReactAuthDataType } from "@shared/authApiTypes";
 import localeMap from '@shared/localeMap';
-import { ACCENTS, type AccentId } from '@lib/theme';
+import { accentFillHex, isValidAccent, resolveAccent, type AccentValue } from '@lib/theme';
 const console = consoleFactory(modulename);
 
 
@@ -20,8 +20,9 @@ export class AuthedAdmin {
     public readonly profilePicture: string | undefined;
     public readonly discordIdentifier: string | undefined;
     public readonly cfxIdentifier: string | undefined;
+    public readonly licenseIdentifier: string | undefined;
     public readonly locale: string | undefined;
-    public readonly accent: AccentId | undefined;
+    public readonly accent: AccentValue | undefined;
     public readonly accentColor: string | undefined;
     public readonly csrfToken?: string;
 
@@ -37,17 +38,15 @@ export class AuthedAdmin {
         const discordId = vaultAdmin.providers?.discord?.id;
         this.discordIdentifier = discordId ? `discord:${discordId}` : undefined;
         this.cfxIdentifier = vaultAdmin.providers?.citizenfx?.identifier;
+        this.licenseIdentifier = vaultAdmin.providers?.license?.identifier;
         const storedLocale = vaultAdmin.preferences?.locale;
         this.locale = typeof storedLocale === 'string'
             && Object.prototype.hasOwnProperty.call(localeMap, storedLocale)
             ? storedLocale
             : undefined;
         const storedAccent = vaultAdmin.preferences?.accent;
-        this.accent = typeof storedAccent === 'string'
-            && Object.prototype.hasOwnProperty.call(ACCENTS, storedAccent)
-            ? storedAccent as AccentId
-            : undefined;
-        this.accentColor = this.accent ? ACCENTS[this.accent].hex : undefined;
+        this.accent = isValidAccent(storedAccent) ? resolveAccent(storedAccent) : undefined;
+        this.accentColor = this.accent ? accentFillHex(this.accent) : undefined;
     }
 
     /**
@@ -106,6 +105,7 @@ export class AuthedAdmin {
             profilePicture: this.profilePicture,
             discordIdentifier: this.discordIdentifier,
             cfxIdentifier: this.cfxIdentifier,
+            licenseIdentifier: this.licenseIdentifier,
             locale: this.locale,
             accent: this.accent,
             accentColor: this.accentColor,

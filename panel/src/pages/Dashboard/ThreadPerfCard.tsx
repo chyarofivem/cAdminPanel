@@ -1,8 +1,7 @@
 import { Bar, BarTooltipProps } from '@nivo/bar';
-import { BarChartHorizontalIcon, Loader2Icon } from 'lucide-react';
 import { memo, useMemo, useState } from 'react';
 import { useIsDarkMode } from '@/hooks/theme';
-import { formatTickBoundary, getBucketTicketsEstimatedTime, getMinTickIntervalMarker, getTimeWeightedHistogram } from './chartingUtils';
+import { formatTickBoundary, getBucketTicketsEstimatedTime, getChartChromeColors, getMinTickIntervalMarker, getTimeWeightedHistogram } from './chartingUtils';
 import DebouncedResizeContainer from "@/components/DebouncedResizeContainer";
 import { useAtomValue } from 'jotai';
 import { dashPerfCursorAtom, dashSvRuntimeAtom, useGetDashDataAge } from './dashboardHooks';
@@ -11,6 +10,7 @@ import { SvRtPerfThreadNamesType } from '@shared/otherTypes';
 import { cn } from '@/lib/utils';
 import { dateToLocaleDateString, dateToLocaleTimeString, isDateToday } from '@/lib/dateTime';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import Section from '@/components/Section';
 import { t } from '@/lib/i18n';
 
 
@@ -56,21 +56,23 @@ const PERF_MIN_TICK_TIME = {
  */
 const ThreadPerfChart = memo(({ data, minTickIntervalMarker, width, height }: ThreadPerfChartProps) => {
     const isDarkMode = useIsDarkMode();
+    //Gridlines, axes and labels use the design tokens; the bar colours are a fixed series scale.
+    const chromeColors = useMemo(() => getChartChromeColors(), []);
 
     const CustomToolbar = (datum: BarTooltipProps<ThreadPerfChartDatum>) => {
         const lowerLimit = data.find((_, index) => index === datum.index - 1)?.bucket ?? 0;
         const upperLimit = datum.data.bucket;
         const pctString = (datum.value * 100).toFixed() + '%';
         return (
-            <div className="p-3 text-gray-900 bg-white rounded-md shadow-md">
+            <div className="rounded-xs bg-menu px-2.5 py-1.5 text-xs text-body shadow-menu tabular-nums">
                 <div>
-                    {t('Tick duration')}: <strong>{formatTickBoundary(lowerLimit)}</strong> ~ <strong>{formatTickBoundary(upperLimit)}</strong>
+                    {t('Tick duration')}: <strong className="font-semibold text-white">{formatTickBoundary(lowerLimit)}</strong> ~ <strong className="font-semibold text-white">{formatTickBoundary(upperLimit)}</strong>
                 </div>
                 <div>
-                    {t('Time spent')}: <strong>~{pctString}</strong>
+                    {t('Time spent')}: <strong className="font-semibold text-white">~{pctString}</strong>
                 </div>
                 <div>
-                    {t('Tick count')}: {datum.data.count}
+                    {t('Tick count')}: <span className="text-white">{datum.data.count}</span>
                 </div>
             </div>
         );
@@ -88,15 +90,18 @@ const ThreadPerfChart = memo(({ data, minTickIntervalMarker, width, height }: Th
             theme={{
                 tooltip: { wrapper: { zIndex: 10000 } },
                 text: {
+                    fontFamily: 'inherit',
                     fontSize: '12px',
-                    fontWeight: 600,
-                    fill: 'inherit',
+                    fontWeight: 500,
+                    fill: chromeColors.muted,
+                },
+                axis: {
+                    domain: { line: { stroke: chromeColors.hairline, strokeWidth: 1 } },
+                    ticks: { line: { stroke: chromeColors.hairline, strokeWidth: 1 } },
                 },
                 grid: {
                     line: {
-                        strokeDasharray: '8 6',
-                        stroke: '#3F4146', //secondary
-                        strokeOpacity: isDarkMode ? 1 : 0.25,
+                        stroke: chromeColors.hairline,
                         strokeWidth: 1,
                     },
                 },
@@ -250,7 +255,7 @@ export default function ThreadPerfCard() {
             const dateStr = dateToLocaleDateString(perfCursorData.snap.end, 'short');
             const fullStr = isDateToday(perfCursorData.snap.end) ? timeStr : `${timeStr} - ${dateStr}`;
             return (<>
-                (<span className="text-xs text-warning-inline font-mono">{fullStr}</span>)
+                (<span className="font-mono text-xs tabular-nums text-warning-text">{fullStr}</span>)
             </>);
         } else {
             return dataAge.isStale ? t('(minutes ago)') : t('(last minute)');
@@ -265,55 +270,60 @@ export default function ThreadPerfCard() {
         cursorThreadLabel = chartData.threadName;
         contentNode = <ThreadPerfChart {...chartData} width={chartSize.width} height={chartSize.height} />;
     } else if (typeof chartData === 'string') {
-        contentNode = <div className="absolute inset-0 flex flex-col items-center justify-center text-muted-foreground text-center">
+        contentNode = <div className="absolute inset-0 flex flex-col items-center justify-center p-4 text-center text-sm text-muted-foreground">
             <p className='max-w-80'>
                 {t('Data not yet available.')} <br />
                 {t('The thread performance chart will appear soon after the server is online.')}
             </p>
         </div>;
     } else {
-        contentNode = <div className="absolute inset-0 flex flex-col items-center justify-center">
-            <Loader2Icon className="animate-spin size-16 text-muted-foreground" />
+        contentNode = <div role="status" className="absolute inset-0 flex items-center justify-center text-sm text-muted-foreground">
+            {t('Loading…')}
         </div>;
     }
 
 
     return (
-        <div className="py-6 rounded-2xl bg-white/5 flex flex-col col-span-3 fill-primary h-[20rem] max-h-[20rem]">
-            <div className="px-6 flex flex-row items-center justify-between space-y-0 pb-2">
-                <h3 className="text-xs uppercase tracking-widest text-neutral-500 line-clamp-1">
-                    {t('{thread} performance', { thread: cursorThreadLabel ?? selectedThread })} {titleTimeIndicator}
-                </h3>
-                <div className="flex gap-4 text-neutral-500">
-                    <Select
-                        defaultValue={selectedThread}
-                        onValueChange={setSelectedThread}
-                        disabled={!!perfCursorData}
-                    >
-                        <SelectTrigger className={cn(
-                            "w-32 grow md:grow-0 h-6 px-3 py-1 text-sm",
+        <Section
+            className="min-w-0"
+            title={<>
+                {t('{thread} performance', { thread: cursorThreadLabel ?? selectedThread })}{' '}
+                <span className="text-dense font-normal text-muted-foreground">{titleTimeIndicator}</span>
+            </>}
+            actions={
+                <Select
+                    defaultValue={selectedThread}
+                    onValueChange={setSelectedThread}
+                    disabled={!!perfCursorData}
+                >
+                    <SelectTrigger
+                        aria-label={t('Select thread')}
+                        className={cn(
+                            "w-36 text-dense sm:h-9",
                             !!perfCursorData && 'hidden'
-                        )} >
-                            <SelectValue placeholder={t('Select thread')} />
-                        </SelectTrigger>
-                        <SelectContent className="px-0">
-                            <SelectItem value={'svMain'} className="cursor-pointer">
-                                svMain
-                            </SelectItem>
-                            <SelectItem value={'svSync'} className="cursor-pointer">
-                                svSync
-                            </SelectItem>
-                            <SelectItem value={'svNetwork'} className="cursor-pointer">
-                                svNetwork
-                            </SelectItem>
-                        </SelectContent>
-                    </Select>
-                    <div className='hidden xs:block'><BarChartHorizontalIcon className="size-4" /></div>
-                </div>
+                        )}
+                    >
+                        <SelectValue placeholder={t('Select thread')} />
+                    </SelectTrigger>
+                    <SelectContent className="px-0">
+                        <SelectItem value={'svMain'} className="cursor-pointer">
+                            svMain
+                        </SelectItem>
+                        <SelectItem value={'svSync'} className="cursor-pointer">
+                            svSync
+                        </SelectItem>
+                        <SelectItem value={'svNetwork'} className="cursor-pointer">
+                            svNetwork
+                        </SelectItem>
+                    </SelectContent>
+                </Select>
+            }
+        >
+            <div className="h-72">
+                <DebouncedResizeContainer onDebouncedResize={setChartSize}>
+                    {contentNode}
+                </DebouncedResizeContainer>
             </div>
-            <DebouncedResizeContainer onDebouncedResize={setChartSize}>
-                {contentNode}
-            </DebouncedResizeContainer>
-        </div>
+        </Section>
     );
 }

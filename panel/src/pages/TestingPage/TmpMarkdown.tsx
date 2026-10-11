@@ -65,7 +65,7 @@ const toatData = {
 
 export default function TmpMarkdown() {
     return (<>
-        <div className="border p-4 rounded-lg">
+        <div className="rounded-lg bg-raise p-4 sm:p-6">
             <MarkdownProse md={testMarkdown} />
         </div>
         <div className="flex flex-wrap gap-4 items-start">

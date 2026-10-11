@@ -40,7 +40,7 @@ describe('intercom branding context', () => {
             success: true,
             panelName: 'Test Server Panel',
             accent: 'rose',
-            accentColor: '#e11d48',
+            accentColor: '#be123c',
         });
         expect(logoUrl.origin).toBe('https://monitor');
         expect(logoUrl.pathname).toBe('/WebPipe/branding/logo');
