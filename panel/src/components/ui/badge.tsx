@@ -5,11 +5,12 @@ import { cn } from "@/lib/utils"
 
 /**
  * Badge: radius-sm, 4px x 8px, 12px/600. Neutral badges sit on raise-2.
- * A status badge uses the status text colour on a 15% tint of that status colour.
- * Status is never colour alone: the badge always carries a word.
+ * A status badge uses the status text colour on a 10% tint of that status colour,
+ * optionally with a 12px status icon before the word. Status is never colour alone:
+ * the badge always carries a word.
  */
 const badgeVariants = cva(
-  "inline-flex items-center whitespace-nowrap rounded-sm px-2 py-1 text-xs font-semibold leading-none",
+  "inline-flex items-center gap-1 whitespace-nowrap rounded-sm px-2 py-1 text-xs font-semibold leading-none [&_svg]:size-3 [&_svg]:shrink-0",
   {
     variants: {
       variant: {
@@ -17,11 +18,11 @@ const badgeVariants = cva(
         secondary: "bg-raise-2 text-badge",
         outline: "bg-raise-2 text-badge",
         accent: "bg-accent text-white",
-        success: "bg-success/15 text-success-text",
-        warning: "bg-warning/15 text-warning-text",
-        danger: "bg-danger/15 text-danger-text",
-        destructive: "bg-danger/15 text-danger-text",
-        info: "bg-info/15 text-info-text",
+        success: "bg-success/10 text-success-text",
+        warning: "bg-warning/10 text-warning-text",
+        danger: "bg-danger/10 text-danger-text",
+        destructive: "bg-danger/10 text-danger-text",
+        info: "bg-info/10 text-info-text",
       },
     },
     defaultVariants: {

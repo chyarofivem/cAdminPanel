@@ -31,6 +31,7 @@
         --accent-soft: rgba(29, 78, 216, 0.1);
         --accent-tint: rgba(29, 78, 216, 0.15);
         --accent-edge: rgba(29, 78, 216, 0.2);
+        --accent-icon: rgba(59, 130, 246, 0.5);
 
         /* Surfaces */
         --bg-top: #101319;
@@ -43,6 +44,8 @@
         --raise-3: rgb(255 255 255 / 0.15);
         --sunken: rgb(15 17 22 / 0.5);
         --hairline: rgb(255 255 255 / 0.05);
+        --toggle-edge: rgb(255 255 255 / 0.12);
+        --toggle-edge-hover: rgb(255 255 255 / 0.2);
 
         /* Text */
         --text: #ffffff;
@@ -61,7 +64,7 @@
         --danger: #dc2626;
         --danger-rgb: 220 38 38;
         --danger-text: #f87171;
-        --danger-tint: rgb(220 38 38 / 0.15);
+        --danger-tint: rgb(220 38 38 / 0.1);
         --info: #3b82f6;
         --info-rgb: 59 130 246;
         --info-text: #60a5fa;
@@ -71,6 +74,7 @@
         --font-mono: "JetBrains Mono Variable", "JetBrains Mono";
 
         /* Shape */
+        --radius-2xs: 4px;
         --radius-xs: 6px;
         --radius-sm: 8px;
         --radius-md: 12px;
@@ -115,6 +119,22 @@
 
     h1, h2, h3, h4 {
         line-height: 1.25;
+    }
+
+    /* Scrollbars: 8px, transparent track, raise-2 thumb, raise-3 on hover. */
+    ::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+    }
+    ::-webkit-scrollbar-track {
+        background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+        border-radius: var(--radius-pill);
+        background: var(--raise-2);
+    }
+    ::-webkit-scrollbar-thumb:hover {
+        background: var(--raise-3);
     }
 
     ::selection {
@@ -207,6 +227,19 @@
     }
 }
 
+/*
+ * One outline icon set (lucide), stroke 1.75, currentColor. Outside @layer on purpose:
+ * lucide adds the class at runtime, so Tailwind would purge a layered rule.
+ */
+svg.lucide {
+    stroke-width: 1.75;
+}
+
+/*
+ * Reduced motion removes scale and movement and keeps only the fades: the
+ * tailwindcss-animate enter/exit transforms are neutralised, so menus, modals and
+ * the drawer only fade, and pressed buttons no longer scale.
+ */
 @media (prefers-reduced-motion: reduce) {
     html:focus-within {
         scroll-behavior: auto;
@@ -215,9 +248,16 @@
     *,
     *::before,
     *::after {
-        animation-duration: 0.01ms !important;
-        animation-iteration-count: 1 !important;
-        transition-duration: 0.01ms !important;
+        --tw-enter-scale: 1 !important;
+        --tw-exit-scale: 1 !important;
+        --tw-enter-translate-x: 0 !important;
+        --tw-enter-translate-y: 0 !important;
+        --tw-exit-translate-x: 0 !important;
+        --tw-exit-translate-y: 0 !important;
+        --tw-enter-rotate: 0 !important;
+        --tw-exit-rotate: 0 !important;
+        --tw-scale-x: 1 !important;
+        --tw-scale-y: 1 !important;
         scroll-behavior: auto !important;
     }
 }

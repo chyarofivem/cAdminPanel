@@ -10,6 +10,7 @@ import { fetchWebPipe } from "@nui/src/utils/fetchWebPipe";
 import { userHasPerm } from "@nui/src/utils/miscUtils";
 import { Button } from "@nui/src/components/ui/Button";
 import { Select } from "@nui/src/components/ui/Select";
+import { CircleXIcon } from "@nui/src/components/ui/icons";
 
 type DurationValue =
   | "2 hours"
@@ -254,20 +255,23 @@ export const PlayerBan: React.FC<PlayerModalViewProps> = ({ details, target }) =
 
       {pendingBan ? (
         <div className="callout callout-danger" role="alertdialog" aria-labelledby="ban-confirm-title">
-          <p id="ban-confirm-title" className="callout-title">
-            {t("nui_menu.player_modal.ban.confirm_title", {
-              name: details.player.displayName,
-              duration: pendingBan.durationLabel,
-            })}
-          </p>
-          <p style={{ overflowWrap: "anywhere" }}>{pendingBan.reason}</p>
-          <div className="modal-footer" style={{ padding: "16px 0 0" }}>
-            <Button onClick={() => setPendingBan(null)} disabled={submitting}>
-              {t("nui_menu.common.cancel")}
-            </Button>
-            <Button variant="danger" onClick={() => void confirmBan()} disabled={submitting}>
-              {t("nui_menu.player_modal.ban.submit")}
-            </Button>
+          <span className="callout-icon" aria-hidden="true"><CircleXIcon /></span>
+          <div className="callout-content">
+            <p id="ban-confirm-title" className="callout-title">
+              {t("nui_menu.player_modal.ban.confirm_title", {
+                name: details.player.displayName,
+                duration: pendingBan.durationLabel,
+              })}
+            </p>
+            <p style={{ overflowWrap: "anywhere" }}>{pendingBan.reason}</p>
+            <div className="callout-actions">
+              <Button onClick={() => setPendingBan(null)} disabled={submitting}>
+                {t("nui_menu.common.cancel")}
+              </Button>
+              <Button variant="danger" onClick={() => void confirmBan()} disabled={submitting}>
+                {t("nui_menu.player_modal.ban.submit")}
+              </Button>
+            </div>
           </div>
         </div>
       ) : (

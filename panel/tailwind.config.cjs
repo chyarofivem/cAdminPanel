@@ -71,6 +71,7 @@ module.exports = {
     },
     borderRadius: {
       none: '0px',
+      '2xs': 'var(--radius-2xs)',
       xs: 'var(--radius-xs)',
       DEFAULT: 'var(--radius-xs)',
       sm: 'var(--radius-sm)',
@@ -159,6 +160,7 @@ module.exports = {
           soft: "var(--accent-soft)",
           tint: "var(--accent-tint)",
           edge: "var(--accent-edge)",
+          icon: "var(--accent-icon)",
           foreground: "var(--text)",
         },
 
@@ -175,6 +177,10 @@ module.exports = {
         },
         sunken: "var(--sunken)",
         hairline: "var(--hairline)",
+        "toggle-edge": {
+          DEFAULT: "var(--toggle-edge)",
+          hover: "var(--toggle-edge-hover)",
+        },
 
         //Text: white is `text-white`, body copy is the default colour.
         body: "var(--text-body)",
@@ -235,21 +241,17 @@ module.exports = {
           from: { height: "var(--radix-accordion-content-height)" },
           to: { height: 0 },
         },
-        "toastbar-progress": {
-          '0%': { transform: 'scaleX(1)' },
-          '100%': { transform: 'scaleX(0)' },
-        },
         "loading-bar": {
           '0%': { transform: 'translateX(-100%)' },
           '100%': { transform: 'translateX(250%)' },
         },
       },
       animation: {
-        "accordion-down": "accordion-down 150ms ease",
-        "accordion-up": "accordion-up 150ms ease",
-        //NOTE: the duration is overridden inline with the toast's own duration
-        "toastbar-progress": 'toastbar-progress 5s linear forwards',
+        "accordion-down": "accordion-down 200ms ease",
+        "accordion-up": "accordion-up 200ms ease",
         "loading-bar": 'loading-bar 1.1s ease-in-out infinite',
+        //Skeletons: a gentle 1.5s opacity pulse, no shimmer.
+        pulse: 'pulse 1.5s ease-in-out infinite',
       },
     },
   },

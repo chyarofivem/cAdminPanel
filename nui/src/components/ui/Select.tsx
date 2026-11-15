@@ -1,4 +1,5 @@
 import React, { useEffect, useId, useRef, useState } from "react";
+import { CheckIcon } from "./icons";
 
 export type SelectOption<T extends string> = {
   value: T;
@@ -18,8 +19,9 @@ type SelectProps<T extends string> = {
 
 /**
  * A small listbox. Native <select> popups are unreliable in the game's off-screen
- * browser, so the menu draws its own: menu surface, radius-xs, hairline dividers,
- * and the selected option in the accent text colour.
+ * browser, so the menu draws its own: menu surface, radius-xs, menu shadow,
+ * 36px options with hairline dividers, hover raise with white text, and the
+ * selected option in white with a 16px check at the end.
  */
 export function Select<T extends string>({
   value,
@@ -118,7 +120,10 @@ export function Select<T extends string>({
                 choose(index);
               }}
             >
-              {option.label}
+              <span className="truncate">{option.label}</span>
+              {option.value === value && (
+                <span className="select-check" aria-hidden="true"><CheckIcon /></span>
+              )}
             </li>
           ))}
         </ul>

@@ -397,7 +397,7 @@ export default function MultiIdsList({ idsOnline, idsOffline, type, src, onRemov
             </ListRows>
         )}
         {isInRemovalMode && (
-            <Alert variant="destructive" className="flex flex-wrap items-center justify-between gap-3 p-3 sm:p-3">
+            <Alert variant="destructive" className="flex flex-wrap items-center justify-between gap-3">
                 <span className="text-sm font-medium text-white">
                     {markedForRemoval.length
                         ? t('Permanently delete {count} {type}?', { count: markedForRemoval.length, type: getPluralizedType(markedForRemoval.length) })

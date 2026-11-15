@@ -1,6 +1,6 @@
 import * as React from "react"
 import * as SelectPrimitive from "@radix-ui/react-select"
-import { ChevronDown, ChevronUp } from "lucide-react"
+import { Check, ChevronDown, ChevronUp } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 
@@ -17,14 +17,14 @@ const SelectTrigger = React.forwardRef<
   <SelectPrimitive.Trigger
     ref={ref}
     className={cn(
-      "flex h-11 w-full items-center justify-between gap-2 rounded-sm bg-sunken px-3 py-2 text-left text-sm text-white ring-1 ring-inset ring-hairline transition-shadow duration-150 placeholder:text-faint focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-text data-[state=open]:ring-2 data-[state=open]:ring-accent-text disabled:cursor-not-allowed disabled:opacity-50 [&>span]:line-clamp-1",
+      "flex h-10 w-full items-center justify-between gap-2 rounded-sm bg-sunken px-3 py-2 text-left text-sm text-white ring-1 ring-inset ring-hairline transition-shadow duration-150 placeholder:text-faint focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-text data-[state=open]:ring-2 data-[state=open]:ring-accent-text disabled:cursor-not-allowed disabled:opacity-50 aria-[invalid=true]:ring-1 aria-[invalid=true]:ring-danger-text [&>span]:line-clamp-1",
       className
     )}
     {...props}
   >
     {children}
     <SelectPrimitive.Icon asChild>
-      <ChevronDown className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+      <ChevronDown className="size-4 shrink-0 text-faint" aria-hidden="true" />
     </SelectPrimitive.Icon>
   </SelectPrimitive.Trigger>
 ))
@@ -73,7 +73,7 @@ const SelectContent = React.forwardRef<
     <SelectPrimitive.Content
       ref={ref}
       className={cn(
-        "relative z-50 max-h-96 min-w-[8rem] overflow-hidden rounded-xs bg-menu text-body shadow-menu",
+        "relative z-50 max-h-96 min-w-[8rem] overflow-hidden rounded-xs bg-menu text-body shadow-menu data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-[0.98] data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-[0.98] duration-150",
         position === "popper" &&
           "data-[side=bottom]:translate-y-1 data-[side=left]:-translate-x-1 data-[side=right]:translate-x-1 data-[side=top]:-translate-y-1",
         className
@@ -116,13 +116,18 @@ const SelectItem = React.forwardRef<
   <SelectPrimitive.Item
     ref={ref}
     className={cn(
-      "relative flex min-h-11 w-full cursor-pointer select-none items-center gap-2 px-3 py-2 text-sm outline-none transition-colors duration-150 focus:bg-raise focus:text-white data-[state=checked]:text-accent-text data-[disabled]:pointer-events-none data-[disabled]:opacity-50 sm:min-h-10",
+      "relative flex min-h-11 w-full cursor-pointer select-none items-center gap-2 py-2 pl-3 pr-9 text-sm outline-none transition-colors duration-150 focus:bg-raise focus:text-white data-[state=checked]:text-white data-[disabled]:pointer-events-none data-[disabled]:opacity-50 sm:min-h-9",
       className
     )}
     {...props}
   >
-    {/* The selected option is marked by the accent text colour, not an icon. */}
+    {/* The selected option is white with a check at the end. */}
     <SelectPrimitive.ItemText>{children}</SelectPrimitive.ItemText>
+    <span className="absolute right-3 flex size-4 items-center justify-center">
+      <SelectPrimitive.ItemIndicator>
+        <Check className="size-4" aria-hidden="true" />
+      </SelectPrimitive.ItemIndicator>
+    </span>
   </SelectPrimitive.Item>
 ))
 SelectItem.displayName = SelectPrimitive.Item.displayName

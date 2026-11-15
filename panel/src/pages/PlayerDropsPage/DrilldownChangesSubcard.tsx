@@ -11,21 +11,21 @@ import { t } from "@/lib/i18n";
 //"Switched from ... to ...") carry the meaning, so colour is never the only signal.
 function DiffOld({ children }: { children: React.ReactNode }) {
     return (
-        <span className="rounded-xs bg-danger/15 px-1.5 py-0.5 font-mono text-xs text-danger-text">
+        <span className="rounded-xs bg-danger/10 px-1.5 py-0.5 font-mono text-xs text-danger-text">
             {children}
         </span>
     );
 }
 function DiffNew({ children }: { children: React.ReactNode }) {
     return (
-        <span className="rounded-xs bg-success/15 px-1.5 py-0.5 font-mono text-xs text-success-text">
+        <span className="rounded-xs bg-success/10 px-1.5 py-0.5 font-mono text-xs text-success-text">
             {children}
         </span>
     );
 }
 function DiffUpdated({ children }: { children: React.ReactNode }) {
     return (
-        <span className="rounded-xs bg-warning/15 px-1.5 py-0.5 font-mono text-xs text-warning-text">
+        <span className="rounded-xs bg-warning/10 px-1.5 py-0.5 font-mono text-xs text-warning-text">
             {children}
         </span>
     );

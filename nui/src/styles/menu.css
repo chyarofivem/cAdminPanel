@@ -16,6 +16,7 @@
     --accent-soft: rgba(29, 78, 216, 0.1);
     --accent-tint: rgba(29, 78, 216, 0.15);
     --accent-edge: rgba(29, 78, 216, 0.2);
+    --accent-icon: rgba(59, 130, 246, 0.5);
 
     /* Surfaces */
     --bg-top: #101319;
@@ -28,6 +29,8 @@
     --raise-3: rgba(255, 255, 255, 0.15);
     --sunken: rgba(15, 17, 22, 0.5);
     --hairline: rgba(255, 255, 255, 0.05);
+    --toggle-edge: rgba(255, 255, 255, 0.12);
+    --toggle-edge-hover: rgba(255, 255, 255, 0.2);
 
     /* Text */
     --text: #ffffff;
@@ -36,19 +39,18 @@
     --text-faint: #71717a;
     --badge-text: #f3f4f6;
 
-    /* Status: never follows the accent */
+    /* Status: never follows the accent. Tints are the 10% fill of badges and callouts. */
     --success: #22c55e;
-    --success-tint: rgba(34, 197, 94, 0.15);
+    --success-tint: rgba(34, 197, 94, 0.1);
     --success-text: #4ade80;
     --warning: #f59e0b;
-    --warning-tint: rgba(245, 158, 11, 0.15);
+    --warning-tint: rgba(245, 158, 11, 0.1);
     --warning-text: #fbbf24;
     --danger: #dc2626;
-    --danger-hover: rgba(220, 38, 38, 0.9);
-    --danger-tint: rgba(220, 38, 38, 0.15);
+    --danger-tint: rgba(220, 38, 38, 0.1);
     --danger-text: #f87171;
     --info: #3b82f6;
-    --info-tint: rgba(59, 130, 246, 0.15);
+    --info-tint: rgba(59, 130, 246, 0.1);
     --info-text: #60a5fa;
 
     /* Type */
@@ -56,18 +58,22 @@
     --font-mono: 'JetBrains Mono Variable', 'JetBrains Mono', ui-monospace, Consolas, monospace;
 
     /* Shape */
+    --radius-2xs: 4px;
     --radius-xs: 6px;
     --radius-sm: 8px;
     --radius-md: 12px;
     --radius-lg: 16px;
     --radius-pill: 9999px;
 
-    /* Elevation: only menus and modals */
+    /* Elevation: only menus, tooltips, modals, toasts and the primary button */
     --shadow-button: 0 1px 3px rgba(0, 0, 0, 0.1);
     --shadow-menu: 0 20px 25px -5px rgba(0, 0, 0, 0.25), 0 8px 10px -6px rgba(0, 0, 0, 0.25);
     --shadow-modal: 0 25px 50px -12px rgba(0, 0, 0, 0.5), 0 0 0 1px var(--hairline);
 
+    /* Motion: colour and background, press, the nav pill */
     --ease: 150ms ease;
+    --press: 100ms ease;
+    --pill-ease: 220ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 *,
@@ -133,17 +139,22 @@ select {
 }
 
 ::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
+    width: 8px;
+    height: 8px;
 }
 
-::-webkit-scrollbar-track {
+::-webkit-scrollbar-track,
+::-webkit-scrollbar-corner {
     background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
     border-radius: var(--radius-pill);
     background: var(--raise-2);
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--raise-3);
 }
 
 .sr-only {
@@ -383,6 +394,7 @@ select {
 
 /* MARK: Action list (main page) */
 .action-list {
+    position: relative;
     display: flex;
     flex-direction: column;
     gap: 2px;
@@ -399,7 +411,28 @@ select {
     display: none;
 }
 
+/* The one shared nav pill. MainPageList moves it to the selected row's offsetTop and
+   height; it sits inside the scrolling list so it scrolls with the rows. The
+   transition is switched on after the first measurement so it never slides in. */
+.action-pill {
+    position: absolute;
+    top: 0;
+    left: 8px;
+    right: 8px;
+    height: 0;
+    border: 1px solid var(--hairline);
+    border-radius: var(--radius-md);
+    background: var(--raise);
+    pointer-events: none;
+}
+
+.action-pill.is-animated {
+    transition: transform var(--pill-ease), height var(--pill-ease);
+}
+
 .action-row {
+    /* Above the pill, which comes first in the list. */
+    position: relative;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -412,18 +445,13 @@ select {
     background: transparent;
     color: var(--text-body);
     font-size: 14px;
+    font-weight: 500;
     text-align: left;
     cursor: pointer;
-    transition: background-color var(--ease), color var(--ease);
-}
-
-.action-row:hover {
-    background: var(--raise);
-    color: var(--text);
+    transition: color var(--ease);
 }
 
 .action-row.is-selected {
-    background: var(--accent-soft);
     color: var(--accent-text);
 }
 
@@ -471,16 +499,18 @@ select {
     line-height: 1.25;
     white-space: nowrap;
     cursor: pointer;
-    transition: background-color var(--ease), color var(--ease), transform var(--ease);
+    transition: background-color var(--ease), color var(--ease), filter var(--ease), transform var(--press);
 }
 
-.btn:active {
+.btn:active:not(:disabled) {
     transform: scale(0.97);
 }
 
+/* Disabled: 50% opacity, not-allowed cursor, and no hover (the hover rules below
+   all skip :disabled). */
 .btn:disabled {
     opacity: 0.5;
-    pointer-events: none;
+    cursor: not-allowed;
 }
 
 .btn-primary {
@@ -489,7 +519,7 @@ select {
     box-shadow: var(--shadow-button);
 }
 
-.btn-primary:hover {
+.btn-primary:hover:not(:disabled) {
     background: var(--accent-hover);
 }
 
@@ -498,7 +528,7 @@ select {
     color: var(--text);
 }
 
-.btn-secondary:hover {
+.btn-secondary:hover:not(:disabled) {
     background: var(--raise-3);
 }
 
@@ -509,11 +539,10 @@ select {
 .btn-danger {
     background: var(--danger);
     color: var(--text);
-    box-shadow: var(--shadow-button);
 }
 
-.btn-danger:hover {
-    background: var(--danger-hover);
+.btn-danger:hover:not(:disabled) {
+    filter: brightness(1.1);
 }
 
 .btn-sm {
@@ -530,13 +559,13 @@ select {
     color: var(--accent-text);
 }
 
-.btn-link:hover {
+.btn-link:hover:not(:disabled) {
     color: var(--accent-glow);
     text-decoration: underline;
     text-underline-offset: 4px;
 }
 
-.btn-link:active {
+.btn-link:active:not(:disabled) {
     transform: none;
 }
 
@@ -553,22 +582,26 @@ select {
     background: transparent;
     color: var(--text-body);
     cursor: pointer;
-    transition: background-color var(--ease), color var(--ease);
+    transition: background-color var(--ease), color var(--ease), transform var(--press);
 }
 
-.icon-btn:hover {
+.icon-btn:hover:not(:disabled) {
     background: var(--raise);
     color: var(--text);
 }
 
+.icon-btn:active:not(:disabled) {
+    transform: scale(0.97);
+}
+
 .icon-btn:disabled {
     opacity: 0.5;
-    pointer-events: none;
+    cursor: not-allowed;
 }
 
 .icon-btn svg {
-    width: 16px;
-    height: 16px;
+    width: 20px;
+    height: 20px;
 }
 
 /* Tooltip for icon-only buttons: CEF has no native title tooltips. */
@@ -576,16 +609,17 @@ select {
 .icon-btn[data-tooltip]:focus-visible::after {
     content: attr(data-tooltip);
     position: absolute;
-    top: calc(100% + 6px);
+    top: calc(100% + 8px);
     right: 0;
     z-index: 10;
-    padding: 6px 10px;
+    padding: 4px 8px;
     border-radius: var(--radius-xs);
     background: var(--menu);
     box-shadow: var(--shadow-menu);
-    color: var(--text-body);
+    color: var(--text);
     font-size: 12px;
-    font-weight: 400;
+    font-weight: 500;
+    line-height: 1.5;
     white-space: nowrap;
     pointer-events: none;
 }
@@ -613,7 +647,7 @@ select {
 .textarea,
 .select-trigger {
     width: 100%;
-    min-height: 44px;
+    min-height: 40px;
     padding: 0 12px;
     border: 0;
     border-radius: var(--radius-sm);
@@ -691,67 +725,131 @@ select {
 }
 
 .select-option {
-    min-height: 40px;
-    padding: 10px 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    min-height: 36px;
+    padding: 0 12px;
     color: var(--text-body);
     font-size: 14px;
     white-space: nowrap;
     cursor: pointer;
+    transition: background-color var(--ease), color var(--ease);
 }
 
 .select-option + .select-option {
     border-top: 1px solid var(--hairline);
 }
 
-.select-option.is-highlighted {
-    background: var(--raise);
+.select-option.is-highlighted,
+.select-option.is-selected {
     color: var(--text);
 }
 
-.select-option.is-selected {
-    color: var(--accent-text);
+.select-option.is-highlighted {
+    background: var(--raise);
+}
+
+.select-check {
+    display: inline-grid;
+    flex-shrink: 0;
+    place-items: center;
+}
+
+.select-check svg {
+    width: 16px;
+    height: 16px;
+}
+
+.input:disabled,
+.textarea:disabled,
+.select-trigger:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
 }
 
 
 /* MARK: Badges, callouts, bars */
+/* Badge: never solid. Neutral on raise-2; status is the status text on its 10% tint,
+   always with a word. */
 .badge {
     display: inline-flex;
     flex-shrink: 0;
     align-items: center;
+    gap: 4px;
     padding: 4px 8px;
     border-radius: var(--radius-sm);
     background: var(--raise-2);
     color: var(--badge-text);
     font-size: 12px;
     font-weight: 600;
-    line-height: 1;
+    line-height: 16px;
     white-space: nowrap;
 }
 
-.badge-accent { background: var(--accent); color: var(--text); }
+.badge-accent { background: var(--accent-soft); color: var(--accent-text); }
 .badge-success { background: var(--success-tint); color: var(--success-text); }
 .badge-warning { background: var(--warning-tint); color: var(--warning-text); }
 .badge-danger { background: var(--danger-tint); color: var(--danger-text); }
 .badge-info { background: var(--info-tint); color: var(--info-text); }
 
+/* Callout: one flat fill carries the meaning. No border, start bar, ring or shadow.
+   Only the fill and the optional 24px status icon take the colour; the text stays on
+   the text ramp. */
 .callout {
-    padding: 16px 24px;
-    border-left: 4px solid var(--accent);
-    border-radius: 0 var(--radius-lg) var(--radius-lg) 0;
-    background: var(--accent-tint);
-    color: rgba(255, 255, 255, 0.6);
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 16px;
+    border-radius: var(--radius-lg);
+    background: var(--accent-soft);
+    color: var(--text-muted);
     font-size: 14px;
+    line-height: 20px;
+}
+
+.callout-icon {
+    display: inline-grid;
+    flex-shrink: 0;
+    place-items: center;
+    color: var(--accent-text);
+}
+
+.callout-icon svg {
+    width: 24px;
+    height: 24px;
+}
+
+.callout-content {
+    flex: 1;
+    min-width: 0;
 }
 
 .callout-title {
     margin-bottom: 4px;
-    color: rgba(255, 255, 255, 0.9);
-    font-size: 18px;
+    color: var(--text);
+    font-size: 14px;
     font-weight: 600;
+    line-height: 20px;
 }
 
-.callout-danger { border-left-color: var(--danger); background: var(--danger-tint); }
-.callout-warning { border-left-color: var(--warning); background: var(--warning-tint); }
+.callout-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin-top: 12px;
+}
+
+.callout-danger { background: var(--danger-tint); }
+.callout-danger .callout-icon { color: var(--danger-text); }
+.callout-warning { background: var(--warning-tint); }
+.callout-warning .callout-icon { color: var(--warning-text); }
+.callout-success { background: var(--success-tint); }
+.callout-success .callout-icon { color: var(--success-text); }
+.callout-info { background: var(--info-tint); }
+.callout-info .callout-icon { color: var(--info-text); }
 
 .meter {
     width: 100%;
@@ -780,6 +878,7 @@ select {
     gap: 8px;
 }
 
+/* List row: raise, radius-lg, 16px x 24px, hover raise-2. */
 .row {
     display: flex;
     align-items: center;
@@ -787,9 +886,14 @@ select {
     width: 100%;
     min-width: 0;
     min-height: 44px;
-    padding: 12px 16px;
+    padding: 16px 24px;
     border-radius: var(--radius-lg);
     background: var(--raise);
+    transition: background-color var(--ease);
+}
+
+.row:hover {
+    background: var(--raise-2);
 }
 
 .row-copy {
@@ -836,17 +940,18 @@ select {
     gap: 24px;
 }
 
+/* Empty state: centred inside the section it belongs to, no surface of its own,
+   one 14px body line and an optional action below it. */
 .empty {
     display: flex;
-    flex-wrap: wrap;
+    flex-direction: column;
     align-items: center;
-    justify-content: space-between;
+    justify-content: center;
     gap: 12px;
-    padding: 24px;
-    border-radius: var(--radius-lg);
-    background: var(--raise);
-    color: var(--text-muted);
+    padding: 48px 24px;
+    color: var(--text-body);
     font-size: 14px;
+    text-align: center;
 }
 
 
@@ -904,7 +1009,7 @@ select {
     gap: 12px;
     width: 100%;
     min-height: 64px;
-    padding: 12px 16px;
+    padding: 16px 24px;
     border: 0;
     border-radius: var(--radius-lg);
     background: var(--raise);
@@ -966,20 +1071,43 @@ select {
     background: rgba(0, 0, 0, 0.6);
 }
 
+/* Modal: 448px for confirmations, 640px for forms, the wide player modal. It fades in
+   and scales from 0.98 over 150ms; there is no exit animation. */
 .modal {
     display: flex;
     flex-direction: column;
-    width: min(520px, 100%);
+    width: min(448px, 100%);
     max-height: 100%;
     overflow: hidden;
     border-radius: var(--radius-md);
     background: var(--modal);
     box-shadow: var(--shadow-modal);
+    animation: modal-in 150ms ease;
+}
+
+.modal-form {
+    width: min(640px, 100%);
 }
 
 .modal-wide {
     width: min(960px, 100%);
     height: min(720px, 100%);
+}
+
+@keyframes modal-in {
+    from {
+        opacity: 0;
+        transform: scale(0.98);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+@keyframes fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
 }
 
 .modal-header {
@@ -991,7 +1119,7 @@ select {
 
 .modal-title {
     color: var(--text);
-    font-size: 16px;
+    font-size: 18px;
     font-weight: 600;
 }
 
@@ -1124,7 +1252,7 @@ select {
     gap: 12px;
     width: 100%;
     min-height: 44px;
-    padding: 10px 16px;
+    padding: 16px 24px;
     border: 0;
     border-radius: var(--radius-lg);
     background: var(--raise);
@@ -1149,46 +1277,67 @@ select {
 
 
 /* MARK: Notifications */
+/* Toast: modal surface, radius-md, modal shadow, 16px padding, at most 384px. A 16px
+   status icon in the status text colour, then a 14px/500 white title and an optional
+   13px muted line. No start bar. */
 .toast {
-    position: relative;
-    width: min(400px, calc(100vw - 32px));
-    padding: 12px 16px 12px 20px;
-    overflow: hidden;
-    border-radius: var(--radius-xs);
-    background: var(--menu);
-    box-shadow: var(--shadow-menu);
+    width: calc(100vw - 32px);
+    max-width: 384px;
+    padding: 16px;
+    border-radius: var(--radius-md);
+    background: var(--modal);
+    box-shadow: var(--shadow-modal);
     color: var(--text);
     font-size: 14px;
+    font-weight: 500;
+    line-height: 20px;
     white-space: pre-wrap;
     overflow-wrap: anywhere;
     pointer-events: auto;
-    --toast-bar: var(--accent);
 }
 
-.toast::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    bottom: 0;
-    left: 0;
-    width: 4px;
-    background: var(--toast-bar);
+.toast-row {
+    display: flex;
+    flex: 1;
+    align-items: flex-start;
+    gap: 8px;
+    min-width: 0;
 }
 
-.toast-success { --toast-bar: var(--success); }
-.toast-warning { --toast-bar: var(--warning); }
-.toast-error { --toast-bar: var(--danger); }
-.toast-info { --toast-bar: var(--info); }
+.toast-icon {
+    display: inline-grid;
+    flex-shrink: 0;
+    place-items: center;
+    height: 20px;
+    color: var(--accent-text);
+}
+
+.toast-icon svg {
+    width: 16px;
+    height: 16px;
+}
+
+.toast-success .toast-icon { color: var(--success-text); }
+.toast-warning .toast-icon { color: var(--warning-text); }
+.toast-error .toast-icon { color: var(--danger-text); }
+.toast-info .toast-icon { color: var(--info-text); }
+
+.toast-content {
+    flex: 1;
+    min-width: 0;
+}
 
 .toast-title {
     color: var(--text);
     font-size: 14px;
-    font-weight: 600;
+    font-weight: 500;
 }
 
 .toast-message {
-    margin-top: 2px;
-    color: var(--text-body);
+    margin-top: 4px;
+    color: var(--text-muted);
+    font-size: 13px;
+    font-weight: 400;
 }
 
 
@@ -1212,38 +1361,41 @@ select {
     pointer-events: none;
 }
 
+/* The warning card is a modal surface holding one danger callout. Only the callout's
+   fill and icon are red; the text stays on the text ramp. */
 .warn-card {
     width: min(640px, 100%);
-    overflow: hidden;
+    padding: 24px;
     border-radius: var(--radius-md);
     background: var(--modal);
     box-shadow: var(--shadow-modal);
 }
 
-.warn-card .callout {
-    padding: 24px;
-    border-radius: 0;
-}
-
 .warn-title {
-    color: var(--danger-text);
-    font-size: 20px;
+    color: var(--text);
+    font-size: 18px;
     font-weight: 600;
+    line-height: 24px;
 }
 
 .warn-message {
-    margin-top: 12px;
+    margin-top: 8px;
     color: var(--text);
-    font-size: 18px;
+    font-size: 16px;
     line-height: 1.5;
     white-space: pre-wrap;
     overflow-wrap: anywhere;
 }
 
 .warn-meta {
-    margin-top: 16px;
+    margin-top: 12px;
     color: var(--text-muted);
     font-size: 13px;
+    line-height: 1.5;
+}
+
+.warn-meta + .warn-meta {
+    margin-top: 4px;
 }
 
 .warn-instruction {
@@ -1252,13 +1404,23 @@ select {
 }
 
 
+/* Reduced motion drops the scale and transform effects and keeps the fades: the nav
+   pill jumps, the modal only fades in, buttons do not shrink when pressed. */
 @media (prefers-reduced-motion: reduce) {
-    *,
-    *::before,
-    *::after {
-        animation-duration: 0.01ms !important;
-        animation-iteration-count: 1 !important;
-        transition-duration: 0.01ms !important;
-        scroll-behavior: auto !important;
+    html {
+        scroll-behavior: auto;
+    }
+
+    .action-pill.is-animated {
+        transition: none;
+    }
+
+    .modal {
+        animation-name: fade-in;
+    }
+
+    .btn:active:not(:disabled),
+    .icon-btn:active:not(:disabled) {
+        transform: none;
     }
 }

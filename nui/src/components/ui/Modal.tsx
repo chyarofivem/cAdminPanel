@@ -6,7 +6,10 @@ type ModalProps = {
   onClose: () => void;
   /** id of the element that names the dialog */
   labelledBy?: string;
+  /** The player modal: 960px wide. */
   wide?: boolean;
+  /** A modal that is a form: 640px. The default (448px) is for confirmations. */
+  form?: boolean;
   /** Set when the modal content manages its own initial focus (eg. an autofocus input). */
   skipInitialFocus?: boolean;
   id?: string;
@@ -15,7 +18,8 @@ type ModalProps = {
 
 /**
  * Modal: modal surface, radius-md, modal shadow with a hairline ring, black 60%
- * backdrop without blur. Escape and a backdrop click close it, and the key events
+ * backdrop without blur. It fades in and scales from 0.98 over 150ms (menu.css).
+ * Escape and a backdrop click close it, and the key events
  * stop here so the menu's own Escape handler does not close the whole menu.
  */
 export const Modal: React.FC<ModalProps> = ({
@@ -23,6 +27,7 @@ export const Modal: React.FC<ModalProps> = ({
   onClose,
   labelledBy,
   wide,
+  form,
   skipInitialFocus,
   id,
   children,
@@ -56,7 +61,7 @@ export const Modal: React.FC<ModalProps> = ({
         aria-modal="true"
         aria-labelledby={labelledBy}
         tabIndex={-1}
-        className={wide ? "modal modal-wide" : "modal"}
+        className={wide ? "modal modal-wide" : form ? "modal modal-form" : "modal"}
         onKeyDown={(event) => {
           if (event.key === "Escape") {
             event.stopPropagation();

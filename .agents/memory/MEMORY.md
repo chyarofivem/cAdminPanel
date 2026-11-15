@@ -13,5 +13,6 @@ reference) and one line below. Update or delete a note that turns out to be wron
 - [Scripted edits break quietly](crlf-script-edits.md): CRLF files, heredoc escapes and shell quoting; prefer the Edit and Write tools.
 - [Previewing UI without the game](ui-preview-without-game.md): browser-mode NUI on mocks, the panel needs the backend, and CEF (Chrome 103) limits.
 - [The user tests UI themselves](user-watches-ui-live.md): give the dev-server commands early, keep a runnable state, never install browsers or screenshot tooling.
-- [The 2026-10 design-system rebuild](design-rebuild-2026-10.md): why the panel and in-game menu look the way they do, and what was removed on purpose.
+- [The design-system rebuilds](design-rebuild-2026-10.md): the 2026-10 rebuild and the 2026-11 move onto the owner's design.md; what was removed or reversed on purpose.
 - [FXServer artifact sources](fxserver-artifact-sources.md): the runtime.fivem.net index now redirects to docs; `server.zip` still downloads; the changelog API is the stable source.
+- [npm ci skips dev dependencies](npm-install-omits-dev.md): install with `--include=dev --ignore-scripts`; a plain `npm ci` leaves vitest/esbuild out and fails on husky.

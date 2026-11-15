@@ -142,7 +142,7 @@ export default function PlayerModal() {
 
     return (
         <Dialog open={isModalOpen} onOpenChange={handleOpenClose}>
-            <DialogContent className="max-w-2xl h-full sm:h-auto max-h-full p-0 gap-1 sm:gap-4 flex flex-col">
+            <DialogContent className="max-w-2xl h-full sm:h-fit max-h-full p-0 gap-1 sm:gap-4 flex flex-col">
                 <DialogHeader className="px-4 py-3 border-b">
                     <DialogTitle className="line-clamp-1 break-all leading-7">
                         {pageTitle}

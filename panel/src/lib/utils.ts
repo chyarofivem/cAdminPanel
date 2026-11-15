@@ -15,7 +15,7 @@ const twMerge = extendTailwindMerge({
         classGroups: {
             'font-size': [{ text: ['micro', '2xs', 'dense'] }],
             shadow: [{ shadow: ['button', 'menu', 'modal'] }],
-            rounded: [{ rounded: ['xs', 'pill'] }],
+            rounded: [{ rounded: ['2xs', 'xs', 'pill'] }],
         },
     },
 });

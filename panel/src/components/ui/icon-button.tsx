@@ -11,8 +11,8 @@ type IconButtonProps = Omit<ButtonProps, "size" | "children" | "aria-label"> & {
 }
 
 /**
- * The only icon-only control: 36x36, radius-sm, transparent, body-coloured icon that
- * turns white on a raise background when hovered. The label is mandatory so every
+ * The only icon-only control: 36x36, radius-sm, transparent, 20px body-coloured icon
+ * that turns white on a raise background when hovered. The label is mandatory so every
  * icon carries an aria-label and a tooltip.
  */
 const IconButton = React.forwardRef<HTMLButtonElement, IconButtonProps>(
@@ -24,7 +24,7 @@ const IconButton = React.forwardRef<HTMLButtonElement, IconButtonProps>(
           variant={variant}
           size="icon"
           aria-label={label}
-          className={cn("[&_svg]:size-4", className)}
+          className={cn("[&_svg]:size-5", className)}
           {...props}
         >
           {icon}

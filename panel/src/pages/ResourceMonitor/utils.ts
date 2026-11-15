@@ -2,11 +2,11 @@ import type { ResourceMonitorErrorCode, ResourceMonitorHistory } from '@shared/r
 import { t } from '@/lib/i18n';
 
 /**
- * Chart series colours. Chart series never follow the accent (docs/design-system.md),
- * so this fixed palette is the series token set. The order keeps neighbours apart for
- * colour-blind readers: sky, amber, rose, violet, emerald.
+ * Chart series colours (docs/design-system.md, charts): the accent first, then the
+ * neutral greys. Status colours are kept for the threshold line. The values are CSS
+ * variables, so SVG marks must take them through `style`, not presentation attributes.
  */
-export const SERIES_COLORS = ['#38bdf8', '#fbbf24', '#fb7185', '#a78bfa', '#34d399'] as const;
+export const SERIES_COLORS = ['var(--accent-text)', 'var(--text-body)', 'var(--text-muted)', 'var(--text-faint)'] as const;
 
 /**
  * Formats a millisecond value: two decimals under 1 ms, one decimal above.

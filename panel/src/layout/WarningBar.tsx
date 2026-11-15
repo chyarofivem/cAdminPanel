@@ -1,5 +1,5 @@
 import useWarningBar from "@/hooks/useWarningBar";
-import { cn } from "@/lib/utils";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { t } from "@/lib/i18n";
 import TxAnchor from "@/components/TxAnchor";
 import type { UpdateAvailableEventType } from "@shared/socketioTypes";
@@ -11,26 +11,20 @@ type InnerWarningBarProps = {
 };
 
 /**
- * A floating notice at the top of the viewport. It is a menu surface with a 4px
- * status bar, so the words carry the status and the colour only reinforces it.
+ * A system banner (connection lost, update available) at the top of the page content.
+ * It is a callout: one flat status tint with its status icon, and it does not float.
  */
 export function InnerWarningBar({ title, description, isImportant }: InnerWarningBarProps) {
     return (
-        <div className="pointer-events-none fixed inset-x-0 top-3 z-40 flex justify-center px-4">
-            <div
-                role={isImportant ? 'alert' : 'status'}
-                className="pointer-events-auto relative w-full max-w-md overflow-hidden rounded-xs bg-menu py-3 pl-5 pr-4 shadow-menu"
-            >
-                <div aria-hidden className={cn('absolute inset-y-0 left-0 w-1', isImportant ? 'bg-danger' : 'bg-info')} />
-                <h2 className="text-sm font-medium text-white">{title}</h2>
-                <div className="mt-0.5 text-dense text-muted-foreground">{description}</div>
-            </div>
-        </div>
+        <Alert variant={isImportant ? 'destructive' : 'info'} className="mt-4">
+            <AlertTitle>{title}</AlertTitle>
+            <AlertDescription>{description}</AlertDescription>
+        </Alert>
     );
 }
 
 
-const linkClasses = "text-dense";
+const linkClasses = "text-sm";
 
 function UpdateWarningBar({ panel, fxserver }: UpdateAvailableEventType) {
     return (

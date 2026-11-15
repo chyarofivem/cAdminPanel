@@ -1,8 +1,8 @@
 import { cn } from '@/lib/utils';
 
 /**
- * List rows hold records: full width, raise background, radius-lg, 8px between rows,
- * no dividers. Never put rows inside a card.
+ * List rows hold records: full width, raise background, radius-lg, 16px x 24px
+ * padding (16px on phones), 8px between rows, no dividers. Never put rows inside a card.
  */
 export function ListRows({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
     return <div role="list" className={cn('flex flex-col gap-2', className)} {...props} />;
@@ -16,7 +16,7 @@ export function ListRow({ className, interactive, ...props }: ListRowProps) {
     return <div
         role="listitem"
         className={cn(
-            'flex min-h-11 w-full min-w-0 items-center gap-3 rounded-lg bg-raise px-4 py-3 sm:px-5',
+            'flex min-h-11 w-full min-w-0 items-center gap-3 rounded-lg bg-raise p-4 sm:px-6',
             interactive && 'transition-colors duration-150 hover:bg-raise-2',
             className,
         )}

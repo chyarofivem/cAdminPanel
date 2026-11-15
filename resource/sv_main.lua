@@ -499,10 +499,10 @@ local function buildConnectionCard(title, content)
         end
     end
 
-    local cardStyle = ('margin-top: 24px; padding: 24px; border-left: solid 4px rgb(%s); border-radius: 0px 16px 16px 0px; background-color: rgba(%s, 0.15);'):format(accent, accent)
-    local brandStyle = 'margin: 0px 0px 4px; font-size: 0.8125rem; line-height: 1.5; color: rgba(255, 255, 255, 0.6);'
-    local titleStyle = 'margin: 0px; padding: 0px; font-size: 1.125rem; font-weight: 600; line-height: 1.25; color: rgba(255, 255, 255, 0.9);'
-    local bodyStyle = 'margin: 8px 0px 0px; padding: 0px; font-size: 0.875rem; line-height: 1.5; color: rgba(255, 255, 255, 0.6);'
+    local cardStyle = ('margin-top: 24px; padding: 16px; border-radius: 16px; background-color: rgba(%s, 0.1);'):format(accent)
+    local brandStyle = 'margin: 0px 0px 4px; font-size: 0.8125rem; line-height: 1.25rem; color: rgb(156, 163, 175);'
+    local titleStyle = 'margin: 0px; padding: 0px; font-size: 0.875rem; font-weight: 600; line-height: 1.25rem; color: rgb(255, 255, 255);'
+    local bodyStyle = 'margin: 4px 0px 0px; padding: 0px; font-size: 0.875rem; line-height: 1.25rem; color: rgb(156, 163, 175);'
     return ('<div style="%s"><div style="%s">%s</div><h2 style="%s">%s</h2><p style="%s">%s</p></div>'):format(
         cardStyle,
         brandStyle,

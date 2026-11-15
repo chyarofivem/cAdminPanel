@@ -144,7 +144,7 @@ export const useThemedImage = (baseImageUrl?: string) => {
 }
 
 /**
- * Applies a preset id or a custom `#rrggbb` accent. Only the seven accent
+ * Applies a preset id or a custom `#rrggbb` accent. Only the eight accent
  * tokens change; surfaces, text and status colours never follow it.
  */
 const applyAccent = (accentValue: string) => {

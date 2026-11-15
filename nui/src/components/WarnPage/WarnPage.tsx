@@ -1,11 +1,13 @@
 import React, { useState } from "react";
 import { useTranslate } from "react-polyglot";
 import { useNuiEvent } from "../../hooks/useNuiEvent";
+import { AlertTriangleIcon } from "../ui/icons";
 
 /**
- * The player-facing warning. A modal card over a dark backdrop, with the warning
- * as a danger callout. Pulses play a sound and update the countdown; nothing
- * bounces or flashes.
+ * The player-facing warning. A modal card over a dark backdrop, holding the warning
+ * as a danger callout: the 10% danger fill and a 24px triangle in the danger text
+ * colour, with the text on the text ramp. Pulses play a sound and update the
+ * countdown; nothing bounces or flashes.
  */
 interface WarnInnerProps {
   message: string;
@@ -35,14 +37,15 @@ const WarnInner: React.FC<WarnInnerProps> = ({
     <>
       <div className="warn-card" role="alertdialog" aria-labelledby="warn-title" aria-describedby="warn-message">
         <div className="callout callout-danger">
-          <h1 id="warn-title" className="warn-title">{t("nui_warning.title")}</h1>
-          <p id="warn-message" className="warn-message">{message}</p>
-          <p className="warn-meta">{t("nui_warning.warned_by")} {warnedBy}</p>
-          {!isWarningNew && (
-            <p className="warn-meta" style={{ marginTop: 4, color: "var(--warning-text)" }}>
-              {t("nui_warning.stale_message")}
-            </p>
-          )}
+          <span className="callout-icon" aria-hidden="true"><AlertTriangleIcon /></span>
+          <div className="callout-content">
+            <h1 id="warn-title" className="warn-title">{t("nui_warning.title")}</h1>
+            <p id="warn-message" className="warn-message">{message}</p>
+            <p className="warn-meta">{t("nui_warning.warned_by")} {warnedBy}</p>
+            {!isWarningNew && (
+              <p className="warn-meta">{t("nui_warning.stale_message")}</p>
+            )}
+          </div>
         </div>
       </div>
       <p className="warn-instruction tabular" style={{ fontSize: instructionFontSize }} aria-live="polite">

@@ -25,10 +25,10 @@ describe('theme accents', () => {
         expect(isValidAccent('rgb(1, 2, 3)')).toBe(false);
     });
 
-    it('exposes all seven accent tokens', () => {
+    it('exposes all eight accent tokens', () => {
         expect(Object.keys(accentVars('emerald'))).toEqual([
             'accent', 'accent-hover', 'accent-text', 'accent-glow',
-            'accent-soft', 'accent-tint', 'accent-edge',
+            'accent-soft', 'accent-tint', 'accent-edge', 'accent-icon',
         ]);
         expect(accentVars('emerald')['accent']).toBe('#047857');
     });

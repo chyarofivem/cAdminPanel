@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { MenuListItem, MenuListItemMulti } from "./MenuListItem";
 import { useKeyboardNavigation } from "../../hooks/useKeyboardNavigation";
 import { useDialogContext } from "../../provider/DialogProvider";
@@ -449,8 +449,36 @@ export const MainPageList: React.FC = () => {
     [playerMode, teleportMode, vehicleMode, healMode, serverCtx, isRedm, lastVehicleSpawned]
   );
 
+  //The one shared nav pill follows the selected row. The list is keyboard driven
+  //(pointer-events: none), so it tracks the selected index only. It is placed before
+  //paint, and its transition only switches on after the first placement, so it
+  //never slides in from the top when the list mounts.
+  const listRef = useRef<HTMLDivElement | null>(null);
+  const [pill, setPill] = useState<{ top: number; height: number } | null>(null);
+  const [pillAnimated, setPillAnimated] = useState(false);
+
+  useLayoutEffect(() => {
+    const list = listRef.current;
+    if (!list) return;
+    const row = list.querySelectorAll<HTMLElement>(".action-row")[curSelected];
+    setPill(row ? { top: row.offsetTop, height: row.offsetHeight } : null);
+  }, [curSelected, menuListItems.length]);
+
+  useEffect(() => {
+    if (!pill || pillAnimated) return;
+    const frame = requestAnimationFrame(() => setPillAnimated(true));
+    return () => cancelAnimationFrame(frame);
+  }, [pill, pillAnimated]);
+
   return (
-    <div className="action-list" role="list">
+    <div ref={listRef} className="action-list" role="list">
+      <div
+        className={pillAnimated ? "action-pill is-animated" : "action-pill"}
+        aria-hidden="true"
+        style={pill
+          ? { transform: `translateY(${pill.top}px)`, height: pill.height }
+          : { visibility: "hidden" }}
+      />
       {menuListItems.map((item, index) =>
         item.isMultiAction ? (
           // @ts-ignore

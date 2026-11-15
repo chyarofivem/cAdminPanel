@@ -72,7 +72,10 @@ export default function MainShell() {
             <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
                 <Header />
                 <main ref={mainRef} id="panel-content" tabIndex={-1} className="flex-1 overflow-x-hidden overflow-y-auto focus:outline-none">
-                    <div className="mx-auto w-full max-w-screen-2xl px-4 pb-8 md:px-6 lg:px-8"><MainRouter /></div>
+                    <div className="mx-auto w-full max-w-screen-xl px-4 pb-8 md:px-6 lg:px-8">
+                        <WarningBar />
+                        <MainRouter />
+                    </div>
                 </main>
             </div>
             <button
@@ -86,7 +89,6 @@ export default function MainShell() {
             </button>
         </div>
         <MainSheets />
-        <WarningBar />
         <ConfirmDialog />
         <PromptDialog />
         <TxToaster />

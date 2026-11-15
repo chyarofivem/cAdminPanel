@@ -19,7 +19,7 @@ const SheetOverlay = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <SheetPrimitive.Overlay
     className={cn(
-      "fixed inset-0 z-50 bg-black/60",
+      "fixed inset-0 z-50 bg-black/60 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 duration-150",
       className
     )}
     {...props}
@@ -30,7 +30,7 @@ SheetOverlay.displayName = SheetPrimitive.Overlay.displayName
 
 const sheetVariants = cva(
   //The drawer is the one surface that slides: it is how the phone navigation opens.
-  "fixed z-50 gap-4 bg-modal p-4 text-body shadow-modal ease-in-out data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:duration-150 data-[state=open]:duration-200 motion-reduce:animate-none sm:p-6",
+  "fixed z-50 gap-4 bg-modal p-4 text-body shadow-modal ease-in-out data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=open]:fade-in-0 data-[state=closed]:fade-out-0 duration-200 sm:p-6",
   {
     variants: {
       side: {
@@ -69,7 +69,7 @@ const SheetContent = React.forwardRef<
         title="Close"
         className="absolute right-3 top-3 grid size-9 place-items-center rounded-sm text-body transition-colors duration-150 hover:bg-raise hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-text disabled:pointer-events-none"
       >
-        <X className="size-4" />
+        <X className="size-5" aria-hidden="true" />
       </SheetPrimitive.Close>
     </SheetPrimitive.Content>
   </SheetPortal>
@@ -110,7 +110,7 @@ const SheetTitle = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <SheetPrimitive.Title
     ref={ref}
-    className={cn("text-base font-semibold leading-tight text-white", className)}
+    className={cn("text-lg font-semibold leading-tight text-white", className)}
     {...props}
   />
 ))

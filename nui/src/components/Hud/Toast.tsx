@@ -5,26 +5,36 @@ import {
   type CustomContentProps,
   type TransitionProps,
 } from "notistack";
+import {
+  AlertTriangleIcon,
+  CircleCheckIcon,
+  CircleXIcon,
+  InfoCircleIcon,
+} from "../ui/icons";
 
 type CommunicationKind = "announcement" | "direct-message" | "restart";
 
+type ToastLook = { className: string; Icon: React.FC };
+
 /**
- * Toasts use the menu surface with a 4px status bar on the start edge.
- * The communication kinds (announcement, DM, restart) are the same card with a
- * title; announcements and restarts carry status colours, DMs follow the accent.
+ * Toasts sit on the modal surface with the modal shadow. A 16px status icon in the
+ * status text colour leads, then the title and an optional muted line. The
+ * communication kinds (announcement, DM, restart) are the same card: announcements
+ * take the warning triangle, restarts the error circle, and direct messages and
+ * default toasts an info circle in the accent text colour.
  */
-const variantClass: Record<string, string> = {
-  default: "toast",
-  info: "toast toast-info",
-  success: "toast toast-success",
-  warning: "toast toast-warning",
-  error: "toast toast-error",
+const variantLook: Record<string, ToastLook> = {
+  default: { className: "toast", Icon: InfoCircleIcon },
+  info: { className: "toast toast-info", Icon: InfoCircleIcon },
+  success: { className: "toast toast-success", Icon: CircleCheckIcon },
+  warning: { className: "toast toast-warning", Icon: AlertTriangleIcon },
+  error: { className: "toast toast-error", Icon: CircleXIcon },
 };
 
-const communicationClass: Record<CommunicationKind, string> = {
-  announcement: "toast toast-warning",
-  "direct-message": "toast",
-  restart: "toast toast-error",
+const communicationLook: Record<CommunicationKind, ToastLook> = {
+  announcement: { className: "toast toast-warning", Icon: AlertTriangleIcon },
+  "direct-message": { className: "toast", Icon: InfoCircleIcon },
+  restart: { className: "toast toast-error", Icon: CircleXIcon },
 };
 
 const getCommunicationKind = (className?: string): CommunicationKind | null => {
@@ -38,9 +48,9 @@ const getCommunicationKind = (className?: string): CommunicationKind | null => {
 export const Toast = React.forwardRef<HTMLDivElement, CustomContentProps>(
   ({ message, variant, className, style }, ref) => {
     const communicationKind = getCommunicationKind(className);
-    const toastClass = communicationKind
-      ? communicationClass[communicationKind]
-      : variantClass[variant] ?? variantClass.default;
+    const { className: toastClass, Icon } = communicationKind
+      ? communicationLook[communicationKind]
+      : variantLook[variant] ?? variantLook.default;
     const isAlert = !communicationKind && (variant === "error" || variant === "warning");
     return (
       <SnackbarContent
@@ -50,7 +60,12 @@ export const Toast = React.forwardRef<HTMLDivElement, CustomContentProps>(
         className={toastClass}
         style={style}
       >
-        {message}
+        {/* One child row, so notistack's own flex-wrap on SnackbarContent never
+            pushes the text under the icon. */}
+        <div className="toast-row">
+          <span className="toast-icon" aria-hidden="true"><Icon /></span>
+          <div className="toast-content">{message}</div>
+        </div>
       </SnackbarContent>
     );
   }

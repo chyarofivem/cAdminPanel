@@ -11,9 +11,10 @@ import { userHasPerm } from "../../utils/miscUtils";
 import { useMenuHelp } from "../../provider/MenuHelpProvider";
 
 /**
- * Main-page rows are nav rows: 44px, radius-md, body text. The keyboard cursor
- * reads like the active nav row (accent-soft background, accent text). Rows the
- * admin cannot use are dimmed and explain why on Enter.
+ * Main-page rows are nav rows: 44px, radius-md, 14px/500 body text on a
+ * transparent row. The keyboard cursor reads like the active nav row: the shared
+ * pill drawn by MainPageList sits under it and its label turns accent text. Rows
+ * the admin cannot use are dimmed and explain why on Enter.
  */
 const rowClass = (selected: boolean, allowed: boolean) => [
   "action-row",

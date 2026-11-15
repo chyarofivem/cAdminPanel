@@ -11,7 +11,7 @@ import { useServerCtxValue } from "../state/server.state";
  * Applies the administrator's accent (or the server accent) to the menu.
  * `accent` is a preset id or a custom `#rrggbb`; `accentColor` is the fill hex and
  * is only used when an older resource sends no usable `accent`.
- * Only the seven accent tokens change.
+ * Only the eight accent tokens change.
  */
 export const useApplyAccent = () => {
   const { accent, accentColor } = useServerCtxValue();

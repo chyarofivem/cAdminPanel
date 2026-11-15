@@ -130,6 +130,7 @@ export const DialogProvider: React.FC<DialogProviderProps> = ({ children }) => {
         open={dialogOpen}
         onClose={handleDialogClose}
         labelledBy="input-dialog-title"
+        form
         skipInitialFocus
       >
         <form

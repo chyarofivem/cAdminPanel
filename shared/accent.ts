@@ -7,11 +7,11 @@
  *
  * An accent value is either a preset id (`blue`, `orange`, ...) or a custom colour
  * stored as a lowercase `#rrggbb` string. Every consumer turns that value into the
- * same seven tokens through `accentTokens()`.
+ * same eight tokens through `accentTokens()`.
  *
  * The output never relies on `color-mix()` or `oklch()`: the in-game browser is
  * CEF/Chrome 103, which supports neither, and the web panel also runs inside it
- * through the WebPipe iframe. Soft, tint and edge are emitted as comma-form rgba().
+ * through the WebPipe iframe. Soft, tint, edge and icon are emitted as comma-form rgba().
  */
 
 export const DEFAULT_ACCENT = 'blue';
@@ -64,6 +64,8 @@ export type AccentTokens = {
     accentSoft: string;
     accentTint: string;
     accentEdge: string;
+    /** The active nav icon: the accent text colour at 50%. */
+    accentIcon: string;
 };
 
 export type AccentOption = {
@@ -250,6 +252,7 @@ export function accentTokens(value: unknown): AccentTokens {
         accentSoft: rgba(base.accent, 0.1),
         accentTint: rgba(base.accent, 0.15),
         accentEdge: rgba(base.accent, 0.2),
+        accentIcon: rgba(base.accentText, 0.5),
     };
 }
 
@@ -266,6 +269,7 @@ export function accentCssVars(value: unknown): Record<string, string> {
         'accent-soft': tokens.accentSoft,
         'accent-tint': tokens.accentTint,
         'accent-edge': tokens.accentEdge,
+        'accent-icon': tokens.accentIcon,
     };
 }
 

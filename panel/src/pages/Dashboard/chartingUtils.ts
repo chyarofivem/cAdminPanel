@@ -3,8 +3,8 @@ import * as d3 from 'd3';
 
 
 /**
- * Colours for chart chrome (gridlines, axes, labels and the cursor), read from the design
- * tokens in globals.css. Series colours never come from here and never follow the accent.
+ * Colours for charts, read from the design tokens in globals.css: chrome (gridlines,
+ * axes, labels and the cursor) plus the accent, which single-series marks follow.
  * Values are concrete strings so they also work as SVG attributes and canvas styles.
  * NOTE: PlayerDropsPage/chartingUtils.ts holds the same helper for the drops timeline.
  */
@@ -19,13 +19,17 @@ export const getChartChromeColors = () => {
         body: read('--text-body', '#d1d5db'),
         muted: read('--text-muted', '#9ca3af'),
         faint: read('--text-faint', '#71717a'),
+        bgBottom: read('--bg-bottom', '#0b0d10'),
+        accent: read('--accent', '#1d4ed8'),
+        accentText: read('--accent-text', '#3b82f6'),
+        accentGlow: read('--accent-glow', '#60a5fa'),
     };
 };
 export type ChartChromeColors = ReturnType<typeof getChartChromeColors>;
 
 
 /**
- * Restyles a d3 axis group: muted 11px labels in the panel font, hairline domain and ticks.
+ * Restyles a d3 axis group: faint 11px labels in the panel font, hairline domain and ticks.
  * d3 creates new ticks on every `.call(axis)`, so call this again after each one.
  */
 export const styleChartAxis = <GDatum, PElement extends d3.BaseType, PDatum>(
@@ -35,7 +39,7 @@ export const styleChartAxis = <GDatum, PElement extends d3.BaseType, PDatum>(
     axisGroup
         .attr('font-family', null)
         .attr('font-size', 11)
-        .attr('color', colors.muted);
+        .attr('color', colors.faint);
     axisGroup.selectAll('.domain, .tick line').attr('stroke', colors.hairline);
 };
 

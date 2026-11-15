@@ -69,8 +69,8 @@ export default function drawFullPerfChart({
     //closed by the end of file
 
     //Setup
-    //NOTE: chart chrome (axes, plot background, cursor) uses the design tokens.
-    //The heatmap palette and the player line are fixed series colours.
+    //NOTE: every colour comes from the design tokens: chrome (axes, plot background,
+    //cursor), the accent heatmap and the white player line on top of it.
     const chromeColors = getChartChromeColors();
     const drawableAreaHeight = height - margins.top - margins.bottom;
     const drawableAreaWidth = width - margins.left - margins.right;
@@ -97,7 +97,8 @@ export default function drawFullPerfChart({
         .domain(bucketLabels)
         .range([height - margins.bottom, 0]);
 
-    const histColor = d3.scaleSequential(isDarkMode ? d3.interpolateViridis : d3.interpolateCool)
+    //The heatmap is one measure, so it follows the accent: from a dark accent to the glow.
+    const histColor = d3.scaleSequential(d3.interpolateRgb(d3.color(chromeColors.accent)!.darker(2).formatHex(), chromeColors.accentGlow))
         .domain([0, 1]);
 
 
@@ -317,7 +318,7 @@ export default function drawFullPerfChart({
                     .attr('fill', 'none')
                     .attr('stroke-linejoin', 'round')
                     .attr('stroke-linecap', 'round')
-                    .attr('stroke', 'black')
+                    .attr('stroke', chromeColors.bgBottom)
                     .attr('stroke-width', 6)
                     .attr('d', playerLineGenerator(d.log));
             })
@@ -330,7 +331,7 @@ export default function drawFullPerfChart({
                     .attr('fill', 'none')
                     .attr('stroke-linejoin', 'round')
                     .attr('stroke-linecap', 'round')
-                    .attr('stroke', 'rgb(204, 203, 203)')
+                    .attr('stroke', chromeColors.text)
                     .attr('stroke-width', 2)
                     .attr('d', playerLineGenerator(d.log));
             });

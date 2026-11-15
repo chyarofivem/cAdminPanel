@@ -190,7 +190,7 @@ export default function PlayerInfoTab({ playerRef, player, serverTime, tsFetch, 
     return (
         <ModalTabInner>
             {playerBannedText ? (
-                <Alert variant="warning" className="mb-3 p-3 font-medium text-white sm:p-3">
+                <Alert variant="warning" className="mb-3">
                     {playerBannedText}
                 </Alert>
             ) : null}

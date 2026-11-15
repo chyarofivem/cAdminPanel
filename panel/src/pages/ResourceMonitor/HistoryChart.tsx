@@ -155,12 +155,12 @@ export default function HistoryChart({ history, thresholdMs, intervalMinutes }: 
                     const ty = layout.y(tick);
                     return <g key={tick}>
                         <line x1={MARGIN.left} x2={MARGIN.left + layout.plotWidth} y1={ty} y2={ty} className="stroke-hairline" strokeWidth={1} />
-                        <text x={MARGIN.left - 8} y={ty} dy="0.32em" textAnchor="end" className="fill-muted-foreground text-micro tabular-nums">
+                        <text x={MARGIN.left - 8} y={ty} dy="0.32em" textAnchor="end" className="fill-faint text-micro tabular-nums">
                             {formatMs(tick)}
                         </text>
                     </g>;
                 })}
-                <text x={4} y={MARGIN.top - 6} className="fill-muted-foreground text-micro">{t('ms')}</text>
+                <text x={4} y={MARGIN.top - 6} className="fill-faint text-micro">{t('ms')}</text>
 
                 {/* Time axis */}
                 {layout.timeTicks.map((ts, index) => <text
@@ -168,7 +168,7 @@ export default function HistoryChart({ history, thresholdMs, intervalMinutes }: 
                     x={layout.x(ts)}
                     y={CHART_HEIGHT - 8}
                     textAnchor={index === 0 ? 'start' : index === layout.timeTicks.length - 1 ? 'end' : 'middle'}
-                    className="fill-muted-foreground text-micro tabular-nums"
+                    className="fill-faint text-micro tabular-nums"
                 >
                     {formatClock(ts)}
                 </text>)}
@@ -179,23 +179,23 @@ export default function HistoryChart({ history, thresholdMs, intervalMinutes }: 
                     x2={MARGIN.left + layout.plotWidth}
                     y1={thresholdY}
                     y2={thresholdY}
-                    className="stroke-muted-foreground"
+                    className="stroke-warning-text"
                     strokeWidth={1}
                     strokeDasharray="4 4"
                 />
-                <text x={MARGIN.left + layout.plotWidth} y={thresholdY - 6} textAnchor="end" className="fill-muted-foreground text-micro tabular-nums">
+                <text x={MARGIN.left + layout.plotWidth} y={thresholdY - 6} textAnchor="end" className="fill-faint text-micro tabular-nums">
                     {t('Threshold {value} ms', { value: formatMs(thresholdMs) })}
                 </text>
 
                 {/* Series */}
                 {layout.paths.map((segments, seriesIndex) => <g key={series[seriesIndex].name}>
                     {segments.map((segment, segmentIndex) => segment.single
-                        ? <circle key={segmentIndex} cx={segment.single.cx} cy={segment.single.cy} r={2.5} fill={series[seriesIndex].color} />
+                        ? <circle key={segmentIndex} cx={segment.single.cx} cy={segment.single.cy} r={2.5} style={{ fill: series[seriesIndex].color }} />
                         : <path
                             key={segmentIndex}
                             d={segment.d}
                             fill="none"
-                            stroke={series[seriesIndex].color}
+                            style={{ stroke: series[seriesIndex].color }}
                             strokeWidth={2}
                             strokeLinejoin="round"
                             strokeLinecap="round"
@@ -213,7 +213,7 @@ export default function HistoryChart({ history, thresholdMs, intervalMinutes }: 
                             cx={hovered.px}
                             cy={layout.y(value)}
                             r={4}
-                            fill={item.color}
+                            style={{ fill: item.color }}
                             className="stroke-sidebar"
                             strokeWidth={2}
                         />;

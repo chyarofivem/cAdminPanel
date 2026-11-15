@@ -32,10 +32,10 @@ const textSwatches = [
 ] as const;
 
 const statusSwatches = [
-    ['bg-success/15 text-success-text', 'success'],
-    ['bg-warning/15 text-warning-text', 'warning'],
-    ['bg-danger/15 text-danger-text', 'danger'],
-    ['bg-info/15 text-info-text', 'info'],
+    ['bg-success/10 text-success-text', 'success'],
+    ['bg-warning/10 text-warning-text', 'warning'],
+    ['bg-danger/10 text-danger-text', 'danger'],
+    ['bg-info/10 text-info-text', 'info'],
 ] as const;
 
 function SwatchGroup({ title, children }: { title: string, children: React.ReactNode }) {

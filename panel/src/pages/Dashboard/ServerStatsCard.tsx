@@ -15,11 +15,12 @@ const formatMemory = (mb: number) => {
         : `${Math.round(mb)} MB`;
 }
 
+//A key-value pair: 13px muted label above a 14px white value.
 function Stat({ label, value }: { label: string; value: React.ReactNode }) {
     return (
         <div className="min-w-0">
             <p className="truncate text-dense text-muted-foreground">{label}</p>
-            <p className="mt-1 text-lg font-semibold tabular-nums text-white">{value}</p>
+            <p className="mt-1 text-sm tabular-nums text-white">{value}</p>
         </div>
     );
 }

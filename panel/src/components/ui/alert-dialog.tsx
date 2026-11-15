@@ -16,7 +16,7 @@ const AlertDialogOverlay = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <AlertDialogPrimitive.Overlay
     className={cn(
-      "fixed inset-0 z-50 bg-black/60",
+      "fixed inset-0 z-50 bg-black/60 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 duration-150",
       className
     )}
     {...props}
@@ -34,7 +34,8 @@ const AlertDialogContent = React.forwardRef<
     <AlertDialogPrimitive.Content
       ref={ref}
       className={cn(
-        "fixed left-[50%] top-[50%] z-50 grid max-h-[calc(100vh-2rem)] w-[calc(100%-2rem)] max-w-lg translate-x-[-50%] translate-y-[-50%] gap-6 overflow-y-auto rounded-md bg-modal p-4 text-body shadow-modal sm:p-6",
+        //Confirmation: 448px wide, full-screen sheet on phones.
+        "fixed inset-0 z-50 m-auto grid h-fit max-h-[calc(100vh-2rem)] w-full max-w-md content-start gap-6 overflow-y-auto rounded-md bg-modal p-4 text-body shadow-modal sm:w-[calc(100%-2rem)] sm:p-6 max-sm:h-full max-sm:max-h-full max-sm:rounded-none data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-[0.98] data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-[0.98] duration-150",
         className
       )}
       {...props}
@@ -79,7 +80,7 @@ const AlertDialogTitle = React.forwardRef<
   <AlertDialogPrimitive.Title
     ref={ref}
     className={cn(
-      "text-base font-semibold leading-tight text-white",
+      "text-lg font-semibold leading-tight text-white",
       'attempt-word-wrap', //TX CUSTOM - prevents overflow of long words
       className
     )}

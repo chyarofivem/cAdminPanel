@@ -11,7 +11,8 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
       <input
         type={type}
         className={cn(
-          "flex h-11 py-2 w-full rounded-sm bg-sunken px-3 text-sm text-white ring-1 ring-inset ring-hairline transition-shadow duration-150 placeholder:text-faint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-text disabled:cursor-not-allowed disabled:opacity-50 file:border-0 file:bg-transparent file:text-sm file:font-medium",
+          //Input: 40px, sunken, radius-sm, hairline ring; 2px accent-text ring on focus, 1px danger ring when invalid.
+          "flex h-10 py-2 w-full rounded-sm bg-sunken px-3 text-sm text-white ring-1 ring-inset ring-hairline transition-shadow duration-150 placeholder:text-faint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-text disabled:cursor-not-allowed disabled:opacity-50 aria-[invalid=true]:ring-1 aria-[invalid=true]:ring-danger-text file:border-0 file:bg-transparent file:text-sm file:font-medium",
           className
         )}
         ref={ref}

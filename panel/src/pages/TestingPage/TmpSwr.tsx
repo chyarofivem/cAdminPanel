@@ -61,7 +61,7 @@ export default function TmpSwr() {
                             <th className="p-2 font-medium text-white">Status</th>
                             <td className={cn(
                                 "p-2 text-center",
-                                swr.data ? isDataFresh ? 'bg-success/15 text-success-text' : 'bg-danger/15 text-danger-text' : 'bg-raise-2 text-muted-foreground',
+                                swr.data ? isDataFresh ? 'bg-success/10 text-success-text' : 'bg-danger/10 text-danger-text' : 'bg-raise-2 text-muted-foreground',
                                 swr.data ? 'opacity-100' : 'opacity-50'
                             )}>
                                 {swr.data ? isDataFresh ? 'Fresh' : 'Stale' : ''}
